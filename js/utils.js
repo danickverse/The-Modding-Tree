@@ -312,7 +312,7 @@ document.onkeydown = function (e) {
 	if (tmp.gameEnded && !player.keepGoing) return;
 	let key = e.key
 	if (ctrlDown) key = "ctrl+" + key
-	if (shiftDown) player.shiftAlias = true // added this myself lets see if it works?
+	if (shiftDown) player.shiftDown = true // added this myself lets see if it works?
 	if (onFocused) return
 	if (ctrlDown && hotkeys[key]) e.preventDefault()
 	if (hotkeys[key]) {
@@ -324,7 +324,7 @@ document.onkeydown = function (e) {
 
 document.onkeyup = function (e) {
 	shiftDown = e.shiftKey
-	if (!shiftDown) player.shiftAlias = false
+	if (!shiftDown) player.shiftDown = false
 	ctrlDown = e.ctrlKey
 }
 
