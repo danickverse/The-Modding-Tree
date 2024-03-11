@@ -29,6 +29,7 @@ addLayer("p", {
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new Decimal(1)
         if (hasUpgrade("p", 13)) mult = mult.times(upgradeEffect("p", 13))
+        if (hasUpgrade("p", 14)) mult = mult.times(upgradeEffect("p", 14))
         mult = mult.times(buyableEffect("p", 21))
         return mult
     },
@@ -47,87 +48,127 @@ addLayer("p", {
             description:() => "Multiplies point gain by 1 + ln(1 + [Best Pennies])",
             cost: new Decimal("1"),
             effect:() => player.p.best.add(1).ln().add(1),
-            effectDisplay:() => format(player.p.best.add(1).ln().add(1)) + "x"
+            effectDisplay:() => format(upgradeEffect("p", 11)) + "x"
         },
         12: {
             title: "Wait A Second...",
             description:() => "Increases base point gain by log2(2 + [Upgrades]).",
             cost: new Decimal("5"),
             effect:() => Math.log2(2 + player.p.upgrades.length),
-            effectDisplay:() => "+" + format(Math.log2(2 + player.p.upgrades.length))
+            effectDisplay:() => "+" + format(upgradeEffect("p", 12)),
+            unlocked:() => hasUpgrade("p", 11)
         },
         13: {
-            title: "Wait A Second!",
-            description:() => "Multiplies penny gain by 1 + ln((1 + [Points]/100)^.5)",
+            title: "Wait A Second...?",
+            description:() => "Multiplies penny gain by 1 + ln((1 + [Points]/100)<sup>.5</sup>)",
             cost: new Decimal("100"),
             currencyDisplayName:() => "points",
             currencyInternalName:() => "points",
             currencyLocation:() => player,
             effect:() => player.points.div(100).add(1).pow(.5).ln().add(1),
-            effectDisplay:() => format(player.points.div(100).add(1).pow(.5).ln().add(1)) + "x"
+            effectDisplay:() => format(upgradeEffect("p", 13)) + "x",
+            unlocked:() => hasUpgrade("p", 12)
         },
         14: {
-            title: "Why Is It Cheaper?",
+            title:() => "Why Is This Useless?",
+            description:() => {
+                if (!hasUpgrade("p", 14)) return ""
+                if (!player.shiftDown) return "Multiplies penny gain by 1.1x if [Points] < 1e10"
+            },
+            cost: new Decimal("10"),
+            effect:() => {
+                let base = new Decimal("1.1")
+                let exp = 1
+                if (player.points.lt(new Decimal("1e10"))) return base.pow(exp)
+                return 1
+            },
+            effectDisplay:() => {
+                if (!hasUpgrade("p", 14)) return "Does nothing"
+                return format(upgradeEffect("p", 14)) + "x"
+            },
+            unlocked:() => hasUpgrade("p", 13)
+        },
+        15: {
+            title: "Biggest Bestest Coin",
             description:() => {
                 if (!player.shiftDown) return ""
             },
             cost: new Decimal("25"),
-            effect:() => 1
+            effect:() => 1,
+            effectDisplay:() => "",
+            unlocked:() => hasUpgrade("p", 14)
         },
         21: {
             title: "Still Can't Buy Water",
-            description:() => "Multiplies point gain by (1 + [Pennies]/100)^.5",
+            description:() => "Multiplies point gain by (1 + [Pennies]/100)<sup>.5</sup>",
             cost: new Decimal("100"),
             effect:() => player.p.points.div(100).add(1).pow(.5),
-            effectDisplay:() => format(player.p.points.div(100).add(1).pow(.5)) + "x"
+            effectDisplay:() => format(upgradeEffect("p", 21)) + "x",
+            unlocked:() => hasUpgrade("p", 15)
         },
         25: {
             title: "Now we're getting somewhere...",
-            //description:() => {
-                //if (!hasUpgrade("p", 25)) return "Unlock a way to put those pennies to good use."
-                //return "Multiplies point gain by ((1 + [Investment Points])^2)x"
-            //},
             cost: new Decimal("1e6"),
             effect:() => player.p.investment.points.add(1).pow(2),
             //effectDisplay:() => format(player.p.investment.points.add(1).pow(2)) + "x"
             fullDisplay:() => {
                 let title = "<b><h3>Now we're getting somewhere...</b></h3>"
-                let description = (!hasUpgrade("p", 25)) ? "Unlock a way to put those pennies to good use." : "Multiplies point gain by (1 + [Investment])^2"
+                let description = (!hasUpgrade("p", 25)) ? "Unlock a way to put those pennies to good use." : "Multiplies point gain by (1 + [Investment])<sup>2</sup>"
                 let effect = (!hasUpgrade("p", 25)) ? "" : "Currently: " + format(player.p.investment.points.add(1).pow(2)) + "x"
                 let cost = "Cost: 1,000,000 pennies"
                 return title + "<br>" + description + "<br>" + effect + "<br><br>" + cost
-            }
+            },
+            // keeps unlocked after doing an investment
+            unlocked:() => (hasUpgrade("p", 21) || player.p.investment.points.gt(decZero)) 
         },
         31: {
             title: "One Man's Trash",
             description:() => {
-                if (!player.shiftDown) return "Unlock the ability to take classes in finding pennies!"
+                if (!player.shiftDown & !hasUpgrade("p", 31)) return "Unlock the ability to take classes in finding pennies!"
                 return "Unlocks the Education buyable"
             },
             cost: new Decimal("1e5"),
-            unlocked:() => hasUpgrade("p", 25)
+            unlocked:() => (hasUpgrade("p", 25) && player.p.investment.points.gte(2))
         },
+        32: {
+            title: "Not so useless anymore",
+            cost: new Decimal("1e7"),
+            // boosts upgrade 14 to exponential growth !
+            unlocked:() => hasUpgrade("p", 25)
+        }
     },
     buyables: {
         11: {
             title: "Investment",
-            cost() {return decZero},
+            cost() {return new Decimal("1e6")},
             display() {
-                return "Invest your current pennies at a rate of (x/4e6)^.5!\nRequires 1e6 Pennies.\nCurrent Investment: " + format(player[this.layer].investment.points) + "\nCooldown: " + format(player[this.layer].investmentCooldown) + " seconds."
+                "Invest your current pennies at a rate of (x/4e6)^.5!\nRequires 1e6 Pennies.\n"
+                "Current Investment: " + format(player[this.layer].investment.points) + "\n"
+                "Cooldown: " + format(player[this.layer].investmentCooldown) + " seconds."
+                let investmentRate = "<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/4e6)<sup>.5</sup>!<br>"
+                let curr = "<b><h3>Current Investment:</h3></b> " + + format(player[this.layer].investment.points) + "<br>"
+                let cooldown = "<b><h3>Cooldown:</h3></b> " + format(player[this.layer].investmentCooldown) + " seconds.<br>"
+                let req = "<b><h3>Requires:</h3></b> " + format(this.cost()) + " pennies"
+                return investmentRate + curr + cooldown + req
             },
-            canAfford() {return player.p.points.gte(new Decimal("1e6")) & player.p.investmentCooldown == 0},
+            canAfford() {return player.p.points.gte(this.cost()) & player.p.investmentCooldown == 0},
             buy() {
                 let layerData = player.p
                 let investmentExponent = getInvestmentExponent()
                 layerData.investment.points = layerData.investment.points.add(layerData.points.div(4000000).pow(investmentExponent))
                 layerData.points = decZero
-                player.points = decZero
-                player.best = decZero
-                player.total = decZero
+                layerData.best = decZero
+                layerData.total = decZero
                 layerData.investmentCooldown = 30
-                layerData.upgrades = [25]
+
+                function removeUpgrades(index) {
+                    return index >= 25 // keeps upgrades with indices gte 25
+                }
+                layerData.upgrades = layerData.upgrades.filter(removeUpgrades)
+
+                player.points = decZero
             },
-            unlocked:() => {return hasUpgrade("p", 25)}
+            unlocked:() => hasUpgrade("p", 25)
         },
         21: {
             title: "Education",
@@ -138,13 +179,15 @@ addLayer("p", {
                 return base.mul(scaling)
             },
             display() {
-                let levels = "<b><h2>Levels:</h2></b> " + format(getBuyableAmount("p", 21)) + "<br>"
-                let eff = "Multiplies penny gain by " + ((!player.shiftDown) ? format(buyableEffect("p", 21)) : "1.25<sup>x</sup>") + "<br>"
-                let cost = "<b><h2>Cost:</h2></b> " + format(this.cost()) + " pennies"
-                return levels + eff + cost
+                let levels = "<b><h3>Levels:</h3></b> " + format(getBuyableAmount("p", 21)) + "<br>"
+                let eff = "<b><h3>Effect:</h3></b> Multiplies penny gain by " + format(buyableEffect("p", 21)) + "<br>"
+                let effFormula = "<b><h3>Effect Formula:</h3></b> " + ((!player.shiftDown) ? "log2(Investment)" : format(player.p.investment.points.log2())) + "<sup>x</sup><br>"
+                let cost = "<b><h3>Cost:</h3></b> " + format(this.cost()) + " pennies"
+                return levels + eff + effFormula + cost
             },
             effect() {
-                let base = new Decimal(1.25)
+                if (!this.unlocked()) return new Decimal("1")
+                let base = player.p.investment.points.log2()
                 let exp = getBuyableAmount("p", 21)
                 return base.pow(exp)
             },
@@ -152,15 +195,51 @@ addLayer("p", {
                 return player.p.points.gt(this.cost())
             },
             buy() {
-                if (!this.canAfford()) return
+                if (!this.canAfford()) return // should never happen, just in case
                 player.p.points.sub(this.cost())
                 addBuyables("p", 21, 1)
-            }
+            },
+            unlocked:() => (hasUpgrade("p", 31) && player.p.investment.points.gt(new Decimal("2")))
         }
     },
     update(diff) {
         if (player[this.layer].investmentCooldown > 0) {
             player[this.layer].investmentCooldown = Math.max(decZero, player[this.layer].investmentCooldown - diff)
+        }
+    },
+    tabFormat: {
+        "Upgrades": {
+            content: [
+                "main-display",
+                "prestige-button",
+                ["display-text", function() {return "Your best pennies is " + format(player.p.best)}],
+                "blank",
+                "upgrades"
+            ]
+        },
+        "Production": {
+            content: [
+                "main-display",
+                ["display-text",
+                    function(){
+                        //return "You have <h2><span style=\"color:#AD6F69\">"
+                        return `You have 
+                        <h2><span style="color: #AD6F69; text-shadow: 0px 0px 10px #AD6F69; font-family: Lucida Console, Courier New, monospace">
+                            ${formatWhole(player.p.investment.points)}</span></h2> Investment
+                        `
+                        //return `
+                        //<div><span v-if="player[layer].points.lt('1e1000')">You have </span><h2 v-bind:style="{'color': tmp[layer].color, 'text-shadow': '0px 0px 10px ' + tmp[layer].color}">{{data ? format(player[layer].points, data) : formatWhole(player[layer].points)}}</h2> {{tmp[layer].resource}}<span v-if="layers[layer].effectDescription">, <span v-html="run(layers[layer].effectDescription, layers[layer])"></span></span><br><br></div>
+                        //`
+                    }
+                ],
+                "blank",
+                ["display-text", "Investing resets the first two rows of upgrades except for the last row 2 upgrades, "],
+                "buyables", 
+                "blank"
+            ],
+            unlocked(){
+                return hasUpgrade("p", 25)
+            },
         }
     }
 })
@@ -218,7 +297,7 @@ addLayer("e", {
                 ["display-text",
                     function() {
                         if (player.shiftDown) return "You are gaining max(0, log10(log10(10 + points)) - 1) / 1000 Expansions per second"
-                        return "You are gaining " + format(tmp.e.getResetGain) + " Expansions per second"
+                        return "You are gaining " + format(player.e.getResetGain) + " Expansions per second"
                     }
                 ],
                 ["display-text",
