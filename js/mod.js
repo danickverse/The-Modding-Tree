@@ -1,6 +1,6 @@
 let modInfo = {
 	name: "Universal Expansion",
-	id: "410997",
+	id: "danickversetree",
 	author: "danick",
 	pointsName: "points",
 	modFiles: ["layers.js", "tree.js"],
@@ -49,9 +49,20 @@ function getPointGen() {
 	if (hasUpgrade('p', 11)) gainMult = gainMult.mul(upgradeEffect('p', 11))
 	if (hasUpgrade('p', 15)) gainMult = gainMult.mul(upgradeEffect('p', 15))
 	if (hasUpgrade('p', 21)) gainMult = gainMult.mul(upgradeEffect('p', 21))
+	if (hasUpgrade('p', 22)) gainMult = gainMult.mul(upgradeEffect('p', 22))
+	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 
-	return baseGain.times(gainMult)
+	ret = baseGain.mul(gainMult)
+	if (hasUpgrade('p', 23)) {
+		let limit = upgrade23Limit() //player.p.points.mul(100).pow(1).add(10)
+		if (player.points.gt(limit)) {
+			player.points = limit
+			return new Decimal("0")
+		}
+	}
+	return ret
+
 }
 
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
@@ -60,6 +71,7 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
+	"Current endgame is: I don't fucking know"
 ]
 
 // Determines when the game "ends"
