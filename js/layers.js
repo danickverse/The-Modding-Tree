@@ -117,12 +117,12 @@ addLayer("p", {
         },
         13: {
             title: "Wait A Second...?",
-            description: "Multiplies penny gain by 1 + ln((1 + Points/100)<sup>.3</sup>)",
+            description: "Multiplies penny gain by 1 + ln((1 + Points/100)<sup>.4</sup>)",
             cost: new Decimal("100"),
             currencyDisplayName:() => "points",
             currencyInternalName:() => "points",
             currencyLocation:() => player,
-            effect:() => player.points.div(100).add(1).pow(.3).ln().add(1),
+            effect:() => player.points.div(100).add(1).pow(.4).ln().add(1),
             effectDisplay:() => format(upgradeEffect("p", 13)) + "x",
             unlocked:() => hasUpgrade("p", 12) || hasUpgrade("p", 25)
         },
@@ -130,12 +130,12 @@ addLayer("p", {
             title: "Useless",
             description:() => {
                 if (!hasUpgrade("p", 14) && !hasUpgrade("p", 25)) return ""
-                if (!hasUpgrade("p", 32)) return "Multiplies penny gain by 1.1 if Points < " + format(upgrade14Limit())
-                return "Multiplies penny gain by 1.1<sup>Investment</sup> if Points < " + format(upgrade14Limit())
+                if (!hasUpgrade("p", 32)) return "Multiplies penny gain by 1.25 if Points < " + format(upgrade14Limit())
+                return "Multiplies penny gain by 1.25<sup>log2(Investment)</sup> if Points < " + format(upgrade14Limit())
             },
             cost: new Decimal("10"),
             effect:() => {
-                let base = new Decimal("1.1")
+                let base = new Decimal("1.25")
 
                 let exp = 1
                 if (hasUpgrade("p", 32)) exp = upgradeEffect("p", 32)
@@ -191,7 +191,7 @@ addLayer("p", {
         24: {
             title: "Where Did These Come From???",
             description: "Multiplies penny gain by (1 + Points)<sup>.06</sup>",
-            cost: new Decimal(10000),
+            cost: new Decimal("5000"),
             effect:() => player.points.add(1).pow(.06),
             effectDisplay:() => format(upgradeEffect("p", 24)) + "x",
             unlocked:() => hasUpgrade("p", 23) || hasUpgrade("p", 25)
@@ -231,17 +231,17 @@ addLayer("p", {
         },
         32: {
             title: "Slightly Less Useless",
-            description: "Raises Useless Effect to [Investment]",
+            description: "Raises Useless Effect to log2(Investment)",
             cost: new Decimal("4e6"),
-            effect:() => player.p.investment.points,
-            unlocked:() => hasUpgrade("p", 31) || hasUpgrade("p", 35)
+            effect:() => player.p.investment.points.log2(),
+            unlocked:() => (player.p.investment.points.gte(5) && hasUpgrade("p", 31)) || hasUpgrade("p", 35)
         },
         33: {
             title: "Unuselessifier",
-            description: "Multiplies Useless Limit by Investment<sup>3</sup><br>Increases cost of next upgrade",
+            description: "Multiplies Useless Limit by Investment<sup>3</sup><br>Slightly increases cost of next upgrade",
             cost:() => {
                 let ret = new Decimal("4e6")
-                if (hasUpgrade("p", 34)) ret = ret.mul(4)
+                if (hasUpgrade("p", 34)) ret = ret.mul(1.5)
                 return ret
             },
             effect:() => player.p.investment.points.pow(3),
@@ -250,14 +250,14 @@ addLayer("p", {
         },
         34: {
             title: "Slightly Bigger Pockets",
-            description: "Increases We Need Bigger Pockets limit exponent by log10(1 + Investment)/100<br>Increases cost of next upgrade",
+            description: "Increases We Need Bigger Pockets limit exponent by log10(1 + Investment)/100<br>Slightly increases cost of previous upgrade",
             cost:() => {
                 let ret = new Decimal("4e6")
-                if (hasUpgrade("p", 33)) ret = ret.mul(4)
+                if (hasUpgrade("p", 33)) ret = ret.mul(1.5)
                 return ret
             },
-            effect:() => player.p.investment.points.add(1).log10().div(100),
-            effectDisplay:() => "^" + format(upgradeEffect("p", 34)),
+            effect:() => player.p.investment.points.add(1).log10().div(50),
+            effectDisplay:() => "+" + format(upgradeEffect("p", 34)),
             unlocked:() => hasUpgrade("p", 32) || hasUpgrade("p", 35)
         },
         35: {
@@ -302,11 +302,8 @@ addLayer("p", {
         },
         11: {
             title: "Investment",
-            cost() {return new Decimal("1e6")},
+            cost() {return new Decimal("5e5")}, //new Decimal("1e6")},
             display() {
-                "Invest your current pennies at a rate of (x/1e6)^.5!\nRequires 1e6 Pennies.\n"
-                "Current Investment: " + format(player[this.layer].investment.points) + "\n"
-                "Cooldown: " + format(player[this.layer].investmentCooldown) + " seconds."
                 let investmentRate = "<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/1e6)<sup>.5</sup>!<br>"
                 let curr = "<b><h3>Current Investment:</h3></b> " + + format(player[this.layer].investment.points) + "<br>"
                 let cooldown = "<b><h3>Cooldown:</h3></b> " + format(player[this.layer].investmentCooldown) + " seconds.<br>"

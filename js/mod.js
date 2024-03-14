@@ -24,7 +24,13 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added basic functionality for Expansions layer.<br>
 		- Added a few various little things<br>
 		(like two or three various little things)<br>
-		(they are really little)`
+		(they are really little)<br><br>
+
+	<h3>v0.11</h3><br>
+		- quick balance patch<br>
+		- like one person played before this so nothing happened<br>
+		- <s>exponentials are funny</s><br>
+	`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
