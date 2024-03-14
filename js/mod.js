@@ -1,11 +1,11 @@
 let modInfo = {
 	name: "Universal Expansion",
 	id: "danickversetree",
-	author: "danick",
+	author: "@.danick",
 	pointsName: "points",
 	modFiles: ["layers.js", "tree.js", "achievements.js"],
 
-	discordName: ".danick",
+	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
 	offlineLimit: 0,  // In hours
@@ -17,10 +17,14 @@ let VERSION = {
 	name: "We're getting somewhere...",
 }
 
-let changelog = `<h1>Changelog:</h1><br>
-	<h3>v0.0</h3><br>
-		- Added things.<br>
-		- Added stuff.`
+let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1</h3><br>
+		- Added penny layer: 15 upgrades, Investment (I? likely adding more), Education I<br>
+		- Added 11 achievements.<br>
+		- Added basic functionality for Expansions layer.<br>
+		- Added a few various little things<br>
+		(like two or three various little things)<br>
+		(they are really little)`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
