@@ -263,7 +263,7 @@ addLayer("p", {
         35: {
             title: "Seriously?",
             description: "Achievements boost pennies at a reduced rate. Unlocks a buyable respec",
-            cost: new Decimal("4e7"),
+            cost: new Decimal("3e7"),
             effect:() => new Decimal(1 + .5 * player.a.achievements.length).pow(.2),
             effectDisplay:() => format(upgradeEffect("p", 35)) + "x",
             unlocked:() => hasAchievement("a", 21)
