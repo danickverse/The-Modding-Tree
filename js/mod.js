@@ -3,7 +3,7 @@ let modInfo = {
 	id: "danickversetree",
 	author: "danick",
 	pointsName: "points",
-	modFiles: ["layers.js", "tree.js"],
+	modFiles: ["layers.js", "tree.js", "achievements.js"],
 
 	discordName: ".danick",
 	discordLink: "",
@@ -55,7 +55,7 @@ function getPointGen() {
 
 	ret = baseGain.mul(gainMult)
 	if (hasUpgrade('p', 23)) {
-		let limit = upgrade23Limit() //player.p.points.mul(100).pow(1).add(10)
+		let limit = upgrade23Limit()
 		if (player.points.gt(limit)) {
 			player.points = limit
 			return new Decimal("0")
@@ -71,12 +71,13 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	"Current endgame is: I don't fucking know"
+	"Current endgame: 11 achievements"
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(new Decimal("e280000000"))
+	//return false
+	return hasAchievement("a", 31)
 }
 
 

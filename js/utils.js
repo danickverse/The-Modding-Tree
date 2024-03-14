@@ -324,7 +324,7 @@ document.onkeydown = function (e) {
 
 document.onkeyup = function (e) {
 	shiftDown = e.shiftKey
-	if (!shiftDown) player.shiftDown = false
+	if (!shiftDown && player.shiftDown) player.shiftDown = false
 	ctrlDown = e.ctrlKey
 }
 
