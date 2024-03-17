@@ -408,7 +408,7 @@ addLayer("p", {
         }
     },
     buyables: {
-        showRespec:() => hasUpgrade("p", 35),
+        showRespec:() => hasUpgrade("p", 35) && !player.e.everUpg33,
         respecText: "Resets ALL buyables and forces an investment reset",
         respecMessage: "Are you sure you want to respec? This will force an investment reset!",
         respec() {
@@ -679,14 +679,15 @@ addLayer("p", {
 
 addLayer("e", {
     symbol: "E",
-    position: 1,
+    position: 2,
     startData() { return {
         unlocked: false,
         points: decZero,
         penny_expansions: {
             points: decZero
         },
-        everUpg23: false
+        everUpg23: false,
+        everUpg33: false
     }},
     color: "#FFFFFF",
     resource: "expansions",
@@ -697,9 +698,7 @@ addLayer("e", {
         let mult = tmp.e.gainMult
         return base.mul(mult)
     },
-    prestigeButtonText(){
-        return "hello"
-    },
+    prestigeButtonText(){ return "" },
     getNextAt() {return decZero},
     baseAmount() {
         if (player.highestPointsEver.lessThan(new Decimal("1e10"))) return decZero
@@ -912,9 +911,12 @@ addLayer("e", {
         },
         33: {
             title: "We Should Get A Wallet",
-            description: "Unlocks Wallets and removes penny buyable respec (it was useless anyways) (Not Implemented)",
+            description: "Unlocks Wallets, which is kept through respec, and removes penny buyable respec (it was useless anyways)",
             cost:() => decOne.mul(2**player.e.upgrades.length).div(4),
-            canAfford: false, // remove with next update!!!
+            onPurchase() {
+                player.e.everUpg23 = true
+                if (!hasUpgrade("p", 23)) player.p.upgrades.push(23)
+            },
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
             currencyLocation:() => player.e.penny_expansions,
@@ -1068,4 +1070,27 @@ addLayer("e", {
             canClick:() => getClickableState("e", 22) || getClickableState("e", 21) != !getClickableState("e", 22)
         }
     }
+})
+
+addLayer("w", {
+    symbol: "W",
+    position: 1,
+    startData() { return {
+        unlocked: false,
+        points: decZero,
+        pennyWallet: {
+            points: decZero
+        },
+        expansionWallet: {
+            points: decZero
+        },
+    }},
+    color: "#FFFFFF",
+    resource: "wallets",
+    type: "none",
+    row: 1,
+    layerShown:() => player.e.everUpg33
+    // penny wallet
+    // expansion wallet
+    // storing in wallet resets all layers above this one
 })
