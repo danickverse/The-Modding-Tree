@@ -186,9 +186,9 @@ addLayer("a", {
         43: {
             name: "18",
             done() {
-                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gt(1e7)) return true
+                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(1e7)) return true
             },
-            tooltip: "Reach 10 million pennies with 0 investment",
+            tooltip: "Reach 10 million pennies with 0 (normal) investment",
             unlocked:() => hasUpgrade("e", 23)
         },
         44: {
@@ -225,14 +225,24 @@ addLayer("a", {
             effectDescription:() => {
                 return "Multiply Penny Expansion gain by 1.05<sup>milestones</sup><br>Currently: " + format(1.05**player.a.milestones.length, 4)
             },
-            done() { return player.a.achievements.length >= 15 }
+            done() { return player.a.achievements.length >= 15 },
+            unlocked:() => player.e.unlocked
         },
         2: {
             requirementDescription: "18 Achievements Finished",
             effectDescription:() => {
                 return "Increase Why Do These Matter??? base to 1.2"
             },
-            done() { return player.a.achievements.length >= 18 }
+            done() { return player.a.achievements.length >= 18 },
+            unlocked:() => player.e.upgrades.length >= 5
+        },
+        3: {
+            requirementDescription: "20 Achievements Finished",
+            effectDescription:() => {
+                return "Multiply Slightly Bigger Pockets effect by 1.5"
+            },
+            done() { return player.a.achievements.length >= 20 },
+            unlocked:() => player.e.upgrades.length >= 5
         }
     },
     tabFormat: {

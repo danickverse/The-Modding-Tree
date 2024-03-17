@@ -36,8 +36,8 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added Expansions layer: 15 upgrades and two clickables<br>
 		- Expanded Penny layer: 5 upgrades (15 -> 20), 2 buyables (2 -> 4)<br>
 		- 9 more achievements (11 -> 20)<br>
-		- 3 achievement milestones (0 -> 3)<br>
-		- Balance changes: Finishing 1.1 content is much faster in slow spots and game supports (encourages?) idle style. 
+		- 4 achievement milestones (0 -> 4)<br>
+		- Balance changes: Finishing v0.11 content is much faster in slow spots and game supports (encourages?) idle style to limited extent. 
 			Implemented softcaps to stop inflation
 	`
 
@@ -95,13 +95,13 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	"Current endgame: 11 achievements"
+	"Current endgame: 1e12 Pennies"
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return false
-	return hasAchievement("a", 31)
+	//return false
+	return player.p.points.gte(new Decimal("1e12"))
 }
 
 

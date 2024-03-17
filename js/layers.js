@@ -32,13 +32,14 @@ function upgrade14Limit() {
 function penniesTaxFactor() {
     if (player.p.points.lt(pennyTaxStart()) && player.p.best.lt(pennyTaxStart())) return decOne//(player.p.points.lt(pennyTaxStart())) return decOne
     let taxFactor = player.p.best.div(2).max(player.p.points).div(pennyTaxStart())//player.p.points.div(pennyTaxStart()) // base tax factor = pennies/1e6
-    taxFactor = taxFactor.add(.5).pow(2.5) // returns (.5 + pennies / 1e6)^2.5
+    taxFactor = taxFactor.add(.5).pow(2.5) // returns (.5 + pennies / 1e6)^2.5 initially
     //taxFactor.ln().div(logarithmBase.ln()) // returns log_base(pennies)
     return taxFactor
 }
 
 function pennyTaxStart() {
     let baseTaxes = new Decimal("1e6")
+    if (hasUpgrade("p", 45)) baseTaxes = baseTaxes.mul(upgradeEffect("p", 45))
     return baseTaxes
 }
 
@@ -48,7 +49,7 @@ function investmentGain() {
     if (hasAchievement("a", 25)) ret = ret.mul(2)
     if (hasAchievement("a", 34)) ret = ret.mul(1.1)
     if (hasAchievement("a", 44)) ret = ret.mul(1.2)
-    if (hasUpgrade("p", 43)) ret = ret.mul(upgradeEffect("p", 42))
+    if (hasUpgrade("p", 43)) ret = ret.mul(upgradeEffect("p", 43))
     if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
     return ret
 }
@@ -124,6 +125,7 @@ addLayer("p", {
         if (hasUpgrade("p", 15)) mult = mult.times(upgradeEffect("p", 15))
         if (hasUpgrade("p", 24)) mult = mult.times(upgradeEffect("p", 24))
         if (hasUpgrade("p", 35)) mult = mult.times(upgradeEffect("p", 35))
+        if (hasUpgrade("p", 44)) mult = mult.times(upgradeEffect("p", 44))
         if (hasAchievement("a", 34)) mult = mult.times(1.2)
         mult = mult.times(buyableEffect("p", 21))
         return mult
@@ -317,7 +319,11 @@ addLayer("p", {
                 if (hasUpgrade("p", 33)) ret = ret.mul(1.5)
                 return ret
             },
-            effect:() => player.p.investment.points.add(1).log10().div(50),
+            effect:() => {
+                let ret = player.p.investment.points.add(1).log10().div(50)
+                if (hasMilestone("a", 3)) ret = ret.mul(1.5)
+                return ret
+            },
             effectDisplay:() => "+" + format(upgradeEffect("p", 34)),
             unlocked:() => (player.p.investment.points.gte(5) && hasUpgrade("p", 31)) || hasUpgrade("p", 35)
         },
@@ -336,7 +342,7 @@ addLayer("p", {
                 return title + "<br>" + description() + "<br><br>" + cost
             },
             cost: new Decimal("2e7"),
-            effect:() => new Decimal(1 + .5 * player.a.achievements.length).pow(!hasUpgrade("e", 14) ? .2 : upgradeEffect("e", 14)),
+            effect:() => new Decimal(1 + .5 * player.a.achievements.length).pow(!hasUpgrade("e", 14) ? .2 : (!hasUpgrade("e", 34) ? upgradeEffect("e", 14) : upgradeEffect("e", 34)), 1),
             effectDisplay:() => format(upgradeEffect("p", 35)) + "x",
             canAfford:() => hasAchievement("a", 21),
             unlocked:() => (player.p.investment.points.gte(5) && hasUpgrade("p", 31)) || hasUpgrade("p", 35)//hasAchievement("a", 21)
@@ -351,10 +357,10 @@ addLayer("p", {
         },
         42: {
             cost:() => new Decimal("1e11"),
-            effect:() => player.p.investment2.points.add(1).pow(.2),
+            effect:() => player.p.investment2.points.add(1).pow(.5),
             fullDisplay:() => {
                 let title = "<b><h3>Invest In The Universe!</b></h3>"
-                let description = (!hasUpgrade("p", 42)) ? "Unlock the Expansion Investment buyable." : "Multiplies expansion gain by (1+Expansion Investment)<sup>.2</sup>"
+                let description = (!hasUpgrade("p", 42)) ? "Unlock the Expansion Investment buyable." : "Multiplies expansion gain by (1+Expansion Investment)<sup>.5</sup>"
                 let effect = (!hasUpgrade("p", 42)) ? "" : "Currently: " + format(upgradeEffect("p", 42)) + "x<br>"
                 let ret = title + "<br>" + description + "<br>" + effect
                 if (!hasUpgrade("p", 42)) return ret + "<br>Cost: 1e11 pennies"
@@ -365,39 +371,39 @@ addLayer("p", {
         43: {
             title: "... And Yourself, Too!",
             description:() => { 
-                let ret = "Multiplies investment gain by effect of previous upgrade"
+                let ret = "Multiplies investment gain by previous upgrade effect"
                 if (!hasUpgrade("p", 43) && !hasUpgrade("p", 44)) ret = ret + "<br>Increases cost of next upgrade"
                 return ret
             },
             cost:() => {
                 let ret = new Decimal("5e10")
-                if (hasUpgrade("p", 44)) ret = ret.mul(5)
+                if (hasUpgrade("p", 44)) ret = ret.mul(10)
                 return ret
             },
+            effect:() => upgradeEffect("p", 42),
             unlocked:() => hasUpgrade("e", 23) && player.p.investment2.points.gte(1)
         },
         44: {
-            title: "Unimplemented",
+            title: "Recycling",
             description:() => { 
-                let ret = "Placeholder"
+                let ret = "Multiplies penny gain by 1 + log10(1 + Investment)"
                 if (!hasUpgrade("p", 43) && !hasUpgrade("p", 44)) ret = ret + "<br>Increases cost of previous upgrade"
                 return ret
             },
             cost:() => {
                 let ret = new Decimal("5e10")
-                if (hasUpgrade("p", 43)) ret = ret.mul(5)
+                if (hasUpgrade("p", 43)) ret = ret.mul(10)
                 return ret
             },
-            effect:() => 1,
-            effectDisplay:() => "+" + format(upgradeEffect("p", 44)),
+            effect:() => player.p.investment.points.add(1).log10().add(1),
+            effectDisplay:() => format(upgradeEffect("p", 44)) + "x",
             unlocked:() => hasUpgrade("e", 23) && player.p.investment2.points.gte(1)
         },
         45: {
-            title: "",
-            cost: new Decimal("2e7"),
-            description: "",
-            effect:() => 0,
-            effectDisplay:() => "",
+            title: "I Want To Break Free!",
+            cost: new Decimal("1e13"),
+            description: "Multiplies base penny value used for Tax by IITU effect",
+            effectDisplay:() => "Tax starts at " + format(pennyTaxStart()) + " pennies",
             unlocked:() => hasUpgrade("e", 23) && player.p.investment2.points.gte(1)
         }
     },
@@ -647,12 +653,12 @@ addLayer("p", {
         "Info": {
             content: [
                 "main-display",
-                ["display-text", 
-                    "\"Tax\" will be applied to your penny gain once your best pennies exceeds 1,000,000 (1e6) "
-                        + "This nerf will apply to you so long as your <b>best</b> pennies exceeds 1e6. It divides your penny gain on reset by the shown value "
+                ["display-text", function() {
+                    let ret = "\"Tax\" will be applied to your penny gain once your <b>best</b> pennies exceeds " + format(pennyTaxStart()) + ". "
+                        + "This nerf will apply to you so long as your <b>best</b> pennies exceeds " + format(pennyTaxStart()) + ". It divides your penny gain on reset by the shown value "
                         + "<br><br>This nerf is calculated using the formula:<br>(.5 + x / pennyTaxStart)<sup>pennyTaxExp</sup>,"
-                        + "<br> where x = max([Best Pennies] / 2, [Current Pennies]), pennyTaxStart = 1e6 initially, and pennyTaxExp = 2.5 initially "
-                        + "<br><br>Essentially, the nerf is a minimum of 1, is roughly 2.76 at 1e6 pennies, and increases alongside your penny amount. "
+                        + "<br> where x = max([Best Pennies] / 2, [Current Pennies]), pennyTaxStart = " + format(pennyTaxStart()) + ", and pennyTaxExp = 2.5 "
+                        + "<br><br>Essentially, the nerf is a minimum of 1, is roughly 2.76 at " + format(pennyTaxStart()) + " pennies, and increases alongside your penny amount. "
                         + "It may slightly decrease and even remain stagnate after spending pennies, if your penny value is lower than [Best Pennies] / 2. "
                         + "That is normal behavior"
                         + "<br><br>A neat trick to circumvent Tax is to avoid purchasing \"We Need Bigger Pockets\" (WNBP) and allow idle gain to accumulate... "
@@ -660,7 +666,8 @@ addLayer("p", {
                         + "<br><br>Once your pennies on reset after Tax surpasses a value of 1e9, it will be raised to a softcap exponent of .5 "
                         + "to avoid inflation from this trick and general scaling. "
                         + "This softcap will be reducable sometime after this trick stops being useful."
-                ],
+                    return ret
+                }],
                 "blank"
             ],
             unlocked(){
@@ -735,10 +742,10 @@ addLayer("e", {
     penny_expansions: {
         getResetGain() {
             if (player.e.points.lessThan(decOne)) return decZero
-            let ret = this.getBaseGain() // base gain
+            let ret = this.getBaseGain().times(this.getGainMult()) // base gain
             if (getClickableState("e", 21)) ret = ret.div(5)
             if (getClickableState("e", 22)) ret = ret.mul(1.5)
-            return ret.times(this.getGainMult())
+            return ret
         },
         getGainMult() {
             ret = decOne
@@ -907,6 +914,7 @@ addLayer("e", {
             title: "We Should Get A Wallet",
             description: "Unlocks Wallets and removes penny buyable respec (it was useless anyways) (Not Implemented)",
             cost:() => decOne.mul(2**player.e.upgrades.length).div(4),
+            canAfford: false, // remove with next update!!!
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
             currencyLocation:() => player.e.penny_expansions,
