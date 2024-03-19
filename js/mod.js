@@ -19,6 +19,19 @@ let VERSION = {
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.15</h3><br>
+		- Added Expansions layer: 15 upgrades and two clickables<br>
+		- Expanded Penny layer: 5 upgrades (15 -> 20), 2 buyables (2 -> 4)<br>
+		- 9 more achievements (11 -> 20)<br>
+		- 4 achievement milestones (0 -> 4)<br>
+		- Balance changes: Finishing v0.11 content is much faster in slow spots and game supports (encourages?) idle style to limited extent. 
+			Implemented softcaps to stop inflation<br><br>
+
+	<h3>v0.11</h3><br>
+		- quick balance patch to stop big number do thing<br>
+		- like one person played before this so nothing happened<br>
+		- <s>exponentials are funny</s><br><br>
+
 	<h3>v0.1</h3><br>
 		- Added Penny layer: 15 upgrades, Investment (I? likely adding more), Education I<br>
 		- Added 11 achievements.<br>
@@ -26,19 +39,6 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added a few various little things<br>
 		(like two or three various little things)<br>
 		(they are really little)<br>
-
-	<br><h3>v0.11</h3><br>
-		- quick balance patch to stop big number do thing<br>
-		- like one person played before this so nothing happened<br>
-		- <s>exponentials are funny</s><br>
-
-	<br><h3>v0.15</h3><br>
-		- Added Expansions layer: 15 upgrades and two clickables<br>
-		- Expanded Penny layer: 5 upgrades (15 -> 20), 2 buyables (2 -> 4)<br>
-		- 9 more achievements (11 -> 20)<br>
-		- 4 achievement milestones (0 -> 4)<br>
-		- Balance changes: Finishing v0.11 content is much faster in slow spots and game supports (encourages?) idle style to limited extent. 
-			Implemented softcaps to stop inflation
 	`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
@@ -73,7 +73,7 @@ function getPointGen() {
 	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 
-	ret = baseGain.mul(gainMult)
+	let ret = baseGain.mul(gainMult)
 
 	if (getClickableState("e", 21)) ret = ret.div(5)
 	// if (hasUpgrade('p', 23)) {

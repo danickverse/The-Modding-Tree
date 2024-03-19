@@ -104,7 +104,7 @@ addLayer("a", {
         31: {
             name: "11",
             done() {
-                if (this.unlocked() && upgrade23Limit().gte("1e10") && player.highestPointsEver.gte("1e10") && player.p.investment.points.gte(50)) {
+                if (this.unlocked() && player.p.upgrades.length >= 15 && upgrade23Limit().gte("1e10") && player.highestPointsEver.gte("1e10") && player.p.investment.points.gte(50)) {
                     return true
                 }
             },
@@ -186,9 +186,9 @@ addLayer("a", {
         43: {
             name: "18",
             done() {
-                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(1e7)) return true
+                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.eq(0) && player.p.points.gte(1e7)) return true
             },
-            tooltip: "Reach 10 million pennies with 0 (normal) investment",
+            tooltip: "Reach 10 million pennies with 0 of any investment",
             unlocked:() => hasUpgrade("e", 23)
         },
         44: {
@@ -210,8 +210,54 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && investmentGain().gt(1000)) return true
             },
-            tooltip: "Reach 1000 investment earned in a single investment reset",
+            tooltip: "Reach 1000 investment earned in a single investment reset<br><br>",
             unlocked:() => hasUpgrade("e", 23)
+        },
+        51: {
+            name: "21",
+            done() {
+                if (hasUpgrade("e", 33)) return true
+            },
+            tooltip: "Unlock the Storage feature<br><br>Unlock more achievements and increase the Where Did These Come From??? exponent by .02",
+            unlocked:() => hasUpgrade("e", 23),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        52: {
+            name: "22",
+            done() {
+                if (this.unlocked() && player.s.stored_expansion.points.gt(0) && player.s.stored_investment.points.gt(0)) return true
+            },
+            tooltip: "Store investment at least once and store expansions at least once",
+            unlocked:() => hasAchievement("a", 51),
+        },
+        53: {
+            name: "23",
+            done() {
+                if (this.unlocked() && player.e.points.eq(0) && player.e.penny_expansions.points.gte(5)) return true
+            },
+            tooltip: "Gain 5 penny expansions without having any expansions",
+            unlocked:() => hasAchievement("a", 51)
+        },
+        54: {
+            name: "24",
+            done() {
+                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.eq(0) && player.p.points.gte(1e7)) return true
+            },
+            tooltip: "Reach 10 million pennies with 0 of any investment... again?",
+            unlocked:() => hasAchievement("a", 51)
+        },
+        55: {
+            name: "25",
+            done() {
+                if (this.unlocked() && false) return true
+            },
+            tooltip: "Placeholder",
+            unlocked:() => hasAchievement("a", 51)
         }
     },
     milestones: {
@@ -243,6 +289,14 @@ addLayer("a", {
             },
             done() { return player.a.achievements.length >= 20 },
             unlocked:() => player.e.upgrades.length >= 5
+        },
+        4: {
+            requirementDescription: "23 Achievements Finished",
+            effectDescription:() => {
+                return "Placeholder"
+            },
+            done() { return player.a.achievements.length >= 23 },
+            unlocked:() => player.s.unlocked
         }
     },
     tabFormat: {
