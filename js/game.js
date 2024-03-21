@@ -344,6 +344,7 @@ function gameLoop(diff) {
 		player.highestPointsEver = player.points.max(player.highestPointsEver)
 	} else {
 		player.points = player.points.add(tmp.pointGen.times(diff)).max(0)
+		if (hasUpgrade("p", 23)) player.highestPointsEver = player.points.max(player.highestPointsEver)
 	}
 
 	for (let x = 0; x <= maxRow; x++){

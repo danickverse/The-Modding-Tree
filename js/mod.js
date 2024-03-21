@@ -14,11 +14,22 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.15",
+	num: "0.18",
 	name: "We're getting somewhere...",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.18</h3><br>
+		- Added Storage layer: two clickables and three milestones<br>
+		- Expanded Expansions layer: 5 upgrades (15 -> 20)<br>
+		- 7 more achievements (20 -> 7)<br>
+		- 2 achievement milestones (4 -> 6)<br>
+		- Microtabs now used for information to clean up tabs<br><
+		- Balance changes: QOL 2 now applies to the first three rows, row 3 expansion upgrades buffed
+			to make them more worthwhile<br>
+		- Various minor fixes (mainly visual inconsistencies), 
+			including one improperly implemented upgrade that could cause NaN errors<br><br>
+
 	<h3>v0.15</h3><br>
 		- Added Expansions layer: 15 upgrades and two clickables<br>
 		- Expanded Penny layer: 5 upgrades (15 -> 20), 2 buyables (2 -> 4)<br>
@@ -38,7 +49,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added basic functionality for Expansions layer.<br>
 		- Added a few various little things<br>
 		(like two or three various little things)<br>
-		(they are really little)<br>
+		(they are really little)
 	`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
@@ -95,13 +106,13 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	"Current endgame: 1e12 Pennies"
+	"Current endgame: 1e15 Pennies"
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
 	//return false
-	return player.p.points.gte(new Decimal("1e12"))
+	return player.p.points.gte(new Decimal("1e15"))
 }
 
 
