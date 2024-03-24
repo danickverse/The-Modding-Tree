@@ -14,11 +14,16 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.17.1",
+	num: "0.17.2",
 	name: "We're getting somewhere...",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.17.2</h3><br>
+		- Fixed accidental softlock brought on by new feature<br>
+		- Correctly implemented the 3rd Stored effect<br>
+		- Fixed minor visual mistakes<br><br>
+	
 	<h3>v0.17.1</h3><br>
 		- Quick change to the intended requirement for a new clickable<br><br>
 	

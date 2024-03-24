@@ -251,7 +251,7 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansions.points.gte(13)) return true
             },
-            tooltip: "Gain 13 penny expansions without a highest points ever that is less than 5e10",
+            tooltip: "Gain 13 penny expansions with a highest points ever (see Expansions Formulas) that is less than 5e10",
             unlocked:() => hasAchievement("a", 51)
         },
         55: {

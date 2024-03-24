@@ -5,8 +5,8 @@ function upgrade23Limit() {
         let newValFactor = limit.sub(base).log10().div(20).add(1) // 1 + log10(L-B)/20
         base = base.mul(newValFactor) // max(limit, base * (1 + log10(limit-base)/20))
     }
-    if (getClickableState("e", 21) || getClickableState("e", 22)) base = base.div(5).max(new Decimal("10"))
-    return base
+    if (getClickableState("e", 21) || getClickableState("e", 22)) base = base.div(5)
+    return base.max(new Decimal("10"))
 }
 
 function upgrade23LimitExp() {
@@ -352,14 +352,14 @@ addLayer("p", {
                 let requirement = () => {
                     if (!player.p.investment.points.gte(5)) return "Requires: 5 Investment"
                     let ret = new Decimal("4e6")
-                    if (hasUpgrade("p", 34)) ret = ret.mul(1.5)
+                    if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
                     return "Cost: " + format(ret) + " pennies"
                 }
                 return title + "<br>" + description() + "<br>" + effectDis + "<br><br>" + requirement()
             },
             cost:() => {
                 let ret = new Decimal("4e6")
-                if (hasUpgrade("p", 34)) ret = ret.mul(1.5)
+                if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
                 return ret
             },
             effect:() => player.p.investment.points.pow(!hasMilestone("s", 2) ? 3 : 4),
@@ -379,14 +379,14 @@ addLayer("p", {
                 let requirement = () => {
                     if (!player.p.investment.points.gte(5)) return "Requires: 5 Investment"
                     let ret = new Decimal("4e6")
-                    if (hasUpgrade("p", 34)) ret = ret.mul(1.5)
+                    if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
                     return "Cost: " + format(ret) + " pennies"
                 }
                 return title + "<br>" + description() + "<br>" + effectDis + "<br><br>" + requirement()
             },
             cost:() => {
                 let ret = new Decimal("4e6")
-                if (hasUpgrade("p", 33)) ret = ret.mul(1.5)
+                if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
                 return ret
             },
             effect:() => {
@@ -445,7 +445,8 @@ addLayer("p", {
             effect:() => player.p.investment2.best.add(1).pow(.5),
             fullDisplay:() => {
                 let title = "<b><h3>Invest In The Universe!</b></h3>"
-                let description = (!hasUpgrade("p", 42)) ? "Unlock the Expansion Investment buyable." : "Multiplies expansion, penny, and point gain by (1 + [Best Expansion Investment])<sup>.5</sup>"
+                let description = (!hasUpgrade("p", 42)) ? "Unlock the Expansion Investment buyable and unlock an effect for this upgrade"
+                    : "Multiplies expansion, penny, and point gain by (1 + [Best Expansion Investment])<sup>.5</sup>"
                 let effect = (!hasUpgrade("p", 42)) ? "" : "Currently: " + format(upgradeEffect("p", 42)) + "x<br>"
                 return title + "<br>" + description + "<br>" + effect + "<br>Cost: 1e11 pennies"
             },
@@ -607,7 +608,7 @@ addLayer("p", {
                 }
                 let effFormulaBase = () => {
                     let ret = "<b><h3>Effect Formula (softcap begins at effect of "
-                    if (hasMilestone("s", 3)) ret = ret + format(player.s.stored_investment.points.add(1).log10().div(10).add(1.7))
+                    if (hasMilestone("s", 2)) ret = ret + format(player.s.stored_investment.points.add(1).log10().div(10).add(1.7))
                     else ret = ret + "2"
                     ret = ret + "):</h3></b><br>"
                     return ret
@@ -623,7 +624,7 @@ addLayer("p", {
                 let mult = getBuyableAmount("p", 22) // increases Education I exponent by base * thisBuyableAmount
                 let effect = base.mul(mult).add(1)
                 let softcapStart = new Decimal("2")
-                if (hasMilestone("s", 3)) softcapStart = player.s.stored_investment.points.add(1).log10().div(10).add(1.7)
+                if (hasMilestone("s", 2)) softcapStart = player.s.stored_investment.points.add(1).log10().div(10).add(1.7)
                 let softcapPower = new Decimal(".2")
                 if (effect.gte(softcapStart))
                 effect = effect.pow(softcapPower).times(softcapStart.pow(decimalOne.sub(softcapPower)))
@@ -1452,6 +1453,9 @@ addLayer("s", {
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
 
+                setClickableState("e", 21, false)
+                setClickableState("e", 22, false)
+
                 player.highestPointsEver = decZero
                 player.e.points = decZero
                 player.e.penny_expansions.points = decZero
@@ -1521,10 +1525,6 @@ addLayer("s", {
                                 + " and effect exponent by " + format(player.s.stored_investment.points.add(1).log10().div(50))
                         }
                         if (hasMilestone("s", 2)) {
-                            ret = ret + ",<br>Multiply expansion investment gain and kept expansion investment by " 
-                + format(1.03**player.s.stored_expansion.points.log2()) + "x"
-                        }
-                        if (hasMilestone("s", 3)) {
                             ret = ret + "<br>Make the Education II softcap begin at an effect of " 
                                 + format((player.s.stored_investment.points.add(1).log10().div(10).add(1.7)).max(new Decimal("2")))
                         }
@@ -1554,7 +1554,7 @@ addLayer("s", {
                                 + format(1.03**player.s.stored_expansion.points.log2()) + "x"
                         }
                         if (hasMilestone("s", 2)) {
-                            ret = ret + ",<br>(Not Implemented)Multiplies PTS (base penny value used for tax) by " 
+                            ret = ret + ",<br>(Not Implemented) Multiplies PTS (base penny value used for tax) by " 
                                 + format(1) + "x"
                         }
                         return ret
