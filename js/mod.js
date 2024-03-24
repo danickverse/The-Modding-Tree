@@ -1,6 +1,6 @@
 let modInfo = {
 	name: "Universal Expansion",
-	id: "danickversetree",
+	id: "danickversetree", // never change, used to store saves
 	author: "@.danick",
 	pointsName: "points",
 	modFiles: ["layers.js", "tree.js", "achievements.js"],
@@ -9,20 +9,20 @@ let modInfo = {
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
-	offlineLimit: 1,  // In hours
+	offlineLimit: 12,  // In hours
 }
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.18",
+	num: "0.17",
 	name: "We're getting somewhere...",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.18</h3><br>
+	<h3>v0.17</h3><br>
 		- Added Storage layer: two clickables and three milestones<br>
-		- Expanded Expansions layer: 5 upgrades (15 -> 20)<br>
-		- 7 more achievements (20 -> 7)<br>
+		- Expanded Expansions layer: 5 upgrades (15 -> 20), not yet balanced<br>
+		- 7 more achievements (20 -> 27), 6 of which are implemented<br>
 		- 2 achievement milestones (4 -> 6)<br>
 		- Microtabs now used for information to clean up tabs<br><
 		- Balance changes: QOL 2 now applies to the first three rows, row 3 expansion upgrades buffed
@@ -83,18 +83,11 @@ function getPointGen() {
 	if (hasUpgrade('p', 22)) gainMult = gainMult.mul(upgradeEffect('p', 22))
 	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
+	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
 
 	let ret = baseGain.mul(gainMult)
 
 	if (getClickableState("e", 21)) ret = ret.div(5)
-	// if (hasUpgrade('p', 23)) {
-	// 	let limit = upgrade23Limit()
-	// 	if (player.points.gt(limit)) {
-	// 		console.log("ow")
-	// 		player.points = limit
-	// 		return new Decimal("0")
-	// 	}
-	// }
 	return ret
 
 }
@@ -106,13 +99,13 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	"Current endgame: 1e15 Pennies"
+	"Current endgame: 26 achievements, 3 Storage milestones"
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
 	//return false
-	return player.p.points.gte(new Decimal("1e15"))
+	return player.a.achievements.length >= 26 && player.s.milestones.length >= 3
 }
 
 

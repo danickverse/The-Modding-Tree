@@ -8,7 +8,7 @@ addLayer("a", {
     },
     color: "yellow",
     row: "side",
-    tooltip: "Achievements",
+    tooltip:() => player.a.achievements.length + " Achievements",
     achievements: {
         11: {
             name: "1",
@@ -249,18 +249,18 @@ addLayer("a", {
         54: {
             name: "24",
             done() {
-                if (this.unlocked() && player.highestPointsEver.lt(1e11) && player.e.penny_expansions.points.gte(100)) return true
+                if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansions.points.gte(13)) return true
             },
-            tooltip: "Gain 100 penny expansions without a highest points ever that is less than 1e11",
+            tooltip: "Gain 13 penny expansions without a highest points ever that is less than 5e10",
             unlocked:() => hasAchievement("a", 51)
         },
         55: {
             name: "25",
             done() {
-                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.lte(1) && player.p.points.gte(1e7)) return true
+                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.lte(1) && player.p.points.gte(7.77e6)) return true
             },
-            tooltip: `Reach 10 million pennies with 0 investment... again? Expansion investment must be less than or equal to 1
-                <br><br>Unlock a Storage milestone`,
+            tooltip: `Reach 7.77 million pennies with 0 normal investment and 1 or less expansion investment
+                <br><br>Lucky Penny ln becomes log2`,
             unlocked:() => hasAchievement("a", 51),
             style() {
                 return {
@@ -272,18 +272,26 @@ addLayer("a", {
         61: {
             name: "26",
             done() {
-                if (this.unlocked() && player.p.points.gte(5e14)) return true
+                if (this.unlocked() && player.p.points.gte(2e13)) return true
             },
-            tooltip: "Become a multi-trillionaire (Reach 5e14 pennies)",
+            tooltip: "Reach 2e13 pennies",
             unlocked:() => hasMilestone("a", 5)
         },
         62: {
             name: "27",
             done() {
+                return false
                 if (this.unlocked() && pennyTaxStart().gte("1e8")) return true
             },
-            tooltip: "Make taxes start at 1 million dollars rather than 1 million pennies",
-            unlocked:() => hasMilestone("a", 5)
+            tooltip: `(Not Implemented) Make taxes start at 1 million dollars rather than 1 million pennies
+                <br><br>Unlock a penny upgrade`,
+            unlocked:() => hasMilestone("a", 5),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
         }
     },
     milestones: {
@@ -324,7 +332,7 @@ addLayer("a", {
         },
         5: {
             requirementDescription: "25 Achievements Finished",
-            effectDescription: "There's A Coin For This? has the same effect as Seriously? and unlock more achievements",
+            effectDescription: "There's A Coin For This? and Seriously? have the same effect and unlock more achievements and storage milestones",
             done() { return player.a.achievements.length >= 25 },
             unlocked:() => hasAchievement("a", 51)
         }
@@ -333,9 +341,10 @@ addLayer("a", {
         "Achievements": {
             content: [
                 ["display-text", function() { 
-                    let ret = "You have completed "+ player.a.achievements.length + "/25 achievements"
-                    if (hasUpgrade("p", 21)) ret = ret + ", which boosts point gain by " + format(upgradeEffect("p", 21)) + "x"
-                    if (hasUpgrade("p", 35)) ret = ret + " and penny gain by " + format(upgradeEffect("p", 35)) + "x"
+                    let ret = "You have completed "+ player.a.achievements.length + "/27 achievements"
+                    if (hasUpgrade("p", 21)) ret = ret + ", which multiplies point gain by " + format(upgradeEffect("p", 21)) + "x"
+                    if (hasUpgrade("p", 35)) ret = ret + ", penny gain by " + format(upgradeEffect("p", 35)) + "x"
+                    if (hasUpgrade("e", 24)) ret = ret + ", expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
                     return ret
                 }], 
                 "blank", "blank",
@@ -345,9 +354,10 @@ addLayer("a", {
         "Milestones": {
             content: [
                 ["display-text", function() { 
-                    let ret = "You have completed "+ player.a.achievements.length + "/25 achievements"
-                    if (hasUpgrade("p", 21)) ret = ret + ", which boosts point gain by " + format(upgradeEffect("p", 21)) + "x"
-                    if (hasUpgrade("p", 35)) ret = ret + " and penny gain by " + format(upgradeEffect("p", 35)) + "x"
+                    let ret = "You have completed "+ player.a.achievements.length + "/27 achievements"
+                    if (hasUpgrade("p", 21)) ret = ret + ", which multiplies point gain by " + format(upgradeEffect("p", 21)) + "x"
+                    if (hasUpgrade("p", 35)) ret = ret + ", penny gain by " + format(upgradeEffect("p", 35)) + "x"
+                    if (hasUpgrade("e", 24)) ret = ret + ", expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
                     return ret
                 }],
                 "blank", "blank",
