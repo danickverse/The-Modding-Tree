@@ -14,11 +14,14 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.17",
+	num: "0.17.1",
 	name: "We're getting somewhere...",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.17.1</h3><br>
+		- Quick change to the intended requirement for a new clickable<br><br>
+	
 	<h3>v0.17</h3><br>
 		- Added Storage layer: two clickables and three milestones<br>
 		- Expanded Expansions layer: 5 upgrades (15 -> 20), not yet balanced<br>

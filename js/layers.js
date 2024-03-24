@@ -1432,13 +1432,13 @@ addLayer("s", {
             title: "Store Your Expansions",
             display() { 
                 if (!this.canClick()) {
-                    let ret = "Requires 500 Expansions"
-                    if (player.s.stored_investment.points.lt(30000)) ret = ret + " and 30000 Stored Investment"
+                    let ret = "Requires 1000 Expansions"
+                    if (player.s.stored_investment.points.lt(5000)) ret = ret + " and 5000 Stored Investment"
                     return ret
                 }
                 return "Gain " + format(player.e.points) + " stored expansions"
             },
-            canClick() { return player.e.points.gte(500) && player.s.stored_investment.points.gte(30000) },
+            canClick() { return player.e.points.gte(1000) && player.s.stored_investment.points.gte(5000) },
             onClick() {
                 player.s.stored_expansion.points = player.s.stored_expansion.points.add(player.e.points)
                 investmentReset(true, false)
