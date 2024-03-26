@@ -22,7 +22,7 @@ function upgrade23EffExp() {
     let exp = decOne
     if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
     if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log10().div(50))
-    if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(2))
+    if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(4))
     return exp
 }
 
@@ -330,9 +330,10 @@ addLayer("p", {
             fullDisplay:() => {
                 let title = "<b><h3>Slightly Less Useless</b></h3>"
                 let description = "Raises Useless Effect to log2(Investment)"
+                let effect = "Currently: ^" + format(upgradeEffect("p", 32))
                 let requirement = "Cost: " + format(new Decimal("4e6")) + " pennies"
                 if (!player.p.investment.points.gte(5)) requirement = "Requires: 5 Investment"
-                return title + "<br>" + description + "<br><br>" + requirement
+                return title + "<br>" + description + "<br>" + effect + "<br><br>" + requirement
             },
             cost: new Decimal("4e6"),
             effect:() => player.p.investment.points.log2(),
@@ -344,7 +345,7 @@ addLayer("p", {
                 let title = "<b><h3>Unuselessifier</b></h3>"
                 let description = () => {
                     let ret = "Multiplies Useless Limit by Investment<sup>3</sup>"
-                    if (hasMilestone("s", 2)) ret = "Multiplies Useless Limit by Investment<sup>4</sup>"
+                    if (hasMilestone("s", 2)) ret = "Multiplies Useless Limit by Investment<sup>5</sup>"
                     if (!hasUpgrade("p", 33) && !hasUpgrade("p", 34)) ret = ret + "<br>Increases cost of next upgrade"
                     return ret
                 }
@@ -362,7 +363,7 @@ addLayer("p", {
                 if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
                 return ret
             },
-            effect:() => player.p.investment.points.pow(!hasMilestone("s", 2) ? 3 : 4),
+            effect:() => player.p.investment.points.pow(!hasMilestone("s", 2) ? 3 : 5),
             canAfford:() => player.p.investment.points.gte(5),
             unlocked:() => hasUpgrade("p", 31) || hasUpgrade("p", 35) || hasUpgrade("e", 33)
         },
@@ -663,14 +664,14 @@ addLayer("p", {
             addBuyables("p", 21, 1)
             player.p.autoBuyableCooldown = 10
             if (hasUpgrade("e", 35)) player.p.autoBuyableCooldown = 1
-            if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = .5
+            if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = 1/3 // 3 per second
         }
 
         if (hasUpgrade("e", 15) && player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 22)) {
             addBuyables("p", 22, 1)
             player.p.autoBuyableCooldown = 10
             if (hasUpgrade("e", 35)) player.p.autoBuyableCooldown = 1
-            if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = .5
+            if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = 1/3 // 3 per second
         }
 
         if (hasUpgrade("e", 25) && player.p.autoUpgCooldown == 0) {
@@ -684,7 +685,7 @@ addLayer("p", {
                 let upgIndex = upgIndices[i]
                 if (canAffordUpgrade("p", upgIndex)) {
                     player.p.autoUpgCooldown = .5
-                    if (hasUpgrade("e", 45)) player.p.autoUpgCooldown = player.p.autoUpgCooldown * 2 / 3
+                    if (hasUpgrade("e", 45)) player.p.autoUpgCooldown = .25 // 4 per second
                     player.p.upgrades.push(upgIndex)
                     break
                 }
@@ -754,7 +755,25 @@ addLayer("p", {
             content: [
                 "main-display",
                 ["microtabs", "info"],
-                "blank"
+                "blank",
+                ["display-text", function() {
+                    let ret = "Investment is currently used to...<br>" 
+                    ret = ret + "<br>Multiply point gain by " + format(upgradeEffect("p", 25)) + "x"
+                    if (hasUpgrade("p", 32)) ret = ret + ",<br>Raise the base effect of Useless (1.25) to a power of " + format(upgradeEffect("p", 32))
+                    if (hasUpgrade("p", 33)) ret = ret + ",<br>Multiply the point limit of Useless (initially 1e6) by " + format(upgradeEffect("p", 33)) + "x"
+                    if (hasUpgrade("p", 34)) ret = ret + ",<br>Increase the WNBP limit exponent by +" + format(upgradeEffect("p", 34))
+                    if (hasUpgrade("p", 44)) ret = ret + ",<br>Multiply penny gain by " + format(upgradeEffect("p", 44)) + "x"
+                    return ret
+                }],
+                "blank",
+                ["display-text", function() {
+                    if (!hasUpgrade("p", 42)) return ""
+                    let ret = "Your best expansion investment is " + format(player.p.investment2.best) + ". It is currently used to...<br>"
+                    ret = ret + "<br>Multiply penny, expansion, and point gain by " + format(upgradeEffect("p", 42)) + "x"
+                    if (hasUpgrade("p", 45)) ret = ret + ",<br>Multiply PTS (see Taxes) by " + format(upgradeEffect("p", 42)) + "x"
+                    if (player.s.unlocked) ret = ret + ",<br>Multiply stored investment gain by " + format(upgradeEffect("p", 42).pow(.5)) + "x"
+                    return ret
+                }]
             ],
             unlocked(){
                 return hasUpgrade("p", 25)
@@ -771,9 +790,10 @@ addLayer("p", {
                         if (hasUpgrade("p", 31)) ret = ret + "best pennies, and Education buyables.<br><br>"
                         else ret = ret + " and best pennies.<br><br>"
                         ret = ret + "The first effect that investment has is a direct boost to your point gain, which is " +
-                            "given by the Now We're Getting Somewhere... upgrade.<br><br>"
+                            "given by the Now We're Getting Somewhere... upgrade."
                         return ret
-                    }]
+                    }],
+                    "blank",
                 ]
             },
             "Upgrades": {
@@ -916,7 +936,7 @@ addLayer("e", {
                 if (!hasUpgrade("e", 21)) ret = ret +  "log4(4 + [Expansion Upgrades]) / 50"
                 else if (!hasUpgrade("e", 31)) ret = ret + "ln(4 + [Expansion Upgrades]) / 10"
                 else if (!hasUpgrade("e", 41)) ret = ret + "ln(4 + [Expansion Upgrades]) / 4"
-                else ret = ret + "log2(4 + [Expansion Upgrades]) * 1.5"
+                else ret = ret + "log2(4 + [Expansion Upgrades]) * 2"
                 return ret
             },
             cost:() => decOne.mul(2**player.e.upgrades.length).min(16),
@@ -927,7 +947,7 @@ addLayer("e", {
                 if (!hasUpgrade("e", 21)) return new Decimal(Math.log(4 + player.e.upgrades.length)/Math.log(4)/50)
                 if (!hasUpgrade("e", 31)) return new Decimal(Math.log(4 + player.e.upgrades.length)/10)
                 if (!hasUpgrade("e", 41)) return new Decimal(Math.log(4 + player.e.upgrades.length)/4)
-                return new Decimal(Math.log2(4 + player.e.upgrades.length) * 1.5)
+                return new Decimal(Math.log2(4 + player.e.upgrades.length) * 2)
             },
             effectDisplay:() => "+" + format(upgradeEffect("e", 11))
         },
@@ -940,7 +960,7 @@ addLayer("e", {
                 if (!hasUpgrade("e", 22)) return ret + "/100"
                 if (!hasUpgrade("e", 32)) return ret + "/10"
                 if (!hasUpgrade("e", 42)) return ret + "/7.5"
-                return ret + "/6"
+                return ret + "/5"
             },
             cost:() => decOne.mul(2**player.e.upgrades.length).min(16),
             currencyDisplayName:() => "Penny Expansions",
@@ -948,14 +968,14 @@ addLayer("e", {
             currencyLocation:() => player.e.penny_expansions,
             effect:() => {
                 let exp = .1
-                let mult = decOne.div(100)
-                if (hasUpgrade("e", 22)) mult = mult.mul(10)
-                if (hasUpgrade("e", 32)) mult = mult.mul(10/7.5)
+                let divisor = 100
+                if (hasUpgrade("e", 22)) divisor = 10
+                if (hasUpgrade("e", 32)) divisor = 7.5
                 if (hasUpgrade("e", 42)) {
-                    mult = mult.mul(7.5/6)
-                    exp = .11
+                    divisor = 5
+                    exp = .12
                 }
-                let ret = player.e.points.pow(exp).mul(mult)
+                let ret = player.e.points.pow(exp).div(divisor)
                 return ret
             },
             effectDisplay:() => "+" + format(upgradeEffect("e", 12), 4)
@@ -1141,7 +1161,7 @@ addLayer("e", {
         },
         41: {
             title: "It's Compassion Is Unmatched",
-            description: "Multiply effect of upgrade three rows above this one by 6 and reduce its ln to log2",
+            description: "Multiply effect of upgrade three rows above this one by 8 and reduce its ln to log2",
             cost:() => decOne.mul(4**(player.e.upgrades.length-15)).max(decOne).mul(20000),
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
@@ -1150,8 +1170,8 @@ addLayer("e", {
         },
         42: {
             title: "Maximum Overdrive",
-            description: `Reduce divisor of upgrade three rows above this to 6, increase exponent by .01, 
-                apply to WNBP effect exponent at 2x efficiency`,
+            description: `Reduce divisor of upgrade three rows above this to 5, increase exponent by .02, 
+                apply to WNBP effect exponent at 4x efficiency`,
             cost:() => decOne.mul(4**(player.e.upgrades.length-15)).max(decOne).mul(20000),
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
@@ -1170,7 +1190,7 @@ addLayer("e", {
         },
         44: {
             title: "It's Like A Reward",
-            description: "Remove the +1 from There's A Coin From This, but remove the /2 and increase exponent to 2",
+            description: "Remove the +1 from There's A Coin From This, but remove the divisor and increase exponent to 2 (+.2)",
             cost:() => decOne.mul(4**(player.e.upgrades.length-15)).max(decOne).mul(20000),
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
@@ -1180,7 +1200,7 @@ addLayer("e", {
         45: {
             fullDisplay:() => {
                 let title = "<h3></b>QOL 4</h3></b>"
-                let description = "Increase Focused Production buffs to 3, autobuy one more penny upgrade & buyable per second, autobuy from row 4"
+                let description = "Increase Focused Production buffs to 3, autobuy two more penny upgrades & buyables per second, autobuy from row 4"
                 let requirement = "Requires: " + formatWhole(decOne.mul(4**(player.e.upgrades.length-15)).max(decOne).mul(20000)) + " Penny Expansions"
                 //if (!(hasUpgrade("e", 41) && hasUpgrade("e", 42) && hasUpgrade("e", 43) && hasUpgrade("e", 44))) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -1385,7 +1405,7 @@ addLayer("s", {
     milestones: {
         0: {
             requirementDescription: "30000 Stored Investment",
-            effectDescription:() => "Unlock 1 investment storage and 1 expansion storage effect for each milestone",
+            effectDescription:() => "Unlock 1 investment storage effect and 1 expansion storage effect per milestone",
             done() { return player.s.stored_investment.points.gte(30000) }
         },
         1: {
@@ -1395,14 +1415,14 @@ addLayer("s", {
         },
         2: {
             requirementDescription: "7500 Stored Expansions",
-            effectDescription:() => "Increase Unuselessifier exponent from 3 to 4",
+            effectDescription:() => "Increase Unuselessifier exponent from 3 to 5",
             done() { return this.unlocked() && player.s.stored_expansion.points.gte(7500) },
             unlocked:() => hasMilestone("a", 5)
         },
         3: {
-            requirementDescription: "Not Implemented",
-            effectDescription:() => "Keep 1 Penny Expansion upgrade per milestone",
-            done() { return false && this.unlocked() },
+            requirementDescription: "(Not Implemented) 500000 Stored Investment and 15000 Stored Expansions",
+            effectDescription:() => "Keep 1 Penny Expansion upgrade when storing expansions per milestone",
+            done() { return false && this.unlocked() && player.s.stored_investment.points.gte(5e5) && player.s.stored_expansion.points.gte(1.5e4) },
             unlocked:() => hasMilestone("a", 5)
         }
     },
@@ -1448,8 +1468,17 @@ addLayer("s", {
                 if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul(1.03**player.s.stored_expansion.points.log2())
                 player.p.investment2.points = player.p.investment2.points.min(resetInvestment2Amt)
 
+                let keepUpgIndices = [33, 43]
+                if (hasMilestone("s", 3)) {
+                    for (i = 0; i <= player.s.milestones.length; i++) {
+                        let row = Math.floor(i/5) + 1
+                        let col = (i % 5) + 1
+                        let upgIndex = row * 10 + col
+                        keepUpgIndices.push(upgIndex)
+                    }
+                }
                 function removeUpgrades(index) {
-                    return index == 33 || index == 43
+                    return keepUpgIndices.indexOf(index) != -1
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
 

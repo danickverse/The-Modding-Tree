@@ -14,11 +14,16 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.17.2",
+	num: "0.17.3",
 	name: "We're getting somewhere...",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.17.3</h3><br>
+		- Light balance changes (expansion upgrades --> row 4, col 1/2)
+		- Light visual updates
+		- You can finally see what your investment does in one place (Penny layer --> Info tab)
+
 	<h3>v0.17.2</h3><br>
 		- Fixed accidental softlock brought on by new feature<br>
 		- Correctly implemented the 3rd Stored effect<br>
@@ -46,7 +51,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Balance changes: Finishing v0.11 content is much faster in slow spots and game supports (encourages?) idle style to limited extent. 
 			Implemented softcaps to stop inflation<br><br>
 
-	<h3>v0.11</h3><br>
+	<h3>v0.1.1</h3><br>
 		- quick balance patch to stop big number do thing<br>
 		- like one person played before this so nothing happened<br>
 		- <s>exponentials are funny</s><br><br>

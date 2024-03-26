@@ -277,8 +277,8 @@ addLayer("a", {
             tooltip: "Reach 2e13 pennies",
             unlocked:() => hasMilestone("a", 5)
         },
-        62: {
-            name: "27",
+        65: {
+            name: "30",
             done() {
                 return false
                 if (this.unlocked() && pennyTaxStart().gte("1e8")) return true
