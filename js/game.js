@@ -212,7 +212,7 @@ function doReset(layer, force=false) {
 
 
 	for (layerResetting in layers) {
-		if (row >= layers[layerResetting].row && (!force || layerResetting != layer)) completeChallenge(layerResetting)
+		if (row > layers[layerResetting].row && (!force || layerResetting != layer)) completeChallenge(layerResetting)
 	}
 
 	player.points = (row == 0 ? decimalZero : getStartPoints())

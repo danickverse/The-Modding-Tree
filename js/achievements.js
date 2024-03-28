@@ -1,6 +1,6 @@
 addLayer("a", {
     symbol: "A",
-    position: 1,
+    position: 0,
     startData() { 
         return {
             unlocked: true
@@ -27,7 +27,7 @@ addLayer("a", {
         13: {
             name: "3",
             done() {
-                if (player.p.investment.points.gt(decZero)) return true
+                if (player.p.investment.points.gt(decimalZero)) return true
             },
             tooltip: "Invest your pennies once",
             unlocked:() => hasUpgrade("p", 25)
@@ -257,9 +257,10 @@ addLayer("a", {
         55: {
             name: "25",
             done() {
-                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.lte(1) && player.p.points.gte(7.77e6)) return true
+                let investment2Limit = (1.03**player.s.stored_expansion.points.log2())**5
+                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.lte(investment2Limit) && player.p.points.gte(7.77e6)) return true
             },
-            tooltip: `Reach 7.77 million pennies with 0 normal investment and 1 or less expansion investment
+            tooltip: `Reach 7.77 million pennies without gaining normal investment after storing your investment
                 <br><br>Lucky Penny ln becomes log2`,
             unlocked:() => hasAchievement("a", 51),
             style() {
@@ -272,13 +273,59 @@ addLayer("a", {
         61: {
             name: "26",
             done() {
-                if (this.unlocked() && player.p.points.gte(2e13)) return true
+                if (this.unlocked() && player.p.points.gte(5e14)) return true
             },
-            tooltip: "Reach 2e13 pennies",
+            tooltip: "Become a multi-trillionaire (reach 5e14 pennies)",
+            unlocked:() => hasMilestone("a", 5)
+        },
+        62: {
+            name: "27",
+            done() {
+                if (this.unlocked() && hasUpgrade("p", 45)) return true
+            },
+            tooltip: `Purchase the penny upgrade I Want To Break Free!
+                <br><br>Remove the exponent from the penny upgrade 
+                Now We're Getting Somewhere... (linear growth!)`,
+            unlocked:() => hasMilestone("a", 5),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        63: {
+            name: "28",
+            done() {
+                if (this.unlocked() && player.s.high_scores[11].points.gte(1e6)) return true
+            },
+            tooltip: "Complete the Investment Challenge at least once<br><br>Unlock two Focused Production clickables",
+            unlocked:() => hasMilestone("a", 5),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        64: {
+            name: "29",
+            done() {
+                if (this.unlocked() && inChallenge("s", 11) && player.p.points.gte(10000)) return true
+            },
+            tooltip: "Reach 100 dollars while in the Investment Challenge",
             unlocked:() => hasMilestone("a", 5)
         },
         65: {
             name: "30",
+            done() {
+                if (this.unlocked() && !hasUpgrade("p", 22) && player.highestPointsEver.lt(1e6) && player.p.points.gte(1e6)) return true
+            },
+            tooltip: "Reach 1 million pennies without buying Still Can't Buy Water and with a highest points ever that is less than 1 million",
+            unlocked:() => hasMilestone("a", 5)
+        },
+        71: {
+            name: "31",
             done() {
                 return false
                 if (this.unlocked() && pennyTaxStart().gte("1e8")) return true
@@ -297,7 +344,7 @@ addLayer("a", {
     milestones: {
         0: {
             requirementDescription: "10 Achievements Finished",
-            effectDescription: "Multiply WNBP limit based on how far away it is from 1e10 points",
+            effectDescription: "Multiply WNBP limit based on how far away it is from 1e10 points (~1.5x)",
             done() { return player.a.achievements.length >= 10 }
         },
         1: {
@@ -336,12 +383,18 @@ addLayer("a", {
             done() { return player.a.achievements.length >= 25 },
             unlocked:() => hasAchievement("a", 51)
         }
+        // },
+        // 6: {
+        //     requirementDescription: "28 Achievements Finished",
+        //     effectDescription: ""
+        // }
     },
     tabFormat: {
         "Achievements": {
             content: [
                 ["display-text", function() { 
-                    let ret = "You have completed "+ player.a.achievements.length + "/27 achievements"
+                    let totalAch = Object.entries(tmp.a.achievements).length-2
+                    let ret = "You have completed "+ player.a.achievements.length + "/" + totalAch + " achievements"
                     if (hasUpgrade("p", 21)) ret = ret + ", which multiplies point gain by " + format(upgradeEffect("p", 21)) + "x"
                     if (hasUpgrade("p", 35)) ret = ret + ", penny gain by " + format(upgradeEffect("p", 35)) + "x"
                     if (hasUpgrade("e", 24)) ret = ret + ", expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
@@ -354,7 +407,8 @@ addLayer("a", {
         "Milestones": {
             content: [
                 ["display-text", function() { 
-                    let ret = "You have completed "+ player.a.achievements.length + "/27 achievements"
+                    let totalAch = Object.entries(tmp.a.achievements).length-2
+                    let ret = "You have completed "+ player.a.achievements.length + "/" + totalAch + " achievements"
                     if (hasUpgrade("p", 21)) ret = ret + ", which multiplies point gain by " + format(upgradeEffect("p", 21)) + "x"
                     if (hasUpgrade("p", 35)) ret = ret + ", penny gain by " + format(upgradeEffect("p", 35)) + "x"
                     if (hasUpgrade("e", 24)) ret = ret + ", expansion/penny expansion gain by " + format(upgradeEffect("e", 24))

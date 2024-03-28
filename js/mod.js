@@ -3,7 +3,7 @@ let modInfo = {
 	id: "danickversetree", // never change, used to store saves
 	author: "@.danick",
 	pointsName: "points",
-	modFiles: ["layers.js", "tree.js", "achievements.js"],
+	modFiles: ["layers.js", "tree.js", "achievements.js", "effects.js"],
 	allowSmall: true,
 
 	discordName: "",
@@ -14,25 +14,39 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.17.3",
-	name: "We're getting somewhere...",
+	num: "0.1.8",
+	name: "Who Wants To Be A Trillionaire?",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.17.3</h3><br>
+	<h3>v0.1.8</h3><br>
+		- IITU is now based on current expansion investment, not best expansion investment (it was a dumb idea). 
+			Stored Expansion effect 3 (secondary effect) buffed to compensate<br>
+		- 2 more Focused Production Clickables (2 --> 4)<br>
+		- 4 more Achievements (27 --> 31, 30 implemented)<br>
+		- 1 Achievement milestone (6 --> 7)<br>
+		- Investment Challenge (Storage layer) is implemented<br>
+		- Stored Expansion effect 4 and Storage milestone 4 are implemented<br>
+		- Slight rebalancing to Storage milestone requirements<br>
+		- Probably more stuff that I can't remember<br><br>
+
+	<h3>v0.1.7.4</h3><br>
+		- Added new minor layer to display investment effects rather than place them in Info tab of Penny layer<br><br>
+
+	<h3>v0.1.7.3</h3><br>
 		- Light balance changes (expansion upgrades --> row 4, col 1/2)
 		- Light visual updates
-		- You can finally see what your investment does in one place (Penny layer --> Info tab)
+		- You can finally see what your investment does in one place (Penny layer --> Info tab)<br><br>
 
-	<h3>v0.17.2</h3><br>
+	<h3>v0.1.7.2</h3><br>
 		- Fixed accidental softlock brought on by new feature<br>
-		- Correctly implemented the 3rd Stored effect<br>
+		- Correctly implemented the 3rd Stored Investment effect<br>
 		- Fixed minor visual mistakes<br><br>
 	
-	<h3>v0.17.1</h3><br>
+	<h3>v0.1.7.1</h3><br>
 		- Quick change to the intended requirement for a new clickable<br><br>
 	
-	<h3>v0.17</h3><br>
+	<h3>v0.1.7</h3><br>
 		- Added Storage layer: two clickables and three milestones<br>
 		- Expanded Expansions layer: 5 upgrades (15 -> 20), not yet balanced<br>
 		- 7 more achievements (20 -> 27), 6 of which are implemented<br>
@@ -43,7 +57,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Various minor fixes (mainly visual inconsistencies), 
 			including one improperly implemented upgrade that could cause NaN errors<br><br>
 
-	<h3>v0.15</h3><br>
+	<h3>v0.1.5</h3><br>
 		- Added Expansions layer: 15 upgrades and two clickables<br>
 		- Expanded Penny layer: 5 upgrades (15 -> 20), 2 buyables (2 -> 4)<br>
 		- 9 more achievements (11 -> 20)<br>
@@ -100,9 +114,13 @@ function getPointGen() {
 
 	let ret = baseGain.mul(gainMult)
 
-	if (getClickableState("e", 21)) ret = ret.div(5)
-	return ret
+	if (inChallenge("s", 11)) return ret.pow(.5)
 
+	if (getClickableState("e", 21)) ret = ret.div(5)
+	if (getClickableState("e", 31)) ret = ret.mul(clickableEffect("e", 31))
+	if (getClickableState("e", 32)) ret = ret.div(10)
+
+	return ret
 }
 
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
@@ -117,7 +135,7 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	//return false
+	return false
 	return player.a.achievements.length >= 26 && player.s.milestones.length >= 3
 }
 
