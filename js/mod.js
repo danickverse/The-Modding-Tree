@@ -130,13 +130,12 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	"Current endgame: 26 achievements, 3 Storage milestones"
+	"Current endgame: 30 achievements, 4 Storage milestones"
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return false
-	return player.a.achievements.length >= 26 && player.s.milestones.length >= 3
+	return player.a.achievements.length >= 30 && player.s.milestones.length >= 4
 }
 
 

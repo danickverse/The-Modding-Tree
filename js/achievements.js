@@ -319,9 +319,9 @@ addLayer("a", {
         65: {
             name: "30",
             done() {
-                if (this.unlocked() && !hasUpgrade("p", 22) && player.highestPointsEver.lt(1e6) && player.p.points.gte(1e6)) return true
+                if (this.unlocked() && !hasUpgrade("p", 22) && player.highestPointsEver.lt(1e6) && player.p.points.gte(5e5)) return true
             },
-            tooltip: "Reach 1 million pennies without buying Still Can't Buy Water and with a highest points ever that is less than 1 million",
+            tooltip: "Reach 500000 pennies without buying Still Can't Buy Water and with a highest points ever that is less than 1 million",
             unlocked:() => hasMilestone("a", 5)
         },
         71: {
@@ -382,12 +382,18 @@ addLayer("a", {
             effectDescription: "There's A Coin For This? and Seriously? have the same effect and unlock more achievements and storage milestones",
             done() { return player.a.achievements.length >= 25 },
             unlocked:() => hasAchievement("a", 51)
+        },
+        6: {
+            requirementDescription: "28 Achievements Finished",
+            effectDescription:() => {
+                let ret = "Multiply expansion investment gain by 1.01<sup>milestones</sup> "
+                    + "but multiply the Penny Expansion row 4 static multiplier by 1.6x<br>Currently: "
+                ret = ret + format(1.01**(player.a.milestones.length), 4)
+                return ret
+            },
+            done() { return player.a.achievements.length >= 28 },
+            unlocked:() => hasAchievement("a", 51)
         }
-        // },
-        // 6: {
-        //     requirementDescription: "28 Achievements Finished",
-        //     effectDescription: ""
-        // }
     },
     tabFormat: {
         "Achievements": {
