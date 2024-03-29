@@ -111,10 +111,11 @@ function getPointGen() {
 	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
+	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).log2())
 
 	let ret = baseGain.mul(gainMult)
 
-	if (inChallenge("s", 11)) return ret.pow(.5)
+	if (inChallenge("s", 11)) ret = ret.pow(.5)
 
 	if (getClickableState("e", 21)) ret = ret.div(5)
 	if (getClickableState("e", 31)) ret = ret.mul(clickableEffect("e", 31))
