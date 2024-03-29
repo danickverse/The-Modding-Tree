@@ -539,6 +539,14 @@ addLayer("p", {
             description: "Multiplies PTS (base penny value used for Tax) by IITU effect",
             effectDisplay:() => format(upgradeEffect("p", 42)) + "x",
             unlocked:() => hasUpgrade("e", 23) && player.p.investment2.points.gte(1)
+        },
+        51: {
+            title: "2 Quintillion Waters",
+            description: "(Not Implemented)Unlock the System and Education III, which is not autobought at first",
+            cost: new Decimal("2.5e20"),
+            canAfford: false,
+            effectDisplay:() => 1,
+            unlocked:() => hasAchievement("a", 71)
         }
     },
     buyables: {
@@ -696,15 +704,15 @@ addLayer("p", {
     },
     update(diff) {
         if (player.p.investmentCooldown > 0) {
-            player.p.investmentCooldown = Math.max(decimalZero, player.p.investmentCooldown - diff)
+            player.p.investmentCooldown = Math.max(0, player.p.investmentCooldown - diff)
         }
 
         if (player.p.autoUpgCooldown > 0) {
-            player.p.autoUpgCooldown = Math.max(decimalZero, player.p.autoUpgCooldown - diff)
+            player.p.autoUpgCooldown = Math.max(0, player.p.autoUpgCooldown - diff)
         }
 
         if (player.p.autoBuyableCooldown > 0) {
-            player.p.autoBuyableCooldown = Math.max(decimalZero, player.p.autoBuyableCooldown - diff)
+            player.p.autoBuyableCooldown = Math.max(0, player.p.autoBuyableCooldown - diff)
         }
     },
     automate() {
@@ -1449,7 +1457,7 @@ addLayer("e", {
                 ["clickables", [2, 3]]
             ],
             unlocked() {
-                return player.e.points.gte(".1")
+                return player.e.points.gte(".1") || player.s.unlocked
             }
         }
     },
@@ -1589,8 +1597,8 @@ addLayer("s", {
                 player.highestPointsEver = decimalZero
                 player.e.points = decimalZero
                 player.e.penny_expansions.points = decimalZero
-                player.p.autoUpgCooldown = -1
-                player.p.autoBuyableCooldown = -1
+                if (!hasUpgrade("e", 21)) player.p.autoUpgCooldown = -1
+                if (!hasUpgrade("e", 11)) player.p.autoBuyableCooldown = -1
             }
         }
     },
@@ -1677,7 +1685,7 @@ addLayer("s", {
                         }
                         if (hasMilestone("s", 3)) {
                             ret = ret + ",<br>5. Multiply point gain by "
-                                + format(player.s.stored_investment.points.div(1e6).add(1).log2())
+                                + format(player.s.stored_investment.points.div(1e6).add(1).pow(.6))
                         }
                         return ret
                     }], "blank"

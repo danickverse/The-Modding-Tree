@@ -14,11 +14,17 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1.8",
+	num: "0.1.8.1",
 	name: "Who Wants To Be A Trillionaire?",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1.8.1</h3><br>
+		- Buffed Stored Investment effect 5<br>
+		- Focused Production is always accessible after unlocking Storage layer<br>
+		- Fixes: Storage milestone 4 kept (milestones+1) upgrades, which also revealed a bug
+			which occurs when it keeps QOL 1/2. Both issues are fixed now<br><br>
+
 	<h3>v0.1.8</h3><br>
 		- IITU is now based on current expansion investment, not best expansion investment (it was a dumb idea). 
 			Stored Expansion effect 3 (secondary effect) buffed to compensate<br>
@@ -111,7 +117,7 @@ function getPointGen() {
 	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
-	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).log2())
+	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).pow(.6))
 
 	let ret = baseGain.mul(gainMult)
 
