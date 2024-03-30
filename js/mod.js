@@ -14,11 +14,14 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1.8.1",
+	num: "0.1.8.2",
 	name: "Who Wants To Be A Trillionaire?",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1.8.2</h3><br>
+		- Updated programmed Achievement 25 condition to match description<br><br>
+	
 	<h3>v0.1.8.1</h3><br>
 		- Buffed Stored Investment effect 5<br>
 		- Focused Production is always accessible after unlocking Storage layer<br>

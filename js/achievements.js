@@ -257,8 +257,8 @@ addLayer("a", {
         55: {
             name: "25",
             done() {
-                let investment2Limit = (1.03**player.s.stored_expansion.points.log2())**5
-                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.lte(investment2Limit) && player.p.points.gte(7.77e6)) return true
+                let investment2Limit = (1.03**player.s.stored_expansion.points.add(1).log2())**5
+                if (this.unlocked() && !hasUpgrade("p", 35) && player.p.investment.points.eq(0) && player.p.investment2.points.lte(investment2Limit) && player.p.points.gte(7.77e6)) return true
             },
             tooltip: `Reach 7.77 million pennies without gaining normal investment after storing your investment
                 <br><br>Lucky Penny ln becomes log2`,
