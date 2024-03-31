@@ -110,7 +110,7 @@ function getPointGen() {
 
 	let baseGain = new Decimal(1)
 	if (hasUpgrade('p', 12)) baseGain = baseGain.add(upgradeEffect('p', 12))
-	if (hasAchievement('a', 33)) baseGain = baseGain.add(1)
+	if (hasAchievement('a', 35)) baseGain = baseGain.add(1)
 
 	let gainMult = new Decimal(1)
 	if (hasUpgrade('p', 11)) gainMult = gainMult.mul(upgradeEffect('p', 11))
@@ -120,7 +120,7 @@ function getPointGen() {
 	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
-	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).pow(.6))
+	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).pow(.4))
 
 	let ret = baseGain.mul(gainMult)
 

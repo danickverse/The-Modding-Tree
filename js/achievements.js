@@ -327,10 +327,9 @@ addLayer("a", {
         71: {
             name: "31",
             done() {
-                return false
-                if (this.unlocked() && pennyTaxStart().gte("1e8")) return true
+                if (this.unlocked() && pennyTaxStart().gte("1e8") && player.s.stored_investment.points.gte(1e10)) return true
             },
-            tooltip: `(Not Implemented) Make taxes start at 1 million dollars rather than 1 million pennies
+            tooltip: `Make taxes start at 100 million pennies rather than 1 million pennies and reach 1e10 Stored Investment
                 <br><br>Unlock a penny upgrade`,
             unlocked:() => hasMilestone("a", 5),
             style() {
@@ -386,9 +385,9 @@ addLayer("a", {
         6: {
             requirementDescription: "28 Achievements Finished",
             effectDescription:() => {
-                let ret = "Multiply expansion investment gain by 1.01<sup>milestones</sup> "
+                let ret = "Multiply expansion investment gain by 1.01<sup>milestones + achievements - 28</sup> "
                     + "but multiply the Penny Expansion row 4 static multiplier by 1.6x<br>Currently: "
-                ret = ret + format(1.01**(player.a.milestones.length), 4)
+                ret = ret + format(1.01**(player.a.milestones.length+player.a.achievements.length-28), 4)
                 return ret
             },
             done() { return player.a.achievements.length >= 28 },
