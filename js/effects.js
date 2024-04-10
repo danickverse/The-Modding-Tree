@@ -37,10 +37,26 @@ addLayer("effects", {
                     ret = ret + "<br>Multiply penny, expansion, and point gain by " + format(upgradeEffect("p", 42)) + "x"
                     if (hasUpgrade("p", 43)) ret = ret + ",<br>Multiply investment gain by " + format(upgradeEffect("p", 42))
                     if (hasUpgrade("p", 45)) ret = ret + ",<br>Multiply PTS (see Taxes) by " + format(upgradeEffect("p", 42)) + "x"
-                    if (player.s.unlocked) ret = ret + ",<br>Multiply stored investment gain by " + format(upgradeEffect("p", 42).pow(.25)) + "x"
+                    if (player.s.unlocked) ret = ret + ",<br>Multiply stored investment/stored expansion gain by " + format(upgradeEffect("p", 42).pow(.25)) + "x"
                     return ret
                 }]
             ]
+        },
+        "Expansions": {
+            content: [
+                ["display-text", function() {
+                    let ret = "Your current expansions is " + format(player.e.points) + ". It is currently used to...<br>"
+                    if (hasUpgrade("e", 12)) ret = ret + "<br>Increase WNBP limit exponent by " + format(upgradeEffect("e", 12), 4)
+                    return ret
+                }], 
+                "blank",
+                ["display-text", function() {
+                    let ret = "Your current penny expansions is " + format(player.e.penny_expansions.points) + ". It is currently used to...<br>"
+                    if (hasUpgrade("p", 53)) ret = ret + "<br>Multiply penny gain by " + format(upgradeEffect("p", 53))
+                    return ret
+                }]
+            ],
+            unlocked:() => player.e.unlocked
         }
     }
 })

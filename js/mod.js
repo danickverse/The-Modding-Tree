@@ -14,11 +14,26 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1.8.2",
-	name: "Who Wants To Be A Trillionaire?",
+	num: "0.1.9",
+	name: "Preparing For The Future",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1.9</h3><br>
+		- Added 1 storage milestone
+		- Added 3 achievements (31 --> 34) and 1 achievement milestone (7 --> 8)
+		- Achievement 30 completely changed so it is now always doable<br>
+		- Removed Achievement 27's effect (originally removed the Now We're Getting Somewhere... exponent), 
+		added effect to Achievement 29 to compensate <br>
+		- Storage milestone 4 first requirement greatly increased from 5m to 250m and second requirement increased from 50,000 to 300,000<br>
+		- IITU effect also buffs stored expansion as well; some values are thus rebalanced<br>
+		- Expansion Investment gain exponent decreased from .5 --> .4 and now has both a hardcap & softcap that can be reduced through progression<br>
+		- Buffed 7th Achievement milestone (based on # of milestones and achievements rather than just milestones)<br>
+		- Buffed QOL 1 autobuyer (10 seconds --> 5 seconds)<br>
+		- Buffed It's Compassion Is Unmatched's first effect by 2.5x<br>
+		- Inflation from older saves *should* be fixed, values reset to reasonable v0.1.8.2 endgame values if surpassed<br>
+		- Other (mostly minor) visual/balance changes<br><br>
+	
 	<h3>v0.1.8.2</h3><br>
 		- Updated programmed Achievement 25 condition to match description<br><br>
 	
@@ -122,9 +137,15 @@ function getPointGen() {
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
 	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).pow(.4))
 
-	let ret = baseGain.mul(gainMult)
+	let gainExp = decimalOne
+	if (hasUpgrade("p", 52)) gainExp = gainExp.add(upgradeEffect("p", 52))
+	if (inChallenge("s", 11)) gainExp = gainExp.div(2)
+	if (inChallenge("s", 12)) gainExp = gainExp.div(4)
 
-	if (inChallenge("s", 11)) ret = ret.pow(.5)
+	let ret = baseGain.mul(gainMult).pow(gainExp)
+
+	// direct effects to gain
+	if (inChallenge("s", 11) && hasUpgrade("s", 12)) ret = ret.mul(5)
 
 	if (getClickableState("e", 21)) ret = ret.div(5)
 	if (getClickableState("e", 31)) ret = ret.mul(clickableEffect("e", 31))
@@ -145,6 +166,7 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
+	return false
 	return player.a.achievements.length >= 30 && player.s.milestones.length >= 4
 }
 
@@ -166,4 +188,19 @@ function maxTickLength() {
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
 // you can cap their current resources with this.
 function fixOldSave(oldVersion){
+	console.log(oldVersion)
+	if (oldVersion == "0.1.8.2") {
+		player.p.investment2.points = player.p.investment2.points.min(tmp.p.buyables[12].hardcap)
+		player.p.investment.points = player.p.investment.points.min(new Decimal("1e11"))
+		player.e.points = player.e.points.min(new Decimal("3e6"))
+		player.e.penny_expansions.points = player.e.penny_expansions.points.min(new Decimal("5e7"))
+		player.s.stored_investment.points = player.s.stored_investment.points.min(new Decimal("1e11"))
+		player.s.stored_expansion.points = player.s.stored_expansion.points.min(new Decimal("1e6"))
+		player.p.points = player.p.points.min(new Decimal("1e20"))
+		player.points = upgrade23Limit()
+		player.highestPointsEver = player.points
+		if (player.p.upgrades.indexOf(51) > -1) player.p.upgrades.splice(player.p.upgrades.indexOf(51, 1))
+		investmentReset()
+		player.s.high_scores[11].points = player.s.high_scores[11].points.min(new Decimal("1e15"))
+	}
 }

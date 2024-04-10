@@ -54,7 +54,7 @@ addLayer("a", {
                 check = new Decimal("3e9")
                 if (player.p.upgrades.length >= 14 && upgrade23Limit().gte(check) && player.points.gte(check)) return true
             },
-            tooltip: "Reach 3e9 points and 14 upgrades (row 1, row 2, 4 in row 3)<br><br>Unlock the fifteenth penny upgrade, more achievements, and milestones",
+            tooltip: "Have 3e9 points and 14 upgrades (row 1, row 2, 4 in row 3) at the same time<br><br>Unlock the fifteenth penny upgrade, more achievements, and milestones",
             unlocked:() => hasUpgrade("p", 25),
             style() {
                 return {
@@ -210,9 +210,9 @@ addLayer("a", {
         45: {
             name: "20",
             done() {
-                if (this.unlocked() && investmentGain().gt(1000)) return true
+                if (this.unlocked() && investmentGain().gte(2000)) return true
             },
-            tooltip: "Reach 1000 investment earned in a single investment reset",
+            tooltip: "Reach 2000 investment earned in a single investment reset",
             unlocked:() => hasUpgrade("e", 23) || player.s.unlocked
         },
         51: {
@@ -251,7 +251,7 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansions.points.gte(13)) return true
             },
-            tooltip: "Gain 13 penny expansions with a highest points ever (see Expansions Formulas) that is less than 5e10",
+            tooltip: "Gain 13 penny expansions with a highest points ever (reset to 0 by storing expansions) that is less than 5e10",
             unlocked:() => hasAchievement("a", 51)
         },
         55: {
@@ -283,16 +283,8 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && hasUpgrade("p", 45)) return true
             },
-            tooltip: `Purchase the penny upgrade I Want To Break Free!
-                <br><br>Remove the exponent from the penny upgrade 
-                Now We're Getting Somewhere... (linear growth!)`,
-            unlocked:() => hasMilestone("a", 5),
-            style() {
-                return {
-                "border-color": "blue",
-                "border-width": "5px"
-                }
-            }
+            tooltip: "Purchase the penny upgrade I Want To Break Free!",
+            unlocked:() => hasMilestone("a", 5)
         },
         63: {
             name: "28",
@@ -313,24 +305,8 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && inChallenge("s", 11) && player.p.points.gte(10000)) return true
             },
-            tooltip: "Reach 100 dollars while in the Investment Challenge",
-            unlocked:() => hasMilestone("a", 5)
-        },
-        65: {
-            name: "30",
-            done() {
-                if (this.unlocked() && !hasUpgrade("p", 22) && player.highestPointsEver.lt(1e6) && player.p.points.gte(5e5)) return true
-            },
-            tooltip: "Reach 500000 pennies without buying Still Can't Buy Water and with a highest points ever that is less than 1 million",
-            unlocked:() => hasMilestone("a", 5)
-        },
-        71: {
-            name: "31",
-            done() {
-                if (this.unlocked() && pennyTaxStart().gte("1e8") && player.s.stored_investment.points.gte(1e10)) return true
-            },
-            tooltip: `Make taxes start at 100 million pennies rather than 1 million pennies and reach 1e10 Stored Investment
-                <br><br>Unlock a penny upgrade`,
+            tooltip: `Reach 100 dollars (10000 Pennies) while in the Investment Challenge"
+                <br><br>Remove divisor from Still Can't Buy Water`,
             unlocked:() => hasMilestone("a", 5),
             style() {
                 return {
@@ -338,6 +314,57 @@ addLayer("a", {
                 "border-width": "5px"
                 }
             }
+        },
+        65: {
+            name: "30",
+            done() { return false }, // Handled by Store Expansion clickable
+            tooltip: "Store Expansions with less current expansion investment than your maximum kept expansion investment (see Stored Expansion effects)",
+            unlocked:() => hasMilestone("a", 5)
+        },
+        71: {
+            name: "31",
+            done() {
+                return (this.unlocked() && pennyTaxStart().gte("8e7") && player.s.stored_investment.points.gte(1e9))
+            },
+            tooltip: `Make taxes start at 80 million pennies rather than 1 million pennies and reach 1e9 Stored Investment
+                <br><br>Unlock a row of penny upgrades that are kept`,
+            unlocked:() => hasMilestone("s", 3),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        72: {
+            name: "32",
+            done() {
+                return (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(5e14))
+            },
+            tooltip: "Become a multi-trillionaire (5e14 Pennies) with 0 investment",
+            unlocked:() => hasMilestone("s", 3)
+        },
+        73: {
+            name: "33",
+            done() {
+                return (this.unlocked() && investment2Gain().eq(tmp.p.buyables[12].hardcap))
+            },
+            tooltip: "Reach the expansion investment hardcap<br><br>Unlock storage upgrades and more storage milestones",
+            unlocked:() => hasMilestone("s", 3),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        74: {
+            name: "34",
+            done() {
+                return (this.unlocked() && inChallenge("s", 11) && player.p.investment.points.gt(0))
+            },
+            tooltip: "Gain investment in the Investment challenge",
+            unlocked:() => hasMilestone("s", 3)
         }
     },
     milestones: {
@@ -378,7 +405,7 @@ addLayer("a", {
         },
         5: {
             requirementDescription: "25 Achievements Finished",
-            effectDescription: "There's A Coin For This? and Seriously? have the same effect and unlock more achievements and storage milestones",
+            effectDescription: "There's A Coin For This? and Seriously? have the same exponent/effect and unlock more achievements and storage milestones",
             done() { return player.a.achievements.length >= 25 },
             unlocked:() => hasAchievement("a", 51)
         },
@@ -391,6 +418,12 @@ addLayer("a", {
                 return ret
             },
             done() { return player.a.achievements.length >= 28 },
+            unlocked:() => hasAchievement("a", 51)
+        },
+        7: {
+            requirementDescription: "32 Achievements Finished",
+            effectDescription: "We Need Bigger Pockets base point effect is increased by 1 (initially 10)",
+            done() { return player.a.achievements.length >= 32 },
             unlocked:() => hasAchievement("a", 51)
         }
     },
