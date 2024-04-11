@@ -350,7 +350,11 @@ function gameLoop(diff) {
 	for (let x = 0; x <= maxRow; x++){
 		for (item in TREE_LAYERS[x]) {
 			let layer = TREE_LAYERS[x][item]
-			player[layer].resetTime += diff
+			if (layer == "p") {
+				let newDiff = boostedTime(diff)
+				player.p.resetTime += newDiff
+			}
+			else player[layer].resetTime += diff
 			if (tmp[layer].passiveGeneration) generatePoints(layer, diff*tmp[layer].passiveGeneration);
 			if (layers[layer].update) layers[layer].update(diff);
 		}

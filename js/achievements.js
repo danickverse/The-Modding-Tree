@@ -327,7 +327,7 @@ addLayer("a", {
                 return (this.unlocked() && pennyTaxStart().gte("8e7") && player.s.stored_investment.points.gte(1e9))
             },
             tooltip: `Make taxes start at 80 million pennies rather than 1 million pennies and reach 1e9 Stored Investment
-                <br><br>Unlock a row of penny upgrades that are kept`,
+                <br><br>Unlock a row of penny upgrades that are kept and unlock more achievement milestones`,
             unlocked:() => hasMilestone("s", 3),
             style() {
                 return {
@@ -364,6 +364,14 @@ addLayer("a", {
                 return (this.unlocked() && inChallenge("s", 11) && player.p.investment.points.gt(0))
             },
             tooltip: "Gain investment in the Investment challenge",
+            unlocked:() => hasMilestone("s", 3)
+        },
+        75: {
+            name: "35",
+            done() {
+                return (this.unlocked() && challengeCompletions("s", 12) > 1)
+            },
+            tooltip: "Complete the Expansion Challenge twice",
             unlocked:() => hasMilestone("s", 3)
         }
     },
@@ -423,8 +431,15 @@ addLayer("a", {
         7: {
             requirementDescription: "32 Achievements Finished",
             effectDescription: "We Need Bigger Pockets base point effect is increased by 1 (initially 10)",
-            done() { return player.a.achievements.length >= 32 },
-            unlocked:() => hasAchievement("a", 51)
+            done() { return this.unlocked() && player.a.achievements.length >= 32 },
+            unlocked:() => hasAchievement("a", 71)
+        },
+        8: {
+            requirementDescription: "35 Achievements Finished",
+            effectDescription:() => { return "Gain (1 + Achievements/500)x more Reset Time<br>Currently: "
+                + format(1 + player.a.achievements.length/500, 3) + "x" },
+            done() { return this.unlocked && player.a.achievements.length >= 35 },
+            unlocked:() => hasAchievement("a", 71)
         }
     },
     tabFormat: {

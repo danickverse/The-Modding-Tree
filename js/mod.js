@@ -15,13 +15,14 @@ let modInfo = {
 // Set your version in num and name
 let VERSION = {
 	num: "0.1.9",
-	name: "Preparing For The Future",
+	name: "Clocky Goes Zoomy",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
 	<h3>v0.1.9</h3><br>
-		- Added 1 storage milestone
-		- Added 3 achievements (31 --> 34) and 1 achievement milestone (7 --> 8)
+		- Added 4 Penny upgrades and introduced reset time<br>
+		- Added 1 Storage milestone, two Storage upgrades, and one Storage challenge<br>
+		- Added 4 achievements (31 --> 35) and 2 achievement milestones (7 --> 9)<br>
 		- Achievement 30 completely changed so it is now always doable<br>
 		- Removed Achievement 27's effect (originally removed the Now We're Getting Somewhere... exponent), 
 		added effect to Achievement 29 to compensate <br>
@@ -145,7 +146,7 @@ function getPointGen() {
 	let ret = baseGain.mul(gainMult).pow(gainExp)
 
 	// direct effects to gain
-	if (inChallenge("s", 11) && hasUpgrade("s", 12)) ret = ret.mul(5)
+	if (inChallenge("s", 11) && hasUpgrade("s", 11)) ret = ret.mul(5)
 
 	if (getClickableState("e", 21)) ret = ret.div(5)
 	if (getClickableState("e", 31)) ret = ret.mul(clickableEffect("e", 31))
@@ -161,6 +162,7 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
+	() => boostedTime(1) != 1 ? "Gaining " + format(boostedTime(1), 4) + "x more reset time" : "",
 	"Current endgame: 30 achievements, 4 Storage milestones"
 ]
 
@@ -189,7 +191,7 @@ function maxTickLength() {
 // you can cap their current resources with this.
 function fixOldSave(oldVersion){
 	console.log(oldVersion)
-	if (oldVersion == "0.1.8.2") {
+	if (oldVersion < "0.1.9") {
 		player.p.investment2.points = player.p.investment2.points.min(tmp.p.buyables[12].hardcap)
 		player.p.investment.points = player.p.investment.points.min(new Decimal("1e11"))
 		player.e.points = player.e.points.min(new Decimal("3e6"))

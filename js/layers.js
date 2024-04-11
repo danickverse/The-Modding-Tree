@@ -58,7 +58,7 @@ function pennyTaxExp() {
 }
 
 function investmentGain() {
-    if (inChallenge("s", 11) || inChallenge("s", 12)) {
+    if (inChallenge("s", 11)) {
         let ret = decimalOne
         if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
         if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
@@ -131,6 +131,12 @@ function logXBaseN(x, n) {
     return ret
 }
 
+function boostedTime(diff) {
+    let ret = diff
+    if (hasMilestone("a", 8)) ret = ret * (1 + player.a.achievements.length/500)
+    return ret
+}
+
 addLayer("p", {
     // name: "pennies", // This is optional, only used in a few places, If absent it just uses the layer id.
     symbol: "P", // This appears on the layer's node. Default is the id with the first letter capitalized
@@ -183,7 +189,7 @@ addLayer("p", {
         if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
         if (getClickableState("e", 31)) ret = ret.div(10)
         if (getClickableState("e", 32)) ret = ret.mul(clickableEffect("e", 32))
-        if (inChallenge("s", 11) && hasUpgrade("s", 12)) ret = ret.mul(5)
+        if (inChallenge("s", 11) && hasUpgrade("s", 11)) ret = ret.mul(5)
         if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
         return ret
     },
@@ -613,7 +619,7 @@ addLayer("p", {
                 if (player.shiftDown) return "Resets used to determine reset time include storing resources and investment resets"
                 return "Increase point gain exponent by (Reset Time<sup>*</sup>)<sup>.25</sup> / 30"
             },
-            cost: new Decimal("4e26"),
+            cost: new Decimal("3e26"),
             effect:() => Math.pow(player.p.resetTime, 1/4) / 30,
             effectDisplay:() => "+" + format(upgradeEffect("p", 52)),
             unlocked:() => hasAchievement("a", 71)
@@ -894,7 +900,8 @@ addLayer("p", {
                     function() {
                         let ret = "You currently have " + format(player.points) + " points<br>"
                             + "Your best pennies is " + formatWhole(player.p.best) 
-                        if (hasUpgrade("p", 52)) ret = ret + "<br>Your current reset time is " + formatWhole(player.p.resetTime) + " seconds"
+                        if (hasUpgrade("p", 52)) ret = ret + "<br>Your current reset time is " + formatWhole(player.p.resetTime) 
+                            + " seconds, or about " + format(player.p.resetTime / 60) + " minutes"
                         return ret
                     }
                 ],
@@ -1036,17 +1043,24 @@ addLayer("e", {
     prestigeButtonText(){ return "" },
     getNextAt() {return decimalZero},
     baseAmount() {
-        if (player.highestPointsEver.lt(1e10)) return decimalZero
-        let base = new Decimal(Math.log10(Math.log10(player.highestPointsEver)) - 1)
-        base = base.mul(1 + challengeCompletions("s", 12))
-
-        if (hasMilestone("s", 0) && hasUpgrade("e", 11) && player.s.stored_expansion.points.gt(decimalZero)) {
+        let boost = decimalZero
+        if (hasMilestone("s", 0) && (hasUpgrade("e", 11) || inChallenge("s", 12)) && player.s.stored_expansion.points.gt(decimalZero)) {
             // factorPercent = percent of upg effect that is used to increase base gain
             let boostPercent = player.s.stored_expansion.points.add(1).log10().add(10).div(10)
-            let boost = upgradeEffect("e", 11).mul(boostPercent).div(100)
-            if (inChallenge("s", 12)) return boost
-            base = base.add(boost)
+            boost = upgradeEffect("e", 11).mul(boostPercent).div(100)
+            if (inChallenge("s", 12) && player.points.gt(decimalZero) && player.highestPointsEver.lt(1e10)) {
+                //console.log(upgradeEffect("e", 11).mag)
+                //throw new Error("")
+                // ISSUE IS IN UPGRADE E11 SOMEHOW
+                // would use incorrect effect for a single tick due to game loop order
+                return boost
+            }
         }
+
+        //if (player.highestPointsEver)
+        if (player.highestPointsEver.lt(1e10)) return decimalZero
+        let base = new Decimal(Math.log10(Math.log10(player.highestPointsEver)) - 1)
+        base = base.add(boost)
         return base
     },
     gainMult() {
@@ -1079,8 +1093,8 @@ addLayer("e", {
         if (!player.e.unlocked) return
         let layerData = player[this.layer]
         let penny_expansions = layerData.penny_expansions
-        layerData.points = layerData.points.add(tmp[this.layer].resetGain.times(diff))
         if (getResetGain(this.layer).gt(decimalZero)) {
+            layerData.points = layerData.points.add(tmp[this.layer].resetGain.times(diff))
             layerData.points = layerData.points.sub(layerData.points.mul(.3).div(100).times(diff))
         }
         penny_expansions.points = penny_expansions.points.add(tmp.e.penny_expansions.getResetGain.times(diff))
@@ -1099,6 +1113,7 @@ addLayer("e", {
             let ret = decimalOne
             if (hasUpgrade("e", 24)) ret = ret.times(upgradeEffect("e", 24))
             if (hasMilestone("a", 1)) ret = ret.times(1.05**player.a.milestones.length)
+            ret = ret.mul(1 + challengeCompletions("s", 12))
             return ret
         },
         baseGain() {
@@ -1735,7 +1750,7 @@ addLayer("s", {
         12: {
             title: "Blessed Inflation",
             description: "Raise secondary effect of third stored expansion effect to the 1.5th power",
-            cost: new Decimal("1e8"),
+            cost: new Decimal("8e7"),
             unlocked:() => hasAchievement("a", 73),
             onPurchase() {
                 tmp.s.clickables[12].onClick()
@@ -1793,7 +1808,7 @@ addLayer("s", {
                 let resetInvestment2Amt = decimalOne
                 if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul((1.03**player.s.stored_expansion.points.log2())**5)
                 if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt**1.5
-                if (tmp.a.achievements[65].unlocked && player.a.achievements.indexOf(65) == -1 && player.p.investment2.points.lt(resetInvestment2Amt)) {
+                if (tmp.a.achievements[65].unlocked && player.a.achievements.indexOf("65") == -1 && player.p.investment2.points.lt(resetInvestment2Amt)) {
                     player.a.achievements.push(65)
                     doPopup("achievement", tmp.a.achievements[65].name, "Achievement Gotten!", 3, tmp.a.color)
                 }
@@ -1937,7 +1952,7 @@ addLayer("s", {
                                 ret = ret + ", which only applies when your highest points ever exceeds 1e10"
                             } else {
                                 let effect = upgradeEffect("e", 11).mul(factorPercent).div(100)
-                                if (hasUpgrade("e", 11)) ret = ret + ", which makes up " + format(effect.div(tmp.e.baseAmount).mul(100)) + "% of base expansion gain"
+                                if (hasUpgrade("e", 11) || inChallenge("s", 12)) ret = ret + ", which makes up " + format(effect.div(tmp.e.baseAmount).mul(100)) + "% of base expansion gain"
                             }
                         }
                         if (hasMilestone("s", 1)) {
@@ -1978,10 +1993,18 @@ addLayer("s", {
             name: "Investment Challenge",
             challengeDescription:() => "Raise point/penny gain ^.5 (after tax), Tax starts 10000x earlier, the Tax exponent is 1.5, and investment gain is initially 1",
             goalDescription() { return format(player.s.high_scores[11].points.max(1e6)) + " points" },
-            rewardDescription:() => "Increases the IITU effect exponent based on high score",
+            rewardDescription:() => {
+                let ret = "Increases the IITU effect exponent based on high score"
+                if (challengeEffect("s", 11).gte(.3)) {
+                    if (!player.shiftDown) return ret + " (softcapped*)"
+                    return "Effect after .3 is divided by 10 --> +(.3 + [Remaining Effect]/10)"
+                }
+                return ret
+            },
             rewardEffect() { 
                 let ret = player.s.high_scores[11].points
                 ret = ret.add(1).log2().div(500)
+                if (ret.gte(.3)) ret = .3 + (ret.sub(.3).div(10))
                 return ret
             },
             rewardDisplay() { 
@@ -2012,10 +2035,10 @@ addLayer("s", {
         },
         12: {
             name: "Expansion Challenge",
-            challengeDescription:() => "Raise point/penny gain ^.25 (after tax), investment gain is initially 1, "
-                + "Why Do These Matter??? base is 1.02, and base expansion gain is only based on second stored expansion effect",
+            challengeDescription:() => "Raise point/penny gain ^.375 (after tax), investment gain is initially 1, "
+                + "Why Do These Matter??? base is 1.02, but second stored expansion effect always applies",
             goalDescription() { return format(this.requirement()) + " penny expansions" },
-            rewardDescription:() => "Multiply base expansion gain that is based on highest points ever by 1 + challenge completions",
+            rewardDescription:() => "Multiply penny expansion gain by 1 + challenge completions",
             rewardEffect() { 
                 let ret = player.s.high_scores[11].points
                 ret = ret.add(1).log2().div(500)
@@ -2025,9 +2048,7 @@ addLayer("s", {
                 return format(1 + challengeCompletions("s", 12), 0) + "x"
             },
             canComplete() {
-                return this.requirement()
-                let finishAmt = new Decimal("1e100")
-                return player.e.penny_expansions.points.gte(finishAmt)
+                return player.e.penny_expansions.points.gte(this.requirement())
             },
             // onComplete() {
             //     return
@@ -2041,10 +2062,6 @@ addLayer("s", {
                 let resetInvestment2Amt = decimalOne
                 if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul((1.03**player.s.stored_expansion.points.log2())**5)
                 if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt**1.5
-                if (tmp.a.achievements[65].unlocked && player.a.achievements.indexOf(65) == -1 && player.p.investment2.points.lt(resetInvestment2Amt)) {
-                    player.a.achievements.push(65)
-                    doPopup("achievement", tmp.a.achievements[65].name, "Achievement Gotten!", 3, tmp.a.color)
-                }
                 player.p.investment2.points = player.p.investment2.points.min(resetInvestment2Amt)
 
                 let keepUpgIndices = [33, 43]
@@ -2077,7 +2094,8 @@ addLayer("s", {
             // }
             completionLimit: 100,
             requirement:() => {
-                return decimalZero
+                //if (challengeCompletions("s", 12) == 0) return new Decimal("16")
+                return 2**Math.cbrt(challengeCompletions("s", 12)) * 16**challengeCompletions("s", 12)
             }
         }
         // Expansion Challenge 
