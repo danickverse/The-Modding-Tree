@@ -142,7 +142,7 @@ function inAnyChallenge() {
 	for (let x = 0; x <= maxRow; x++){
 		for (item in TREE_LAYERS[x]) {
 			let layer = TREE_LAYERS[x][item]
-			if (Object.hasOwn(player[layer], "activeChallenge") && player[layer].activeChallenge) return true
+			if (player[layer].activeChallenge) return true
 		}
 	}
 	return false

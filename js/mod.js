@@ -192,7 +192,7 @@ function maxTickLength() {
 function fixOldSave(oldVersion){
 	console.log(oldVersion)
 	if (oldVersion < "0.1.9") {
-		player.p.investment2.points = player.p.investment2.points.min(tmp.p.buyables[12].hardcap)
+		player.p.investment2.points = player.p.investment2.points.min(new Decimal("5000"))
 		player.p.investment.points = player.p.investment.points.min(new Decimal("1e11"))
 		player.e.points = player.e.points.min(new Decimal("3e6"))
 		player.e.penny_expansions.points = player.e.penny_expansions.points.min(new Decimal("5e7"))
