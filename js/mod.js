@@ -199,10 +199,14 @@ function fixOldSave(oldVersion){
 		player.s.stored_investment.points = player.s.stored_investment.points.min(new Decimal("1e11"))
 		player.s.stored_expansion.points = player.s.stored_expansion.points.min(new Decimal("1e6"))
 		player.p.points = player.p.points.min(new Decimal("1e20"))
-		player.points = upgrade23Limit()
+		console.log(upgradeEffect("p", 34))
+		player.points = new Decimal("1e50").min(player.points)
 		player.highestPointsEver = player.points
 		if (player.p.upgrades.indexOf(51) > -1) player.p.upgrades.splice(player.p.upgrades.indexOf(51, 1))
-		investmentReset()
+		let buyableIndices = [21, 22]
+		for (const index of buyableIndices) {
+			player.p.buyables[index] = decimalZero
+		}
 		player.s.high_scores[11].points = player.s.high_scores[11].points.min(new Decimal("1e15"))
 		player.resetTime = 0
 	}
