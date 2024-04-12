@@ -3,7 +3,7 @@ let modInfo = {
 	id: "danickversetree", // never change, used to store saves
 	author: "@.danick",
 	pointsName: "points",
-	modFiles: ["layers.js", "tree.js", "achievements.js", "effects.js"],
+	modFiles: ["layers.js", "tree.js", "achievements.js", "effects.js", "functions.js"],
 	allowSmall: true,
 
 	discordName: "",
@@ -21,14 +21,14 @@ let VERSION = {
 let changelog = `<h1>Changelog:</h1><br><br>
 	<h3>v0.1.9</h3><br>
 		- Added 4 Penny upgrades and introduced reset time<br>
-		- Added 1 Storage milestone, two Storage upgrades, and one Storage challenge<br>
+		- Added 2 Storage milestones (4 --> 6), two Storage upgrades, and one Storage challenge<br>
 		- Added 4 achievements (31 --> 35) and 2 achievement milestones (7 --> 9)<br>
 		- Achievement 30 completely changed so it is now always doable<br>
 		- Removed Achievement 27's effect (originally removed the Now We're Getting Somewhere... exponent), 
 		added effect to Achievement 29 to compensate <br>
 		- Storage milestone 4 first requirement greatly increased from 5m to 250m and second requirement increased from 50,000 to 300,000<br>
 		- IITU effect also buffs stored expansion as well; some values are thus rebalanced<br>
-		- Expansion Investment gain exponent decreased from .5 --> .4 and now has both a hardcap & softcap that can be reduced through progression<br>
+		- Expansion Investment gain exponent decreased from .5 --> .4 and now has both a hardcap that can be reduced through progression & a softcap<br>
 		- Buffed 7th Achievement milestone (based on # of milestones and achievements rather than just milestones)<br>
 		- Buffed QOL 1 autobuyer (10 seconds --> 5 seconds)<br>
 		- Buffed It's Compassion Is Unmatched's first effect by 2.5x<br>
@@ -204,5 +204,6 @@ function fixOldSave(oldVersion){
 		if (player.p.upgrades.indexOf(51) > -1) player.p.upgrades.splice(player.p.upgrades.indexOf(51, 1))
 		investmentReset()
 		player.s.high_scores[11].points = player.s.high_scores[11].points.min(new Decimal("1e15"))
+		player.resetTime = 0
 	}
 }
