@@ -33,7 +33,8 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Buffed QOL 1 autobuyer (10 seconds --> 5 seconds)<br>
 		- Buffed It's Compassion Is Unmatched's first effect by 2.5x<br>
 		- Inflation from older saves *should* be fixed, values reset to reasonable v0.1.8.2 endgame values if surpassed<br>
-		- Other (mostly minor) visual/balance changes<br><br>
+		- Other (mostly minor) visual/balance changes<br>
+		- Probably a bunch more stuff I didn't keep track of<br><br>
 	
 	<h3>v0.1.8.2</h3><br>
 		- Updated programmed Achievement 25 condition to match description<br><br>
@@ -168,8 +169,7 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	return false
-	return player.a.achievements.length >= 30 && player.s.milestones.length >= 4
+	return player.a.achievements.length >= 3 && player.p.points.gte(1e33)
 }
 
 
