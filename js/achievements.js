@@ -347,7 +347,7 @@ addLayer("a", {
         73: {
             name: "33",
             done() {
-                return (this.unlocked() && investment2Gain().eq(tmp.p.buyables[12].hardcap))
+                return (this.unlocked() && player.p.investment2.points.eq(tmp.p.buyables[12].hardcap))
             },
             tooltip: "Reach the expansion investment hardcap<br><br>Unlock storage upgrades and more storage milestones",
             unlocked:() => hasMilestone("s", 3),
