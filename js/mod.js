@@ -199,7 +199,6 @@ function fixOldSave(oldVersion){
 		player.s.stored_investment.points = player.s.stored_investment.points.min(new Decimal("1e11"))
 		player.s.stored_expansion.points = player.s.stored_expansion.points.min(new Decimal("1e6"))
 		player.p.points = player.p.points.min(new Decimal("1e20"))
-		console.log(upgradeEffect("p", 34))
 		player.points = new Decimal("1e50").min(player.points)
 		player.highestPointsEver = player.points
 		if (player.p.upgrades.indexOf(51) > -1) player.p.upgrades.splice(player.p.upgrades.indexOf(51, 1))
