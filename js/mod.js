@@ -14,7 +14,7 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1.9.1",
+	num: "0.1.9.2",
 	name: "Clocky Goes Zoomy",
 }
 
@@ -168,12 +168,12 @@ function addedPlayerData() { return {
 // Display extra things at the top of the page
 var displayThings = [
 	() => boostedTime(1) != 1 ? "Gaining " + format(boostedTime(1), 4) + "x more reset time" : "",
-	"Current endgame: 30 achievements, 4 Storage milestones"
+	"Current endgame: 35 achievements, 1e33 Pennies"
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.a.achievements.length >= 3 && player.p.points.gte(1e33)
+	return player.a.achievements.length >= 35 && player.p.points.gte(1e33)
 }
 
 

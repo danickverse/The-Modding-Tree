@@ -510,9 +510,9 @@ addLayer("p", {
             unlocked:() => hasAchievement("a", 71)
         },
         55: {
-            title: "Placeholder",
-            description: "(Not Implemented) Unlock The System and Education III (not autobought)",
-            cost: new Decimal("1e33"),
+            title: "4 Decillion Waters",
+            description: "Unlock The System and Education III (not autobought)",
+            cost: new Decimal("5e35"),
             canAfford() { return false },
             unlocked:() => hasAchievement("a", 71)
         }
@@ -1204,7 +1204,6 @@ addLayer("e", {
             cost:() => decimalOne.mul(2**player.e.upgrades.length).div(4).min(4096).max(256),
             onPurchase() {
                 player.s.unlocked = true
-                hasUpgrade("e", 33) = true
             },
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
@@ -1577,7 +1576,7 @@ addLayer("s", {
     type: "none",
     row: 0,
     branches: ["p", "e"],
-    layerShown:() => hasUpgrade("e", 33),
+    layerShown:() => hasUpgrade("e", 33) ? true : "ghost",
     milestones: {
         0: {
             requirementDescription: "30,000 Stored Investment",
