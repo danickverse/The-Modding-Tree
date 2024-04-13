@@ -440,7 +440,7 @@ addLayer("p", {
             cost:() => {
                 let ret = new Decimal("5e10")
                 if (hasUpgrade("p", 44)) ret = ret.mul(10)
-                if (inChallenge("s", 11) || inChallenge("s", 12)) ret = ret.mul(1.1)
+                if (inAnyChallenge()) ret = ret.mul(1.1)
                 return ret
             },
             effect:() => upgradeEffect("p", 42),
@@ -495,7 +495,7 @@ addLayer("p", {
             cost: new Decimal("1e30"),
             effect:() => {
                 let ret = player.e.penny_expansions.points.add(1).log10().pow(.5).add(1)
-                if (inChallenge("s", 11) || inChallenge("s", 12)) ret = ret.mul(2)
+                if (inAnyChallenge()) ret = ret.mul(2)
                 return ret
             },
             effectDisplay:() => format(upgradeEffect("p", 53)) + "x",
@@ -530,7 +530,7 @@ addLayer("p", {
             display() {
                 if (!player.shiftDown) {
                     let investmentRate = "<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/1e6)<sup>.5</sup>!"
-                    if (inChallenge("s", 11) || inChallenge("s", 12)) {
+                    if (inAnyChallenge()) {
                         investmentRate = "<b><h3>Rate:</h3></b> Invest your current pennies to gain " + format(investmentGain()) + " investment!"
                     }
                     let cooldown = "<b><h3>Cooldown:</h3></b> " + format(player.p.investmentCooldown) + " seconds."
@@ -1648,7 +1648,7 @@ addLayer("s", {
         11: {
             title: "Store Your Investment",
             display() { 
-                if (inChallenge("s", 11) || inChallenge("s", 12)) return "Cannot store inside of a challenge"
+                if (inAnyChallenge()) return "Cannot store inside of a challenge"
                 if (!this.canClick()) return "Requires 5000 Investment" 
                 return "Gain " + format(player.p.investment.points.mul(upgradeEffect("p", 42).pow(.25))) + " stored investment"
             },
@@ -1673,7 +1673,7 @@ addLayer("s", {
             title: "Store Your Expansions",
             display() { 
                 if (!this.canClick()) {
-                    if (inChallenge("s", 11) || inChallenge("s", 12)) return "Cannot store inside of a challenge"
+                    if (inAnyChallenge()) return "Cannot store inside of a challenge"
                     let ret = "Requires 1000 Expansions"
                     if (player.s.stored_investment.points.lt(5000)) ret = ret + " and 5000 Stored Investment"
                     return ret

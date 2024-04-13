@@ -57,7 +57,7 @@ function pennyTaxExp() {
     if (hasMilestone("s", 5)) {
         baseExp = baseExp.sub(player.s.stored_investment.points.add(10).log10().div(1000))
     }
-    return baseExp
+    return baseExp.max(decimalOne)
 }
 
 function investmentGain() {
@@ -132,6 +132,6 @@ function investmentReset(resetInvestment, resetInvestment2) {
 
 function boostedTime(diff) {
     let ret = diff
-    if (hasMilestone("a", 8)) ret = ret * (1 + player.a.achievements.length/500)
+    if (hasMilestone("a", 8)) ret = ret * (1 + player.a.achievements.length/1000)
     return ret
 }

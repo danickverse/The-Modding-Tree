@@ -436,8 +436,8 @@ addLayer("a", {
         },
         8: {
             requirementDescription: "35 Achievements Finished",
-            effectDescription:() => { return "Gain (1 + Achievements/500)x more Reset Time<br>Currently: "
-                + format(1 + player.a.achievements.length/500, 3) + "x" },
+            effectDescription:() => { return "Gain (1 + Achievements/1000)x more Reset Time<br>Currently: "
+                + format(1 + player.a.achievements.length/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
             unlocked:() => hasAchievement("a", 71)
         }

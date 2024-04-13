@@ -140,12 +140,12 @@ function inChallenge(layer, id) {
 
 function inAnyChallenge() {
 	for (let x = 0; x <= maxRow; x++){
-		for (item in TREE_LAYERS[x]) {
-			let layer = TREE_LAYERS[x][item]
-			if (player[layer].activeChallenge) return true
-		}
-	}
-	return false
+        for (y = 0; y < TREE_LAYERS[x].length; y++) {
+            let layer = TREE_LAYERS[x][y]
+            if (player[layer].activeChallenge) return true
+        }
+    }
+    return false
 }
 
 // ************ Misc ************

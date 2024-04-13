@@ -14,11 +14,15 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1.9",
+	num: "0.1.9.1",
 	name: "Clocky Goes Zoomy",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1.9.1</h3><br>
+		- Helper function works as intended, affects Penny upgrades 18/23<br>
+		- 9th Achievement milestone effect cut in half<br><br>
+	
 	<h3>v0.1.9</h3><br>
 		- Added 4 Penny upgrades and introduced reset time<br>
 		- Added 2 Storage milestones (4 --> 6), two Storage upgrades, and one Storage challenge<br>
