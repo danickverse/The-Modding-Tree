@@ -381,6 +381,10 @@ function doPopup(type = "none", text = "This is a test popup.", title = "", time
 			popupTitle = "Challenge Complete";
 			popupType = "challenge-popup"
 			break;
+		// case "quest":
+		// 	popupTitle = "Quest Complete";
+		// 	popupType = "quest-popup"
+		// 	break;
 		default:
 			popupTitle = "Something Happened?";
 			popupType = "default-popup"

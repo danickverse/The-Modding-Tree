@@ -1,14 +1,50 @@
+function visibleAchievements(showAchPhase) {
+    if (showAchPhase == 1) return [1, 2, 3, 4, 5, 6, 7]
+    if (showAchPhase == 2) return [8, 9, 10, 11, 12, 13]
+}
+
+function visibleMilestones(showAchPhase) {
+    if (showAchPhase == 1) return [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    if (showAchPhase == 2) return [9, 10, 11, 12, 13]
+}
+
 addLayer("a", {
     symbol: "A",
     position: 0,
     startData() { 
         return {
-            unlocked: true
+            unlocked: true,
+            showAchPhase: 1
         }
     },
     color: "yellow",
     row: "side",
     tooltip:() => player.a.achievements.length + " Achievements",
+    doReset(layer) {
+        if (layer == "sys") {
+            // handle achievements
+            let keptAchs = new Set([11, 21, 22, 23, 25, 31, 51])
+            if (hasMilestone("sys", 1)) {
+                for (i = 1; i <= Math.min(player.sys.milestones.length, 7); i++) {
+                    for (j = 1; j <= 5; j++) {
+                        if (!keptAchs.has(i*10 + j)) keptAchs.add(i*10 + j)
+                    }
+                }
+                //console.log(keptAchs)
+            }
+            function achFilter(id) {
+                return id > 80 || keptAchs.has(Number(id))
+            }
+            player.a.achievements = player.a.achievements.filter(achFilter)
+
+            // handle milestones
+            function milestoneFilter(index) {
+                //console.log(`${index}: ${tmp.a.milestones[index].done()}`)
+                return index > 8 || index == 5 || tmp.a.milestones[index].done()
+            }
+            player.a.milestones = player.a.milestones.filter(milestoneFilter)
+        }
+    },
     achievements: {
         11: {
             name: "1",
@@ -159,10 +195,18 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && player.e.upgrades.length < 2 && player.p.points.gte("1.5e9")) return true
             },
-            tooltip: `Reach 1.5 billion pennies with at most one expansion upgrade. How did you manage that?
-                <br><br>Increase base point gain by 1 and WNBP exponent by .01`,
+            tooltip:() => {
+                let ret = `Reach 1.5 billion pennies with at most one expansion upgrade. How did you manage that?`
+                let eff = "<br><br>Increase base point gain by 1 and WNBP exponent by .01"
+                if (hasAchievement("a", 81)) return ret + "<s>" + eff + "</s>"
+                return ret + eff
+            },
             unlocked:() => hasAchievement("a", 31),
             style() {
+                if (hasAchievement("a", 81)) return {
+                    "border-color": "red",
+                    "border-width": "5px"
+                }
                 return {
                 "border-color": "blue",
                 "border-width": "5px"
@@ -305,7 +349,7 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && inChallenge("s", 11) && player.p.points.gte(10000)) return true
             },
-            tooltip: `Reach 100 dollars (10000 Pennies) while in the Investment Challenge"
+            tooltip: `Reach 10000 Pennies while in the Investment Challenge
                 <br><br>Remove divisor from Still Can't Buy Water`,
             unlocked:() => hasMilestone("a", 5),
             style() {
@@ -328,7 +372,7 @@ addLayer("a", {
             },
             tooltip: `Make taxes start at 80 million pennies rather than 1 million pennies and reach 1e9 Stored Investment
                 <br><br>Unlock a row of penny upgrades that are kept and unlock more achievement milestones`,
-            unlocked:() => hasMilestone("s", 3),
+            unlocked:() => hasMilestone("s", 3) || player.sys.unlocked,
             style() {
                 return {
                 "border-color": "blue",
@@ -342,7 +386,7 @@ addLayer("a", {
                 return (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(5e14))
             },
             tooltip: "Become a multi-trillionaire (5e14 Pennies) with 0 investment",
-            unlocked:() => hasMilestone("s", 3)
+            unlocked:() => hasMilestone("s", 3) || player.sys.unlocked
         },
         73: {
             name: "33",
@@ -350,7 +394,7 @@ addLayer("a", {
                 return (this.unlocked() && player.p.investment2.points.eq(tmp.p.buyables[12].hardcap))
             },
             tooltip: "Reach the expansion investment hardcap<br><br>Unlock storage upgrades and more storage milestones",
-            unlocked:() => hasMilestone("s", 3),
+            unlocked:() => hasMilestone("s", 3) || player.sys.unlocked,
             style() {
                 return {
                 "border-color": "blue",
@@ -364,7 +408,7 @@ addLayer("a", {
                 return (this.unlocked() && inChallenge("s", 11) && player.p.investment.points.gt(0))
             },
             tooltip: "Gain investment in the Investment challenge",
-            unlocked:() => hasMilestone("s", 3)
+            unlocked:() => hasMilestone("s", 3) || player.sys.unlocked
         },
         75: {
             name: "35",
@@ -372,8 +416,109 @@ addLayer("a", {
                 return (this.unlocked() && challengeCompletions("s", 12) > 1)
             },
             tooltip: "Complete the Expansion Challenge twice",
-            unlocked:() => hasMilestone("s", 3)
-        }
+            unlocked:() => hasMilestone("s", 3) || player.sys.unlocked
+        },
+        81: {
+            name: "36",
+            done() {
+                return this.unlocked() && hasUpgrade("p", 55) && player.sys.points.gt(0)
+            },
+            tooltip: `Reset for Dollars
+                <br><br>Unlock more achievements & milestones and Wait A Second...
+                effect is [Penny Upgrades] - 6, but nullify Ach 15`,
+            unlocked:() => player.sys.unlocked,
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        82: {
+            name: "37",
+            done() {
+                return this.unlocked() && player.sys.upgrades.length >= 5
+            },
+            tooltip: `Buy 5 System upgrades<br><br>
+                Buff the base conversion rate by 1% additive`,
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        83: {
+            name: "38",
+            done() {
+                return this.unlocked() && getPointGen().gte(1e111)
+            },
+            tooltip: `Reach 1e111 points generated per second<br><br>
+                Buff the base conversion rate by 1% additive`,
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        84: {
+            name: "39",
+            done() {
+                return this.unlocked() && player.s.stored_dollars.points.gt(0)
+            },
+            tooltip: "Store dollars at least once<br><br>Buff the base conversion rate by 1% additive",
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        85: {
+            name: "40",
+            done() {
+                return this.unlocked() && player.sys.total.gte(1.05)
+            },
+            tooltip: "Gain a total of 1.05 (held) dollars<br><br>Buff the base conversion rate by 2% additive",
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        91: {
+            name: "41",
+            done() {
+                return this.unlocked() && false
+            },
+            tooltip: `f`,
+            unlocked:() => hasAchievement("a", 81)
+        },
+        92: {
+            name: "42",
+            done() {
+                return this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.eq(0) 
+                    && player.s.stored_expansion.points.eq(0) && player.s.stored_investment.points.eq(0) 
+                    && player.e.points.eq(0) && player.p.points.gte(1e8)
+            },
+            tooltip: `Reach 100 million pennies with 0 of any investment, 
+                no resources in the Expansion layer, 
+                and no stored investment or expansion<br><br>
+                Have one more effective Apple Tree`,
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
     },
     milestones: {
         0: {
@@ -393,13 +538,13 @@ addLayer("a", {
             requirementDescription: "18 Achievements Finished",
             effectDescription:"Increase Why Do These Matter??? base to 1.2",
             done() { return player.a.achievements.length >= 18 },
-            unlocked:() => player.e.upgrades.length >= 5 || hasMilestone("a", 2)
+            unlocked:() => player.e.upgrades.length >= 5 || hasMilestone("a", 2)  || player.sys.unlocked
         },
         3: {
             requirementDescription: "20 Achievements Finished",
             effectDescription: "Multiply Slightly Bigger Pockets effect by 1.5",
             done() { return player.a.achievements.length >= 20 },
-            unlocked:() => player.e.upgrades.length >= 5 || hasMilestone("a", 3)
+            unlocked:() => player.e.upgrades.length >= 5 || hasMilestone("a", 3)  || player.sys.unlocked
         },
         4: {
             requirementDescription: "22 Achievements Finished",
@@ -415,7 +560,7 @@ addLayer("a", {
             requirementDescription: "25 Achievements Finished",
             effectDescription: "There's A Coin For This? and Seriously? have the same exponent/effect and unlock more achievements and storage milestones",
             done() { return player.a.achievements.length >= 25 },
-            unlocked:() => hasAchievement("a", 51)
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
         },
         6: {
             requirementDescription: "28 Achievements Finished",
@@ -426,21 +571,54 @@ addLayer("a", {
                 return ret
             },
             done() { return player.a.achievements.length >= 28 },
-            unlocked:() => hasAchievement("a", 51)
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
         },
         7: {
             requirementDescription: "32 Achievements Finished",
             effectDescription: "We Need Bigger Pockets base point effect is increased by 1 (initially 10)",
-            done() { return this.unlocked() && player.a.achievements.length >= 32 },
-            unlocked:() => hasAchievement("a", 71)
+            done() { return this.unlocked && player.a.achievements.length >= 32 },
+            unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },
         8: {
             requirementDescription: "35 Achievements Finished",
             effectDescription:() => { return "Gain (1 + Achievements/1000)x more Reset Time<br>Currently: "
                 + format(1 + player.a.achievements.length/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
-            unlocked:() => hasAchievement("a", 71)
+            unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
+        },
+        9: {
+            requirementDescription: "40 Achievements Finished",
+            effectDescription:() => `Multiply the conversion rate by 1.01x per achievement after 35<br>
+                Currently: ${format(1.01 ** Math.max(0, player.a.achievements.length - 35), 4)}x`,
+            done() { return this.unlocked && player.a.achievements.length >= 40 },
+            unlocked:() => hasAchievement("a", 81)
         }
+    },
+    clickables: {
+        11: {
+            display() { 
+                if (player.subtabs['a'].mainTabs == "Achievements") return "View achievements of the last phase"
+                else return "View milestones of the last phase"
+            },
+            canClick() { return player.a.showAchPhase > 1 },
+            onClick() { player.a.showAchPhase-- }
+        },
+        12: {
+            display() { 
+                if (player.subtabs['a'].mainTabs == "Achievements") return "View achievements of the next phase"
+                else return "View milestones of the next phase"
+            },
+            canClick() { 
+                // first condition to stop at last phase
+                // second condition to check if next achievements are unlocked
+                return player.a.showAchPhase < 2 
+                    && tmp.a.achievements[10 * visibleAchievements(player.a.showAchPhase + 1)[0] + 1].unlocked
+            },
+            onClick() { player.a.showAchPhase++ }
+        }
+    },
+    componentStyles: {
+        "clickable"() { return {'font-size':'12px', 'min-height':'50px'} }
     },
     tabFormat: {
         "Achievements": {
@@ -453,8 +631,10 @@ addLayer("a", {
                     if (hasUpgrade("e", 24)) ret = ret + ", expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
                     return ret
                 }], 
-                "blank", "blank",
-                "achievements"
+                "blank", 
+                () => tmp.a.achievements[81].unlocked ? "clickables" : "", 
+                "blank",
+                ["achievements", () => visibleAchievements(player.a.showAchPhase)] //["achievements", [1, 2, 3, 4, 5, 6, 7]]
             ]
         },
         "Milestones": {
@@ -467,19 +647,22 @@ addLayer("a", {
                     if (hasUpgrade("e", 24)) ret = ret + ", expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
                     return ret
                 }],
-                "blank", "blank",
-                "milestones"
+                "blank", 
+                () => tmp.a.achievements[81].unlocked ? "clickables" : "", 
+                "blank",
+                ["milestones", () => visibleMilestones(player.a.showAchPhase)]
             ],
             unlocked:() => hasAchievement("a", 21)
         },
         "Info": {
             content: [
                 ["display-text", function() {
-                    let ret = "Achievements with a blue border have specific rewards<br>"
-                    ret = ret + "<br>For the most part, achievements are primarily ordered by row and only loosely ordered by column. "
-                    ret = ret + "You may complete some achievements in a row before others despite their left-to-right order. "
-                    ret = ret + "However, if you find yourself moving on to/unlocking a new row of achievements before finishing the previous row, "
-                    ret = ret + "it is likely that you can complete the achievements already available to you."
+                    let ret = "Achievements with a blue border have specific rewards, while achievements with red borders "
+                        + "have rewards that have been nullified by something in-game.<br>"
+                        + "<br>For the most part, achievements are primarily ordered by row and only loosely ordered by column. "
+                        + "You may complete some achievements in a row before others despite their left-to-right order. "
+                        + "However, if you find yourself moving on to/unlocking a new row of achievements before finishing the previous row, "
+                        + "it is likely that you can complete the achievements from that earlier row."
                     return ret
                 }]
             ]

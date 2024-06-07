@@ -222,6 +222,7 @@ function doReset(layer, force=false) {
 		rowReset(r, layer)
 	}
 
+	player.resetTime = 0 // added this in, should work?
 	player[layer].resetTime = 0
 
 	updateTemp()
@@ -347,14 +348,16 @@ function gameLoop(diff) {
 		if (hasUpgrade("p", 23)) player.highestPointsEver = player.points.max(player.highestPointsEver)
 	}
 
+	player.resetTime += boostedTime(diff)
 	for (let x = 0; x <= maxRow; x++){
 		for (item in TREE_LAYERS[x]) {
 			let layer = TREE_LAYERS[x][item]
-			if (layer == "p") {
-				let newDiff = boostedTime(diff)
-				player.p.resetTime += newDiff
-			}
-			else player[layer].resetTime += diff
+			// if (layer == "p") {
+			// 	let newDiff = boostedTime(diff)
+			// 	player.p.resetTime += newDiff
+			// }
+			// else player[layer].resetTime += diff
+			player[layer].resetTime += diff
 			if (tmp[layer].passiveGeneration) generatePoints(layer, diff*tmp[layer].passiveGeneration);
 			if (layers[layer].update) layers[layer].update(diff);
 		}

@@ -3,13 +3,16 @@ let modInfo = {
 	id: "danickversetree", // never change, used to store saves
 	author: "@.danick",
 	pointsName: "points",
-	modFiles: ["layers.js", "tree.js", "achievements.js", "effects.js", "functions.js"],
+	modFiles: [
+		"tree.js", "achievements.js", "penny.js", 
+		"expansion.js", "storage.js", "system.js",
+		"quests.js", "effects.js", "functions.js"],
 	allowSmall: true,
 
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
-	offlineLimit: 12,  // In hours
+	offlineLimit: 8,  // In hours
 }
 
 // Set your version in num and name
@@ -19,6 +22,17 @@ let VERSION = {
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.0</h3><br>
+		- The System layer is implemented, along with two new features and upgrades/milestones<br>
+		- Moar Storage and Expansion!<br>
+		- Added 7 achievements (35 -> 45) and 1 achievement milestone (9 -> 10)<br>
+		- Offline generation works for the Expansion layer (i think)! However, if your ticks last over a minute, 
+			the Expansion layer will not function (dont ask why). Don't lag!<br>
+		- Achievement display moderately revamped to help for future updates<br>
+		- Penny Upgrade 21 was rebalanced to provide a more substantial boost<br>
+		- Buffed Expansion Challenge reward to make it more meaningful as the game progresses<br>
+		- A lot of other stuff and bug fixes I forgot to write down<br><br>
+
 	<h3>v0.1.9.1</h3><br>
 		- Helper function works as intended, affects Penny upgrades 18/23<br>
 		- 9th Achievement milestone effect cut in half<br><br>
@@ -129,11 +143,11 @@ function getPointGen() {
 	if(!canGenPoints())
 		return new Decimal(0)
 
-	let baseGain = new Decimal(1)
+	let baseGain = decimalOne
 	if (hasUpgrade('p', 12)) baseGain = baseGain.add(upgradeEffect('p', 12))
-	if (hasAchievement('a', 35)) baseGain = baseGain.add(1)
+	if (hasAchievement('a', 35) && !hasAchievement('a', 81)) baseGain = baseGain.add(1)
 
-	let gainMult = new Decimal(1)
+	let gainMult = decimalOne
 	if (hasUpgrade('p', 11)) gainMult = gainMult.mul(upgradeEffect('p', 11))
 	if (hasUpgrade('p', 15)) gainMult = gainMult.mul(upgradeEffect('p', 15))
 	if (hasUpgrade('p', 21)) gainMult = gainMult.mul(upgradeEffect('p', 21))
@@ -145,35 +159,45 @@ function getPointGen() {
 
 	let gainExp = decimalOne
 	if (hasUpgrade("p", 52)) gainExp = gainExp.add(upgradeEffect("p", 52))
+	if (hasUpgrade("sys", 11)) gainExp = gainExp.mul(upgradeEffect("sys", 11))
 	if (inChallenge("s", 11)) gainExp = gainExp.div(2)
 	if (inChallenge("s", 12)) gainExp = gainExp.div(4)
 
-	let ret = baseGain.mul(gainMult).pow(gainExp)
-
 	// direct effects to gain
-	if (inChallenge("s", 11) && hasUpgrade("s", 11)) ret = ret.mul(5)
+	let directMult = decimalOne
+	if (inChallenge("s", 11) && hasUpgrade("s", 11)) directMult = directMult.mul(5)
 
-	if (getClickableState("e", 21)) ret = ret.div(5)
-	if (getClickableState("e", 31)) ret = ret.mul(clickableEffect("e", 31))
-	if (getClickableState("e", 32)) ret = ret.div(10)
+	if (getClickableState("e", 21)) directMult = directMult.div(5)
+	if (getClickableState("e", 31)) directMult = directMult.mul(clickableEffect("e", 31))
+	if (getClickableState("e", 32)) directMult = directMult.div(10)
 
+	directMult = directMult.mul(buyableEffect("p", 23))
+
+	let ret = baseGain.mul(gainMult).pow(gainExp)
+	ret = ret.mul(directMult)
 	return ret
 }
 
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
 function addedPlayerData() { return {
-	highestPointsEver: new Decimal("0")
+	highestPointsEver: new Decimal("0"),
+	resetTime: 0
 }}
 
 // Display extra things at the top of the page
 var displayThings = [
-	() => boostedTime(1) != 1 ? "Gaining " + format(boostedTime(1), 4) + "x more reset time" : "",
-	"Current endgame: 35 achievements, 1e33 Pennies"
+	() => boostedTime(1) != 1 || player.sys.unlocked ? 
+		(player.shiftDown ? "Your current reset time is " + format(player.resetTime) + " seconds" 
+			: "Gaining " + format(boostedTime(1), 4) + "x more reset time")
+	: "",
+	"Current endgame: 8 Dollar Resets, 45 Achievements",
+	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
+		<br>The game is not balanced here, and content may be scrapped/rebalanced.<br>Be careful.</p>` : ""
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.a.achievements.length >= 35 && player.p.points.gte(1e33)
+	return player.sys.resetCount >= 8 && player.a.achievements.length >= 45
 }
 
 
@@ -187,7 +211,7 @@ var backgroundStyle = {
 
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
-	//return(3600) // Default is 1 hour which is just arbitrarily large
+	return(3600) // Default is 1 hour which is just arbitrarily large
 	return(1)
 }
 
@@ -212,5 +236,9 @@ function fixOldSave(oldVersion){
 		}
 		player.s.high_scores[11].points = player.s.high_scores[11].points.min(new Decimal("1e15"))
 		player.resetTime = 0
+	}
+	if (oldVersion < "0.2") {
+		player.resetTime = player.p.resetTime
+		if (player.a.achievements.indexOf(65) > -1) player.a.achievements[player.a.achievements.indexOf(65)] = "65"
 	}
 }

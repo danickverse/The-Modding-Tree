@@ -15,8 +15,9 @@ function upgrade23LimitExp() {
     let exp = decimalOne
     if (hasUpgrade("p", 34)) exp = exp.add(upgradeEffect("p", 34))
     if (hasUpgrade("e", 12)) exp = exp.add(upgradeEffect("e", 12))
-    if (hasAchievement('a', 35)) exp = exp.add(.01)
+    if (hasAchievement('a', 35) && !hasAchievement("a", 81)) exp = exp.add(.01)
     if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(250))
+    if (hasUpgrade("sys", 22)) exp = exp.mul(upgradeEffect("sys", 22))
     return exp
 }
 
@@ -37,8 +38,8 @@ function upgrade14Limit() {
 function penniesTaxFactor() {
     let pts = pennyTaxStart()
     let pte = pennyTaxExp()
-    if (player.p.points.lt(pts) && player.p.best.lt(pts)) return decimalOne//(player.p.points.lt(pennyTaxStart())) return decimalOne
-    let taxFactor = player.p.best.div(2).max(player.p.points).div(pts)//player.p.points.div(pennyTaxStart()) // base tax factor = pennies/1e6
+    if (player.p.points.lt(pts) && player.p.best.lt(pts)) return decimalOne
+    let taxFactor = player.p.best.div(2).max(player.p.points).div(pts) // base tax factor = pennies/1e6
     taxFactor = taxFactor.add(.5).pow(pte) // returns (.5 + pennies / 1e6)^2.5 initially
     return taxFactor
 }
@@ -46,7 +47,7 @@ function penniesTaxFactor() {
 function pennyTaxStart() {
     let baseTaxes = new Decimal("1e6")
     if (hasUpgrade("p", 45)) baseTaxes = baseTaxes.mul(upgradeEffect("p", 42))
-    if (hasMilestone("s", 2)) baseTaxes = baseTaxes.mul(player.s.stored_expansion.points.add(1).log10().sub(2))
+    if (hasMilestone("s", 2)) baseTaxes = baseTaxes.mul(player.s.stored_expansion.points.add(1).log10().sub(2).max(decimalOne))
     if (inChallenge("s", 11)) baseTaxes = baseTaxes.div(1e4)
     return baseTaxes
 }
@@ -61,10 +62,12 @@ function pennyTaxExp() {
 }
 
 function investmentGain() {
-    if (inChallenge("s", 11)) {
+    if (inAnyChallenge()) {
         let ret = decimalOne
+        if (inChallenge("s", 12)) ret = ret.div(10)
         if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
         if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
+        if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))    
         return ret
     }
     let investmentExponent = new Decimal(".5")
@@ -75,8 +78,10 @@ function investmentGain() {
     if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
     if (hasUpgrade("p", 43)) ret = ret.mul(upgradeEffect("p", 43))
     if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
-    ret = ret.mul(player.s.stored_investment.points.add(1).log10().div(10).add(1)) // applied when player has any stored
+    ret = ret.mul(player.s.stored_investment.points.add(1).log10().div(10).add(1))
     if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
+    ret = ret.mul(player.sys.points.add(1).pow(1.5))
+    if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
 
     if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
     return ret
@@ -110,7 +115,7 @@ function investmentReset(resetInvestment, resetInvestment2) {
     player.p.points = decimalZero
     player.p.best = decimalZero
     player.p.total = decimalZero
-    player.p.resetTime = 0
+    player.resetTime = 0
     
     let keepUpgrades = [21, 25, 35, 41, 42, 51, 52, 53, 54, 55]
     if (player.e.everUpg23) keepUpgrades.push(23)
@@ -134,4 +139,20 @@ function boostedTime(diff) {
     let ret = diff
     if (hasMilestone("a", 8)) ret = ret * (1 + player.a.achievements.length/1000)
     return ret
+}
+
+function conversionRate() {
+    let base = 1
+    let baseAdd = 0
+    if (hasAchievement("a", 82)) baseAdd += .01
+    if (hasAchievement("a", 83)) baseAdd += .01
+    if (hasAchievement("a", 84)) baseAdd += .01
+    if (hasAchievement("a", 85)) baseAdd += .02
+    baseAdd += Number(player.s.stored_dollars.points.root(3).mul(3).div(100))
+
+    let mul = 1
+    if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
+    if (hasUpgrade("sys", 14)) mul *= upgradeEffect("sys", 14)
+
+    return ((base + baseAdd) * mul) / 100
 }
