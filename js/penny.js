@@ -41,6 +41,7 @@ addLayer("p", {
         mult = mult.times(buyableEffect("p", 21))
         mult = mult.times(tmp.sys.effect)
         mult = mult.times(tmp.sys.apples.effect)
+        mult = mult.times(tmp.quests.bars.pointsBar.reward)
         return mult
     },
     gainExp() { // Calculate the exponent on main currency from bonuses
@@ -559,10 +560,10 @@ addLayer("p", {
             fullDisplay:() => {
                 let title = "<b><h3>Penny Coalesence</b></h3>"
                 let description = "Unlock The System"
-                let requirement = "Requires: 1.00e19 investment"
+                let requirement = "Requires: 2.00e18 investment and 35 Achievements"
                 return title + "<br>" + description + "<br><br>" + requirement
             },
-            canAfford:() => player.p.investment.points.gte(1e19),
+            canAfford:() => player.p.investment.points.gte(3e18) && player.a.achievements.length >= 35,
             // currencyDisplayName:() => "Investment",
             // currencyInternalName:() => "points",
             // currencyLocation:() => player.p.investment,
@@ -757,7 +758,7 @@ addLayer("p", {
         23: {
             title: "Education III",
             cost() {
-                let baseCost = new Decimal(".2")
+                let baseCost = new Decimal(".15")
                 let base = new Decimal("2")
                 let exp = new Decimal(getBuyableAmount("p", 23))
                 return baseCost.mul(base.pow(exp))
@@ -787,7 +788,7 @@ addLayer("p", {
                     return `<b><h3>Next:</b></h3> ${format(nextFormNum)}<sup>${format(nextFormNum)}</sup> = ${format(nextFormNum.pow(nextFormNum))}`
                 }
                 //let effFormula = "1.25<sup>x</sup><br>"
-                let costFormula = "<b><h3>Cost Formula:</h3></b><br>0.2*2^x"
+                let costFormula = "<b><h3>Cost Formula:</h3></b><br>0.15*2^x"
                 return effFormulaBase + effFormula1 + effFormula2 + nextEffFormula2() + "<br><br>" +  costFormula
             },
             effect(x) {

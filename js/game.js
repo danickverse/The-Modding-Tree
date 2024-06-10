@@ -222,6 +222,8 @@ function doReset(layer, force=false) {
 		rowReset(r, layer)
 	}
 
+	// console.log(layer + player.resetTime)
+	// if (layer != "p") 
 	player.resetTime = 0 // added this in, should work?
 	player[layer].resetTime = 0
 

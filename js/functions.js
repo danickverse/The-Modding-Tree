@@ -137,7 +137,8 @@ function investmentReset(resetInvestment, resetInvestment2) {
 
 function boostedTime(diff) {
     let ret = diff
-    if (hasMilestone("a", 8)) ret = ret * (1 + player.a.achievements.length/1000)
+    if (hasMilestone("a", 8)) ret = ret * (1 + (player.a.achievements.length**1.5)/1000)
+    ret = ret * tmp.quests.bars.dollarResetBar.reward
     return ret
 }
 
@@ -153,6 +154,7 @@ function conversionRate() {
     let mul = 1
     if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
     if (hasUpgrade("sys", 14)) mul *= upgradeEffect("sys", 14)
+    mul *= tmp.quests.bars.penniesBar.reward
 
     return ((base + baseAdd) * mul) / 100
 }

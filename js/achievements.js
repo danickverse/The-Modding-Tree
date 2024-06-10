@@ -481,9 +481,9 @@ addLayer("a", {
         85: {
             name: "40",
             done() {
-                return this.unlocked() && player.sys.total.gte(1.05)
+                return this.unlocked() && player.sys.points.gte(1)
             },
-            tooltip: "Gain a total of 1.05 (held) dollars<br><br>Buff the base conversion rate by 2% additive",
+            tooltip: "Reach 1 (held) dollars<br><br>Buff the base conversion rate by 2% additive and unlock the Bills tab in Dollars",
             unlocked:() => hasAchievement("a", 81),
             style() {
                 return {
@@ -497,7 +497,7 @@ addLayer("a", {
             done() {
                 return this.unlocked() && false
             },
-            tooltip: `f`,
+            tooltip: ``,
             unlocked:() => hasAchievement("a", 81)
         },
         92: {
@@ -581,7 +581,7 @@ addLayer("a", {
         },
         8: {
             requirementDescription: "35 Achievements Finished",
-            effectDescription:() => { return "Gain (1 + Achievements/1000)x more Reset Time<br>Currently: "
+            effectDescription:() => { return "Gain (1 + Achievements<sup>1.5</sup>/1000)x more Reset Time<br>Currently: "
                 + format(1 + player.a.achievements.length/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked

@@ -24,14 +24,17 @@ let VERSION = {
 let changelog = `<h1>Changelog:</h1><br><br>
 	<h3>v0.2.0</h3><br>
 		- The System layer is implemented, along with two new features and upgrades/milestones<br>
+		- The Quest side layer is implemented, along with 4 quests (more will be added later!)<br>
 		- Moar Storage and Expansion!<br>
-		- Added 7 achievements (35 -> 45) and 1 achievement milestone (9 -> 10)<br>
+		- Added 6 achievements (35 -> 41) and 1 achievement milestone (9 -> 10)<br>
 		- Offline generation works for the Expansion layer (i think)! However, if your ticks last over a minute, 
 			the Expansion layer will not function (dont ask why). Don't lag!<br>
 		- Achievement display moderately revamped to help for future updates<br>
 		- Penny Upgrade 21 was rebalanced to provide a more substantial boost<br>
+		- Nerfed Penny Upgrade 25's cost for taking long to obtain for no real reason<br>
 		- Buffed Expansion Challenge reward to make it more meaningful as the game progresses<br>
-		- A lot of other stuff and bug fixes I forgot to write down<br><br>
+		- Buffed 9th Achievement Milestone for the same reason
+		- A lot of other stuff and (catastrophic) bug fixes I forgot to write down<br><br>
 
 	<h3>v0.1.9.1</h3><br>
 		- Helper function works as intended, affects Penny upgrades 18/23<br>
@@ -192,7 +195,7 @@ var displayThings = [
 	: "",
 	"Current endgame: 8 Dollar Resets, 45 Achievements",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
-		<br>The game is not balanced here, and content may be scrapped/rebalanced.<br>Be careful.</p>` : ""
+		<br>The game is not balanced here, and further content may be scrapped/rebalanced.<br>Be careful.</p>` : ""
 ]
 
 // Determines when the game "ends"

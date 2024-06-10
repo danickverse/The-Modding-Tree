@@ -28,7 +28,9 @@ addLayer("s", {
     layerShown:() => hasUpgrade("e", 33) || player.sys.unlocked,
     doReset(layer) {
         let keptUpgrades = player.s.upgrades
+        let storedDollars = player.s.stored_dollars.points
         layerDataReset("s")
+        player.s.stored_dollars.points = storedDollars
         player.s.upgrades = keptUpgrades
     },
     milestones: {
@@ -156,8 +158,8 @@ addLayer("s", {
                 investmentReset(true, false)
 
                 let resetInvestment2Amt = decimalOne
-                if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul((1.03**player.s.stored_expansion.points.log2())**5)
-                if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt**1.5
+                if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul(player.s.stored_expansion.points.add(1).log2().pow_base(1.03).pow(5))
+                if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt.pow(1.5)
                 player.p.investment2.points = player.p.investment2.points.min(resetInvestment2Amt)
 
                 upg35Index = player.p.upgrades.indexOf(35)
@@ -188,8 +190,8 @@ addLayer("s", {
                 investmentReset(true, false)
 
                 let resetInvestment2Amt = decimalOne
-                if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul((1.03**player.s.stored_expansion.points.log2())**5)
-                if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt**1.5
+                if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul(player.s.stored_expansion.points.add(1).log2().pow_base(1.03).pow(5))
+                if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt.pow(1.5)
                 if (tmp.a.achievements[65].unlocked && player.a.achievements.indexOf("65") == -1 && player.p.investment2.points.lt(resetInvestment2Amt)) {
                     player.a.achievements.push("65")
                     doPopup("achievement", tmp.a.achievements[65].name, "Achievement Unlocked!", 3, tmp.a.color)
@@ -232,7 +234,7 @@ addLayer("s", {
                 let gain = player.sys.points.add(tmp.sys.resetGain)
                 return "Gain " + format(gain) + " stored dollars"
             },
-            canClick() { return player.p.points.gte(tmp.sys.requires) && !inAnyChallenge() },
+            canClick() { return canReset("sys") && !inAnyChallenge() },
             onClick() {
                 player.sys.resetCount--
                 player.sys.total = player.sys.total.sub(tmp.sys.resetGain)
@@ -385,7 +387,7 @@ addLayer("s", {
                             let limitingValue = 190 // 190 --> min divisor of 10
                             let k = Math.log(18)/(12-6) // spreads out inputs --> output = 10 at 10^6, 95 at 10^12
                             let constantShift = 12*k // moves midpoint (subtract 95) to 10^12 stored exp
-                            let exp = -k*player.s.stored_expansion.points.log10() + constantShift
+                            let exp = -k*player.s.stored_expansion.points.add(1).log10() + constantShift
                             let scaling = 1 + Math.pow(Math.E, exp)
                             ret = ret + ",<br>6. Subtract " + format(limitingValue/scaling)
                                 + " from the divisor in the Penny Expansion base gain formula"
@@ -393,7 +395,7 @@ addLayer("s", {
                         if (hasMilestone("s", 5)) {
                             ret = ret + ",<br>7. Multiply the expansion investment hardcap by "
                                 + format(player.s.stored_expansion.points.add(1).log10().floor().sub(7).max(0).pow(2).div(10).add(1))
-                                + "x"
+                                + "x (increases every OoM)"
                         }
                         return ret
                     }], "blank"

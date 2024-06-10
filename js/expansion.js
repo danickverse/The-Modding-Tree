@@ -109,7 +109,7 @@ addLayer("e", {
                 let limitingValue = 190 // 190 --> min divisor of 10
                 let k = Math.log(18)/(12-6) // spreads out inputs --> output = 10 at 10^6, 95 at 10^12
                 let constantShift = 12*k // moves midpoint (subtract 95) to 10^12 stored exp
-                let exp = -k*player.s.stored_expansion.points.log10() + constantShift
+                let exp = -k*player.s.stored_expansion.points.add(1).log10() + constantShift
                 let scaling = 1 + Math.pow(Math.E, exp)
                 divisor = divisor.sub(limitingValue/scaling)
             }
