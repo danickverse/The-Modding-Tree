@@ -21,11 +21,24 @@ function upgrade23LimitExp() {
     return exp
 }
 
+function upgrade23Eff() {
+    let base = new Decimal("10")
+    if (hasMilestone("a", 7)) base = base.add(1)
+
+    let exp = decimalOne
+    if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
+    if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(30))
+    if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
+
+    return base.pow(exp)
+}
+
 function upgrade23EffExp() {
     let exp = decimalOne
     if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
     if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(30))
     if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
+    exp = exp.add(tmp.quests.bars.wnbpBar.reward)
     return exp
 }
 
@@ -67,7 +80,8 @@ function investmentGain() {
         if (inChallenge("s", 12)) ret = ret.div(10)
         if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
         if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
-        if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))    
+        if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
+        if (hasAchievement("a", 85)) ret = ret.mul(1.2)
         return ret
     }
     let investmentExponent = new Decimal(".5")
@@ -82,6 +96,8 @@ function investmentGain() {
     if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
     ret = ret.mul(player.sys.points.add(1).pow(1.5))
     if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
+    if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(1.03**player.s.stored_expansion.points.add(1).log2())
+    if (hasAchievement("a", 85)) ret = ret.mul(1.2)
 
     if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
     return ret
@@ -91,8 +107,9 @@ function investment2Gain() {
     let investmentExponent = new Decimal(".4")
     let ret = player.p.investment.points.div(10000).pow(investmentExponent)
     if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
-    if (hasMilestone("s", 1)) ret = ret.mul(1.03**player.s.stored_expansion.points.log2())
+    if (hasMilestone("s", 1)) ret = ret.mul(1.03**player.s.stored_expansion.points.add(1).log2())
     if (hasMilestone("a", 6)) ret = ret.mul(1.01**(player.a.milestones.length+player.a.achievements.length-28))
+    if (hasAchievement("a", 85)) ret = ret.mul(1.2)
     
     let softcapStart = tmp.p.buyables[12].softcap
     if (ret.gte(softcapStart)) {
@@ -118,7 +135,7 @@ function investmentReset(resetInvestment, resetInvestment2) {
     player.resetTime = 0
     
     let keepUpgrades = [21, 25, 35, 41, 42, 51, 52, 53, 54, 55]
-    if (player.e.everUpg23) keepUpgrades.push(23)
+    if (player.e.everUpg23 && !hasMilestone("sys", 5)) keepUpgrades.push(23)
     function removeUpgrades(index) {
         return keepUpgrades.indexOf(index) != -1 // keeps upgrades with indices gte 25 + achievement upgrades
     }
@@ -157,4 +174,13 @@ function conversionRate() {
     mul *= tmp.quests.bars.penniesBar.reward
 
     return ((base + baseAdd) * mul) / 100
+}
+
+function timeDisplay(time, showDecimal=true) {
+    if (showDecimal) funct = format
+    else funct = formatWhole
+    if (time <= 60) return `${funct(time)} seconds`
+    else if (time <= 3600) return `${funct(time/60, 2)} minutes`
+    else if (time <= 86400) return `${funct(time/3600, 2)} hours`
+    else return `${funct(time/86400, 2)} days`
 }

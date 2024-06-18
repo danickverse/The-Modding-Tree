@@ -22,31 +22,35 @@ addLayer("effects", {
         "Achievements": {
             content: [
                 ["display-text", function() {
-                    let ret = "You currently have " + player.a.achievements.length + " achievements. As seen in the Achievements layer, this number directly...<br>"
-                    ret += "<br>Multiplies point gain by " + format(upgradeEffect("p", 21)) + "x"
+                    let ret = "You currently have " + player.a.achievements.length + " achievements."
+                    if (hasUpgrade("p", 23)) ret += `As seen in the Achievements layer, this number directly...<br>
+                        <br>Multiplies point gain by ${format(upgradeEffect("p", 21))}`
                     if (hasUpgrade("p", 35)) ret += ",<br>Multiplies penny gain by " + format(upgradeEffect("p", 35))
                     if (hasUpgrade("e", 24)) ret += ",<br>Multiplies expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
-                    if (hasMilestone("a", 8)) ret += ",<br>and multiplies reset time by " + format(boostedTime(1), 4) + "x"
+                    if (hasMilestone("a", 8)) ret += ",<br>and multiplies reset time by " + format(boostedTime(1), 4)
 
                     if (hasAchievement("a", 25)) {
-                        ret += ".<br><br>Some achievements also have specific effects. These effects include...<br>"
+                        ret += ".<br><br>Some achievements have specific effects. These effects include...<br>"
                         let investmentBoost = 2
+                        let allInvestmentBoost = 1
                         let expansionBoost = 1
                         let pennyBoost = 1
                         let conversionRateBaseBoost = 0
-                        if (hasAchievement("a", 32)) expansionBoost *= 1.1
                         if (hasAchievement("a", 34)) {
                             investmentBoost *= 1.1
                             expansionBoost *= 1.1
                             pennyBoost *= 1.1
                         }
                         if (hasAchievement("a", 44)) investmentBoost *= 1.2
+                        if (hasAchievement("a", 85)) allInvestmentBoost *= 1.2
+                        if (hasAchievement("a", 32)) expansionBoost *= 1.1
                         if (hasAchievement("a", 82)) conversionRateBaseBoost += .01
                         if (hasAchievement("a", 83)) conversionRateBaseBoost += .01
                         if (hasAchievement("a", 84)) conversionRateBaseBoost += .01
                         if (hasAchievement("a", 85)) conversionRateBaseBoost += .02
 
                         ret += "<br>Multiplying investment gain by " + format(investmentBoost) + "x"
+                        if (allInvestmentBoost > 1) ret += ",<br>Multiplying all investment gain by " + format(expansionInvestmentBoost) + "x, including in challenges"
                         if (expansionBoost > 1) ret += ",<br>Multiplying expansion gain by " + format(expansionBoost) + "x"
                         if (pennyBoost > 1) ret += ",<br>Multiplying penny gain by " + format(pennyBoost) + "x"
 
@@ -106,14 +110,15 @@ addLayer("effects", {
         "Expansions": {
             content: [
                 ["display-text", function() {
-                    let ret = "Your current expansions is " + format(player.e.points) + ". It is currently used to...<br>"
+                    let ret = "Your current expansion is " + format(player.e.points) + ". It is currently used to...<br>"
                     if (hasUpgrade("e", 12)) ret += "<br>Increase WNBP limit exponent by " + format(upgradeEffect("e", 12), 4)
                     return ret
                 }], 
                 "blank",
                 ["display-text", function() {
                     let ret = "Your current penny expansions is " + format(player.e.penny_expansions.points) + ". It is currently used to...<br>"
-                    if (hasUpgrade("p", 53)) ret += "<br>Multiply investment gain by " + format(upgradeEffect("p", 53)) + "x"
+                    if (hasUpgrade("p", 41)) ret += "<br>Increase the WNBP effect exponent by " + format(upgradeEffect("p", 41)) + "x"
+                    if (hasUpgrade("p", 53)) ret += ",<br>Multiply investment gain by " + format(upgradeEffect("p", 53)) + "x"
                     if (hasUpgrade("p", 54)) ret += ",<br>Multiply penny gain by " + format(upgradeEffect("p", 54))
                     return ret
                 }]

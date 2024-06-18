@@ -2,45 +2,54 @@ function systemUpgradeCost(row) {
     let boughtInRow = player.sys.upgrades.filter(
         (index) => Math.floor(index / 10) == row
     ).length
-    if (row == 1) {
-        return .15 + .15 * boughtInRow
-    } else if (row == 2) {
-        return 1 + .5 * boughtInRow
+
+    switch (row) {
+        case 1: return .15 + .15 * boughtInRow
+        case 2: return 1 + .25 * boughtInRow
+        default: throw Error("Invalid row supplied to systemUpgradeCost")
     }
 }
 
 function updateBills(spent) {
     let billsData = player.sys.bills
     billsData.spent = billsData.spent.add(spent)
-    let denominationValues = {
-        9: 10000,
-        8: 1000,
-        7: 100, 
-        6: 50, 
-        5: 20, 
-        4: 10, 
-        3: 5, 
-        2: 2, 
-        1: 1
-    }
-    for (let i = 9; i >= 1; i--) {
-        let value = denominationValues[i]
-        if (billsData.spent.gte(value) && billsData.highestDenominationIndex <= i) {
-            billsData.highestDenominationIndex = i
-            billsData.highestDenomination = value
-            return
+    if (spent > 0) {
+        billsData.spentTotal = billsData.spentTotal.add(spent)
+        let denominationValues = {
+            9: 10000,
+            8: 1000,
+            7: 100, 
+            6: 50, 
+            5: 20, 
+            4: 10, 
+            3: 5, 
+            2: 2, 
+            1: 1
         }
-    }
+        for (let i = 9; i >= 1; i--) {
+            let value = denominationValues[i]
+            if (billsData.spentTotal.gte(value ** 5) && billsData.highestDenominationIndex <= i) {
+                billsData.highestDenominationIndex = i
+                billsData.highestDenomination = value
+                billsData.nextDenominationUnlock = denominationValues[i+1] ** 5
+                return
+            }
+        }
 
-    // spent dollars < 1
-    billsData.highestDenominationIndex = 0
-    billsData.highestDenomination = 0
+        // spent dollars < 1
+        billsData.highestDenominationIndex = 0
+        billsData.highestDenomination = 0
+        billsData.nextDenominationUnlock = 1
+    }
 }
 
 function attackEnemy(damage) {
     player.sys.bills.enemyHealth = player.sys.bills.enemyHealth.sub(damage)
     if (player.sys.bills.enemyHealth.lte(0)) {
-        player.sys.points = player.sys.points.add(tmp.sys.bars.enemyBar.loot)
+        // player.sys.points = player.sys.points.add(tmp.sys.bars.enemyBar.loot)
+        updateBills(tmp.sys.bars.enemyBar.loot)
+        player.sys.bills.totalEnemyKills += 1
+        player.sys.bills.currentEnemyKills += 1
         player.sys.bills.enemyLevel += 1
         player.sys.bills.enemyHealth = layers.sys.bars.enemyBar.maxHealth()
     }
@@ -55,21 +64,27 @@ addLayer("sys", {
         best: decimalZero,
         total: decimalZero,
         resetCount: 0,
-        appleTimer: 0,
-        apples: {
-            points: decimalZero
+        everWNBP: false,
+        autoWNBP: true,
+        businesses: {
+            apples: {
+                points: decimalZero,
+                timer: 0
+            }
         },
         acceleratorPower: {
             points: decimalZero
         },
         bills: {
             spent: decimalZero,
+            spentTotal: decimalZero,
             highestDenomination: 0,
             highestDenominationIndex: 0,
+            nextDenominationUnlock: 1,
             timers: new Array(9).fill(0),
-            cooldowns: [1, 2, 4, 8, 16, 32, 64, 128, 256],
             currentEnemyKills: 0,
             maxEnemyKills: 100,
+            totalEnemyKills: 0,
             enemyLevel: 0,
             enemyHealth: new Decimal(100),
             totalSmackDamage: decimalZero
@@ -119,13 +134,29 @@ addLayer("sys", {
     },
     onPrestige() { 
         player.highestPointsEver = decimalZero
+        player.sys.everWNBP = false
         player.subtabs.s.mainTabs = "Main"
         player.subtabs.e.mainTabs = "Info"
 
         player.sys.resetCount++
 
-        player.sys.apples.points = decimalZero
-        player.sys.appleTimer = 0
+        // if (tmp.a.achievements[93].unlocked && player.a.achievements.indexOf("93") == -1 && player.s.high_scores[11].points.eq(0)) {
+        //     player.a.achievements.push("93")
+        //     doPopup("achievement", tmp.a.achievements[93].name, "Achievement Gotten!", 3, tmp.a.color)
+        // }
+
+        let keptApples = decimalZero
+
+        if (hasMilestone("sys", 3)) {
+            player.sys.acceleratorPower.points = player.sys.acceleratorPower.points.add(500)
+            keptApples = player.sys.business.apples.points.min((player.sys.milestones.length - 2) ** 2)
+        }
+
+        player.sys.businesses.apples.points = keptApples
+        player.sys.businesses.apples.timer = 0
+    },
+    shouldNotify() {
+        return tmp.sys.buyables[12].canAfford || tmp.sys.buyables[13].canAfford
     },
     effect() {
         return player.sys.points.mul(2).add(1).pow(.5)
@@ -133,54 +164,67 @@ addLayer("sys", {
     milestones: {
         0: {
             requirementDescription: "1 Dollar Reset",
-            effectDescription:() => "Unlock Education III, Upgrades, Businesses, and Quests, and multiply Expansion/Penny Expansion gain by 1.2x per milestone<br>Currently: " 
-                + 1.2**player.sys.milestones.length + "x",
+            effectDescription:() => "Unlock Education III, Businesses, and Quests, and multiply Expansion/Penny Expansion gain by 1.25x per milestone<br>Currently: " 
+                + 1.25**player.sys.milestones.length + "x",
             done() { return player.sys.resetCount >= 1 }
         },
         1: {
             requirementDescription: "2 Dollar Resets",
-            effectDescription: "Unlock Stored Dollars, two Stored Dollars effects, and three Storage Upgrades, "
-                + " and keep one row of achievements per milestone, up to 7",
+            effectDescription: "Unlock Stored Dollars and three Storage Upgrades, keep one row of achievements "
+                + "per milestone (up to 7), and It's Only Reasonable also uses System Upgrades<sup>2</sup>",
             done() { return player.sys.resetCount >= 2 }
         },
         2: {
-            requirementDescription: "4 Dollar Resets",
-            effectDescription: `Always autobuy all penny upgrades instantly but QOL 2 and QOL 4 have new effects, 
-                and the 6th Storage milestone only requires 1 Expansion challenge completion`,
-            done() { return player.sys.resetCount >= 4 }
+            requirementDescription: "3 Dollar Resets",
+            effectDescription: "The 6th Storage milestone only requires 1 Expansion challenge completion",
+            done() { return player.sys.resetCount >= 3 }
         },
-        // 3: {
-        //     requirementDescription: "5 Dollar Resets",
-        //     effectDescription: "Unlock the Accelerator and Accelerator Power",
-        //     done() { return player.sys.resetCount >= 5 }
+        3: {
+            requirementDescription: "4 Dollar Resets and 0.5 Stored Dollars",
+            effectDescription:() => `Unlock the Accelerator & Accelerator Power,
+                and keep (milestones - 2)<sup>2</sup> Apples
+                <br>Currently: ${formatWhole(Math.max(player.sys.milestones.length - 2, 0) ** 2)}`,
+            done() { return player.sys.resetCount >= 4 && player.s.stored_dollars.points.gte(.5) }
+        },
+        // 4: {
+        //     requirementDescription: "6 Dollar Resets and 42 Achievements",
+        //     effectDescription: `Unlock the Bills subtab, It's Expandin' Time! no longer force buys WNBP,
+        //         unlock a toggle for autobuying it, and unlock a Quest`,
+        //     done() { return player.sys.resetCount >= 6 && player.a.achievements.length >= 42 },
+        //     toggles: [
+        //         ["sys", "autoWNBP"]
+        //     ]
         // }
+        // IF THIS MILESTONE IS CHANGED, FIX CONDITION IN penny --> automate() AND functions --> investmentReset()
+        // Dont forget to implement changes to QOL 2 and QOL 4
+        // 5: Always autobuy all penny upgrades instantly but QOL 2 and QOL 4 have new (better) effects,
     },
     upgrades: {
         11: {
             title: "Where'd All My Money Go?!?",
             description:() => {
                 if (!player.shiftDown) return "Multiply the point gain exponent by 1.01<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 10 upgrades"
+                return "Maxes at 10 upgrades<br>"
             },
             cost:() => systemUpgradeCost(1),
             effect:() => 1.01 ** Math.min(player.sys.upgrades.length, 10),
             effectDisplay:() => `${format(upgradeEffect("sys", 11))}x`
         },
         12: {
-            title: "Placeholder",
+            title: "There's Always More Space",
             description:() => {
-                if (!player.shiftDown) return "Multiply stored investment & stored expansion gain by 2<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 10 upgrades, works in challenges"
+                if (!player.shiftDown) return "Multiply stored investment & stored expansion gain by 1.25<sup>upgrades<sup>*</sup></sup>"
+                return "Maxes at 10 upgrades<br>"
             },
             cost:() => systemUpgradeCost(1),
-            effect:() => 2 ** Math.min(player.sys.upgrades.length, 10),
-            effectDisplay:() => `${formatWhole(upgradeEffect("sys", 12))}x`
+            effect:() => 1.25 ** Math.min(player.sys.upgrades.length, 10),
+            effectDisplay:() => `${format(upgradeEffect("sys", 12))}x`
         },
         13: {
-            title: "Placeholder",
+            title: "Higher Level Education",
             description:() => {
                 if (!player.shiftDown) return "All Education levels multiply investment gain by 1.02<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 10 upgrades"
+                return "Maxes at 10 upgrades and stays active in challenges<br>"
             },
             cost:() => systemUpgradeCost(1),
             effect:() => {
@@ -195,25 +239,25 @@ addLayer("sys", {
             title: "Dollars = More Dollars",
             description:() => {
                 if (!player.shiftDown) return "Multiply the conversion rate by 1.05<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 10 upgrades"
+                return "Maxes at 10 upgrades<br>"
             },
             cost:() => systemUpgradeCost(1),
             effect:() => 1.05 ** Math.min(player.sys.upgrades.length, 10),
             effectDisplay:() => `${format(upgradeEffect("sys", 14))}x`
         },
         15: {
-            title: "Placeholder",
+            title: "Go Easy On Me",
             description:() => {
-                if (!player.shiftDown) return "Increase the coefficients used for Education III by .01<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 10 upgrades"
+                if (!player.shiftDown) return "The Education II softcap starts 1.1<sup>upgrades<sup>*</sup></sup>x later"
+                return "Maxes at 10 upgrades<br>"
             },
             cost:() => systemUpgradeCost(1),
-            effect:() => .01  * Math.min(player.sys.upgrades.length, 10),
-            effectDisplay:() => `+${format(upgradeEffect("sys", 15))}`
+            effect:() => 1.1 ** Math.min(player.sys.upgrades.length, 10),
+            effectDisplay:() => `${format(upgradeEffect("sys", 15))}x`
         },
         21: {
             title: "A Whole Dollar",
-            description: "Multiply the expansion investment hardcap by 2 and its softcap value by 3",
+            description: "Multiply the expansion investment hardcap by 2 and its softcap by 4",
             cost:() => systemUpgradeCost(2)
         },
         22: {
@@ -223,13 +267,36 @@ addLayer("sys", {
             effect:() => player.sys.best.add(Math.E).ln().ln().mul(.3).add(1),
             effectDisplay:() => `${format(upgradeEffect("sys", 22))}x`
         },
-        111: {
+        23: {
+            title: "Hacking in Extra Points",
+            description: "Increase base point gain by 0.5 per Quest completion",
+            cost:() => systemUpgradeCost(2),
+            effect:() => player.quests.points.div(2),
+            effectDisplay:() => `+${format(upgradeEffect("sys", 23), 1)}`
+        },
+        24: {
+            title: "Rapid Expansion",
+            description: "Multiply Penny Expansion gain by log2(2 + Best Dollars<sup>3</sup>) and its loss rate by 10x",
+            cost:() => systemUpgradeCost(2),
+            effect:() => player.sys.best.pow(3).add(2).log2(),
+            effectDisplay:() => `+${format(upgradeEffect("sys", 24))}`
+        },
+        25: {
+            title: "Efficient Education",
+            description:() => {
+                if (!player.shiftDown) return "Increase the coefficients used for Education III by .01<sup>upgrades<sup>*</sup></sup>"
+                return "Maxes at 10 upgrades<br>"
+            },
+            cost:() => systemUpgradeCost(2),
+            effect:() => .01  * Math.min(player.sys.upgrades.length, 10),
+            effectDisplay:() => `+${format(upgradeEffect("sys", 25))}`
+        },
+        211: {
             title: "Buy-in",
             description: "Unlock the Bills minigame and a new Quest, and gain 1 spent dollar",
             cost:() => decimalOne,
             onPurchase() { 
-                player.sys.bills.spent = player.sys.bills.spent.add(decimalOne) 
-                updateBills()
+                updateBills(1)
             }
         }
     },
@@ -238,22 +305,23 @@ addLayer("sys", {
             title: "Apple Tree",
             cost() { 
                 let amt = getBuyableAmount("sys", 11)
-                return new Decimal(0.1).mul(amt.pow_base(1.1))
+                return new Decimal(".1").mul(amt.add(1))
+                //return new Decimal(0.1).mul(amt.pow_base(1.1))
             },
             display() { 
                 if (!player.shiftDown) {
                     let coloredApples = `<span style="color: maroon; font-family: Lucida Console, Courier New, monospace">apples</span>`
                     let levels = `<h3><b>Levels:</h3></b> ${formatWhole(getBuyableAmount("sys", 11))}/100`
-                    let effDesc = `<h3><b>Effect:</h3></b> Produce ${format(tmp.sys.apples.gain.div(tmp.sys.buyables[11].effect.clampMin(1)))}
-                        ${coloredApples} per tree every ${format(tmp.sys.apples.cooldown)} seconds`
-                    let eff = `Producing ${format(tmp.sys.apples.gain)} ${coloredApples} in ${format(tmp.sys.apples.cooldown- player.sys.appleTimer, 2)} seconds`
+                    let effDesc = `<h3><b>Effect:</h3></b> Produce ${format(tmp.sys.businesses.apples.gain.div(tmp.sys.buyables[11].effect.clampMin(1)))}
+                        ${coloredApples} per tree every ${format(tmp.sys.businesses.apples.cooldown)} seconds`
+                    let eff = `Producing ${format(tmp.sys.businesses.apples.gain)} ${coloredApples} in ${format(tmp.sys.businesses.apples.cooldown- player.sys.businesses.apples.timer, 2)} seconds`
                     let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} dollars`
 
                     return `${levels}\n${effDesc}\n${eff}\n\n${cost}`
                 }
 
                 let effectiveLevels = `<h2><b>Effective Levels:</h3></b><br>${format(tmp.sys.buyables[11].effectiveLevels)}`
-                let costFormula = `<h3><b>Cost Formula:</h3></b><br>0.1 * 1.1<sup>x</sup>`
+                let costFormula = `<h3><b>Cost Formula:</h3></b><br>0.1 * (x + 1)<sup>x</sup>`
                 return `${effectiveLevels}\n\n${costFormula}`
 
             },
@@ -300,9 +368,9 @@ addLayer("sys", {
                 return ret
             },
             effect() { return tmp.sys.buyables[12].effectiveLevels.mul(.25) },
-            canAfford() { return player.sys.apples.points.gte(this.cost()) },
+            canAfford() { return player.sys.businesses.apples.points.gte(this.cost()) },
             buy() { 
-                player.sys.apples.points = player.sys.apples.points.sub(this.cost()) 
+                player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost()) 
                 addBuyables("sys", 12, 1)
             }
         },
@@ -333,9 +401,9 @@ addLayer("sys", {
                 return ret
             },
             effect() { return tmp.sys.buyables[13].effectiveLevels.pow_base(1.1) },
-            canAfford() { return player.sys.apples.points.gte(this.cost()) },
+            canAfford() { return player.sys.businesses.apples.points.gte(this.cost()) },
             buy() { 
-                player.sys.apples.points = player.sys.apples.points.sub(this.cost()) 
+                player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost()) 
                 addBuyables("sys", 13, 1)
             }
         },
@@ -343,7 +411,7 @@ addLayer("sys", {
             title: "1 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 111)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[0] - player.sys.bills.timers[0])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[0])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -353,24 +421,27 @@ addLayer("sys", {
                 
                 return ret
             },
-            cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 1 
-                    && player.sys.bills.spent.gte(this.cost()) 
+            cooldown() {
+                let ret = 1
+
+                return ret
             },
+            cost() { return decimalOne },
+            canAfford() { return player.sys.bills.spent.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 111, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 1}
         },
         112: {
             title: "2 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 112)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[1] - player.sys.bills.timers[1])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[1])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -381,23 +452,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 2 
-                    && player.sys.bills.spent.gte(this.cost()) 
-            },
+            canAfford() { return player.sys.bills.spent.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 112, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 2}
         },
         113: {
             title: "5 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 113)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[2] - player.sys.bills.timers[2])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[2])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -408,23 +477,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 3 
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() { return player.sys.points.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 113, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 3}
         },
         121: {
             title: "10 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 121)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[3] - player.sys.bills.timers[3])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[3])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -435,23 +502,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 4
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() { return player.sys.points.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 121, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 4}
         },
         122: {
             title: "20 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 122)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[4] - player.sys.bills.timers[4])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[4])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -462,23 +527,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 5 
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() { return player.sys.points.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 122, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 5}
         },
         123: {
             title: "50 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 123)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[5] - player.sys.bills.timers[5])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[5])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -489,23 +552,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 6
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() { return player.sys.points.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 123, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 6}
         },
         131: {
             title: "100 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 131)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[6] - player.sys.bills.timers[6])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[6])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -516,23 +577,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 7
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() {return player.sys.points.gte(this.cost())},
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 131, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 7 }
         },
         132: {
             title: "1000 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 132)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[7] - player.sys.bills.timers[7])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[7])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -543,23 +602,21 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 8
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() {  return player.sys.points.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 132, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 8 }
         },
         133: {
             title: "10000 Dollar Bill",
             display() {
                 let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 133)}`
-                let effect = `Deal ${this.effect()} damage in ${format(player.sys.bills.cooldowns[8] - player.sys.bills.timers[8])} seconds`
+                let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.sys.bills.timers[8])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${this.cost()} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
@@ -570,17 +627,15 @@ addLayer("sys", {
                 return ret
             },
             cost() { return decimalOne },
-            canAfford() { 
-                return player.sys.bills.highestDenominationIndex >= 8
-                    && player.sys.points.gte(this.cost()) 
-            },
+            canAfford() { return player.sys.points.gte(this.cost()) },
             buy() {
                 updateBills(this.cost().neg())
                 addBuyables("sys", 133, 1)
             },
             style() {
                 return {'height':'100px'}
-            }
+            },
+            unlocked() { return player.sys.bills.highestDenominationIndex >= 9}
         }
     },
     clickables: {
@@ -612,12 +667,15 @@ addLayer("sys", {
                     isPercent = true
                 }
 
-                if (Number.isNaN(Number(inp))) {
+                inp = Number(inp)
+
+                if (Number.isNaN(inp)) {
                     alert("Invalid input, nothing has occurred")
                     return
-                }
-
-                if ((isPercent && inp > 100) || (!isPercent && player.sys.points.lt(inp))) {
+                } else if (inp <= 0) {
+                    alert("You must enter a positive non-zero number")
+                    return
+                } else if ((isPercent && inp > 100) || (!isPercent && player.sys.points.lt(inp))) {
                     alert("You cannot spend more dollars than you have, nothing has occurred")
                     return
                 }
@@ -633,8 +691,9 @@ addLayer("sys", {
         22: {
             title: "Smack Attack",
             display() {
+                if (player.shiftDown) return "You can hold this button to attack 20 times/s!"
                 return `Gather your spent dollars in a leather bag and smack the enemy!<br>
-                    ${format(this.effect())} damage per click`
+                    ${format(this.effect())} damage per click<sup>*</sup>`
             },
             onClick() { 
                 player.sys.bills.totalSmackDamage = player.sys.bills.totalSmackDamage.add(this.effect())
@@ -646,7 +705,7 @@ addLayer("sys", {
             },
             canClick: true,
             effect() {
-                let ret = player.sys.bills.spent.mul(.02)
+                let ret = player.sys.bills.spent.mul(.04)
                 ret = ret.mul(tmp.quests.bars.smackBar.reward)
                 return ret
             },
@@ -672,7 +731,7 @@ addLayer("sys", {
                 return new Decimal((1 + player.sys.bills.enemyLevel) * 100)
             },
             loot() {
-                let base = .01
+                let base = .1
                 let mul = 1
                 let exp = 1
 
@@ -681,81 +740,58 @@ addLayer("sys", {
             textStyle() { return {'color':'gray'} }
         }
     },
-    apples: {
-        gain:() => {
-            let ret = decimalOne
-            ret = ret.add(tmp.sys.buyables[12].effect)
-            ret = ret.mul(tmp.sys.buyables[13].effect)
-            ret = ret.mul(tmp.sys.buyables[11].effect).clampMin(1)
-            return ret
-        },
-        effect:() => {
-            let ret = player.sys.apples.points
-            ret = ret.add(1).pow(.5)
-            return ret
-        },
-        cooldown:() => {
-            let ret = 60
-            ret = ret / tmp.sys.clickables[11].effect
-            return ret
+    businesses: {
+        apples: {
+            gain:() => {
+                let ret = decimalOne
+                ret = ret.add(tmp.sys.buyables[12].effect)
+                ret = ret.mul(tmp.sys.buyables[13].effect)
+                ret = ret.mul(tmp.sys.buyables[11].effect).clampMin(1)
+                return ret
+            },
+            effect:() => {
+                let ret = player.sys.businesses.apples.points
+                ret = ret.add(1).pow(.125)
+                return ret
+            },
+            cooldown:() => {
+                let ret = 60
+                ret = ret / tmp.sys.clickables[11].effect
+                return ret
+            }
         }
     },
     update(diff) {
-        throw Error("Justify the existence of denominations by locking buyables(?)")
+        //throw Error("Justify the existence of denominations by locking buyables(?)")
         if (getBuyableAmount("sys", 11).gt(0)) {
-            player.sys.appleTimer += diff
-            if (player.sys.appleTimer > tmp.sys.apples.cooldown) {
-                let gain = tmp.sys.apples.gain
-                let timeMultiplier = Math.floor(player.sys.appleTimer / tmp.sys.apples.cooldown)
+            player.sys.businesses.apples.timer += diff
+            let cooldown = tmp.sys.businesses.apples.cooldown
+            if (player.sys.businesses.apples.timer > cooldown) {
+                let gain = tmp.sys.businesses.apples.gain
+                let timeMultiplier = Math.floor(player.sys.businesses.apples.timer / cooldown)
                 gain = gain.mul(timeMultiplier)
-                player.sys.appleTimer -= tmp.sys.apples.cooldown * timeMultiplier
-                player.sys.apples.points = player.sys.apples.points.add(gain)
+                player.sys.businesses.apples.timer -= cooldown * timeMultiplier
+                player.sys.businesses.apples.points = player.sys.businesses.apples.points.add(gain)
             }
         }
 
-        if (hasAchievement("a", 85)) {
+        if (hasMilestone("sys", 4)) {
             for (i = 0; i <= 8; i++) {
                 // map iteration index to buyable index
                 let buyableIndex = 100 + 10 * (1 + Math.floor(i/3)) + (i % 3) + 1
                 if (getBuyableAmount("sys", buyableIndex).gt(0)) {
                     player.sys.bills.timers[i] += diff
-                    if (player.sys.bills.timers[i] > player.sys.bills.cooldowns[i]) {
+                    let cooldown = tmp.sys.buyables[buyableIndex].cooldown
+                    if (player.sys.bills.timers[i] > cooldown) {
                         let gain = buyableEffect("sys", buyableIndex)
-                        let timeMultiplier = Math.floor(player.sys.bills.timers[i] / player.sys.bills.cooldowns[i])
+                        let timeMultiplier = Math.floor(player.sys.bills.timers[i] / cooldown)
                         gain = gain.mul(timeMultiplier)
-                        player.sys.bills.timers[i] -= player.sys.bills.cooldowns[i] * timeMultiplier
+                        player.sys.bills.timers[i] -= cooldown * timeMultiplier
                         attackEnemy(buyableEffect("sys", buyableIndex))
                     }
                 }
 
             }
-            // let spent = player.sys.bills.spent
-            // let billsData = player.sys.bills
-            // if (spent.lt(1)) {
-            //     billsData.highestDenomination = 0
-            //     billsData.change = spent
-            //     return
-            // }
-
-            // let denominationValues = {
-            //     8: 10000,
-            //     7: 1000,
-            //     6: 100, 
-            //     5: 50, 
-            //     4: 20, 
-            //     3: 10, 
-            //     2: 5, 
-            //     1: 2, 
-            //     0: 1
-            // }
-            // for (let i = 10; i >= 0; i--) {
-            //     let value = denominationValues[i]
-            //     let quantity = Number(spent.div(value).floor())
-            //     if (quantity > 0 && i > billsData.highestDenomination) billsData.highestDenomination = value
-            //     billsData.denominations[i] = quantity
-            //     spent = spent.sub(quantity * value)
-            // }
-            // billsData.change = spent
         }
     },
     tabFormat: {
@@ -771,7 +807,7 @@ addLayer("sys", {
                 ["display-text", function () { return "Current conversion rate is " + format(100*conversionRate(), 4) + " : 100 OoM" }],
                 ["display-text", "Purchasing a upgrade increases the cost of other upgrades in the same row (see Info)"],
                 "blank", 
-                () => hasMilestone("sys", 0) ? ["upgrades", [1, 2, 3, 4, 5]] : ""
+                ["upgrades", [1, 2, 3, 4, 5]]
             ]
         },
         "Milestones": {
@@ -792,35 +828,42 @@ addLayer("sys", {
                     ${format(tmp.sys.effect)}<br><br>` 
                 }],
                 ["display-text", "Press shift to see effective levels and cost formulas for each buyable"], 
-                ["buyables", [1, 2, 3]], "blank",
+                ["buyables", [1, 2, 3]],
                 ["display-text", function() { return `You have <span style="color: maroon; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.apples.points)}</span> apples, 
-                    which multiply penny gain by ${format(tmp.sys.apples.effect)}x<br>`
+                    ${format(player.sys.businesses.apples.points)}</span> apples, 
+                    which multiply post-nerf penny gain by ${format(tmp.sys.businesses.apples.effect)}x<br>`
                 }], "blank",
                 ["clickables", [1]], "blank",
-                () => hasMilestone("sys", 3) ? ["display-text", function() { 
-                    return `You have ${formatWhole(player.sys.acceleratorPower.points)} Accelerator Power
+                () => hasMilestone("sys", 3) ? ["display-text", `You have ${formatWhole(player.sys.acceleratorPower.points)} Accelerator Power
                     <br>You gain 1 Accelerator Power from clicking the Accelerator, 10 from investment resets,
-                    and 250 from dollar resets`
-                }] : ""
+                    and 500 from dollar resets`
+                ] : ""
             ],
             unlocked:() => hasMilestone("sys", 0)
         },
         "Bills": {
             content: [
-                ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
+                ["display-text", function() { let ret = `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
                     penny gain, investment gain, and stored investment/expansion gain by  
                     ${format(tmp.sys.effect)}<br><br>
-                    Because you have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${player.sys.bills.spent}</span></h2> spent dollars, the highest denomination available to you is 
-                    the <h2>${player.sys.bills.highestDenomination}</h2> dollar bill<br><br>`
+                    You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
+                    ${format(player.sys.bills.spent)}</span></h2> spent dollars, which means you do ${format(tmp.sys.clickables[22].effect)} 
+                    damage per smack attack.<br><br>
+                    Because you have spent a total of <h3><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
+                    ${format(player.sys.bills.spentTotal)}</h3></span> dollars, the highest denomination available to you is 
+                    the <h3>${player.sys.bills.highestDenomination}</h3> dollar bill`
+                    
+                    if (!Number.isNaN(player.sys.bills.nextDenominationUnlock)) ret += `. Next denomination unlocks at
+                    <h3><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
+                        ${player.sys.bills.nextDenominationUnlock}</span></h3> total spent dollars`
+                    return ret + "<br><br>" 
                 }],
-                () => hasUpgrade("sys", 111) ? ["column", [
+                () => hasUpgrade("sys", 211) ? ["column", [
                     ["bar", "enemyBar"],
                     "blank",
                     ["display-text", `The level ${player.sys.bills.enemyLevel} ${tmp.sys.bars.enemyBar.name} 
-                        will drop ${tmp.sys.bars.enemyBar.loot} Dollars when defeated`],
+                        will drop ${tmp.sys.bars.enemyBar.loot} Spent Dollars when defeated`],
                     ["display-text", `You have defeated this enemy 
                         ${player.sys.bills.currentEnemyKills}/${player.sys.bills.maxEnemyKills} times`],
                     "blank",
@@ -828,9 +871,9 @@ addLayer("sys", {
                     ["clickables", [2]],
                 ]] : "",
                 "blank",
-                ["upgrades", [11]]
+                ["upgrades", [21]]
             ],
-            unlocked:() => hasAchievement("a", 85)
+            unlocked:() => hasMilestone("sys", 4)
         },
         "Info": {
             content: [
@@ -869,7 +912,7 @@ addLayer("sys", {
                         Still, you will eventually be able to buy every upgrade.
                         <br><br>The cost increases are as follows:
                         <br>Row 1: .15 Dollars per upgrade
-                        <br>Row 2: .5 Dollars per upgrade`
+                        <br>Row 2: .25 Dollars per upgrade`
                     ],
                     "blank"
                 ], unlocked:() => hasMilestone("sys", 0)

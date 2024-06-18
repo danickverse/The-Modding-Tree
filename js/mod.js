@@ -17,24 +17,25 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1.9.2",
-	name: "Clocky Goes Zoomy",
+	num: "0.2.0",
+	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
 	<h3>v0.2.0</h3><br>
 		- The System layer is implemented, along with two new features and upgrades/milestones<br>
-		- The Quest side layer is implemented, along with 4 quests (more will be added later!)<br>
-		- Moar Storage and Expansion!<br>
-		- Added 6 achievements (35 -> 41) and 1 achievement milestone (9 -> 10)<br>
+		- The Quest side layer is implemented, along with 5 quests (more will be added soon!)<br>
+		- Moar Storage (but no milestones)!!! Also, Storage upgrades no longer reset currencies, it was a lame mechanic<br>
+		- Added 7 achievements (35 -> 42) and 1 achievement milestone (9 -> 10)<br>
 		- Offline generation works for the Expansion layer (i think)! However, if your ticks last over a minute, 
 			the Expansion layer will not function (dont ask why). Don't lag!<br>
 		- Achievement display moderately revamped to help for future updates<br>
 		- Penny Upgrade 21 was rebalanced to provide a more substantial boost<br>
 		- Nerfed Penny Upgrade 25's cost for taking long to obtain for no real reason<br>
-		- Buffed Expansion Challenge reward to make it more meaningful as the game progresses<br>
-		- Buffed 9th Achievement Milestone for the same reason
-		- A lot of other stuff and (catastrophic) bug fixes I forgot to write down<br><br>
+		- Buffed Expansion Challenge reward to make it more meaningful as the game progresses, and made it easier<br>
+		- Buffed 9th Achievement Milestone for the same reason<br>
+		- Slightly buffed QOL 4 just because<br>
+		- A lot of other stuff, like rebalancing, bug fixes, visual changes, and cleaner code<br><br>
 
 	<h3>v0.1.9.1</h3><br>
 		- Helper function works as intended, affects Penny upgrades 18/23<br>
@@ -149,6 +150,7 @@ function getPointGen() {
 	let baseGain = decimalOne
 	if (hasUpgrade('p', 12)) baseGain = baseGain.add(upgradeEffect('p', 12))
 	if (hasAchievement('a', 35) && !hasAchievement('a', 81)) baseGain = baseGain.add(1)
+	if (hasUpgrade("sys", 23)) baseGain = baseGain.add(upgradeEffect("sys", 23))
 
 	let gainMult = decimalOne
 	if (hasUpgrade('p', 11)) gainMult = gainMult.mul(upgradeEffect('p', 11))
@@ -190,17 +192,19 @@ function addedPlayerData() { return {
 // Display extra things at the top of the page
 var displayThings = [
 	() => boostedTime(1) != 1 || player.sys.unlocked ? 
-		(player.shiftDown ? "Your current reset time is " + format(player.resetTime) + " seconds" 
-			: "Gaining " + format(boostedTime(1), 4) + "x more reset time")
+		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
+			: `Gaining ${format(boostedTime(1), 4)}x more reset time`)
 	: "",
-	"Current endgame: 8 Dollar Resets, 45 Achievements",
+	"Current endgame: 4 Dollar Milestones, 40 Achievements",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
-		<br>The game is not balanced here, and further content may be scrapped/rebalanced.<br>Be careful.</p>` : ""
+		<br>The game is not balanced here, content may be scrapped/rebalanced, and more content 
+		will be added that may make progression easier.
+		<br>Be careful.</p>` : ""
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.sys.resetCount >= 8 && player.a.achievements.length >= 45
+	return player.sys.milestones.length >= 4 && player.a.achievements.length >= 40
 }
 
 

@@ -23,7 +23,7 @@ addLayer("a", {
     doReset(layer) {
         if (layer == "sys") {
             // handle achievements
-            let keptAchs = new Set([11, 21, 22, 23, 25, 31, 51])
+            let keptAchs = new Set([11, 21, 22, 23, 31, 51])
             if (hasMilestone("sys", 1)) {
                 for (i = 1; i <= Math.min(player.sys.milestones.length, 7); i++) {
                     for (j = 1; j <= 5; j++) {
@@ -219,7 +219,7 @@ addLayer("a", {
                 if (this.unlocked() && player.e.everUpg23) return true
             },
             tooltip: "Force unlock WNBP :(",
-            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked
+            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked
         },
         42: {
             name: "17",
@@ -227,7 +227,7 @@ addLayer("a", {
                 if (this.unlocked() && player.p.points.gte(3e10) && tmp.pointGen.lt(upgrade23Limit())) return true
             },
             tooltip: "Gain less points in a single second than you are allowed to have... wait, what?<br>Requires 3e10 Pennies",
-            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked
+            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked
         },
         43: {
             name: "18",
@@ -235,7 +235,7 @@ addLayer("a", {
                 if (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(1e7)) return true
             },
             tooltip: "Reach 10 million pennies with 0 (normal) investment",
-            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked
+            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked
         },
         44: {
             name: "19",
@@ -243,7 +243,7 @@ addLayer("a", {
                 if (this.unlocked() && player.p.investment2.points.gte(1)) return true
             },
             tooltip: "Reach 1 Expansion Investment! How does this even work!<br><br>Multiply investment gain by 1.2",
-            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked,
+            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked,
             style() {
                 return {
                 "border-color": "blue",
@@ -257,16 +257,16 @@ addLayer("a", {
                 if (this.unlocked() && investmentGain().gte(2000)) return true
             },
             tooltip: "Reach 2000 investment earned in a single investment reset",
-            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked
+            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked
         },
         51: {
             name: "21",
             done() {
-                if (player.s.unlocked && player.a.achievements.length >= 20) return true
+                if (player.s.unlocked || player.sys.unlocked && player.a.achievements.length >= 20) return true
             },
             tooltip: `Unlock the Storage feature and complete 20 achievements<br><br>Unlock more achievements
                 and increase the Where Did These Come From??? exponent by .02`,
-            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked,
+            unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked,
             style() {
                 return {
                 "border-color": "blue",
@@ -280,7 +280,7 @@ addLayer("a", {
                 if (this.unlocked() && player.s.stored_investment.points.gt(0)) return true
             },
             tooltip: "Store investment at least one time",
-            unlocked:() => hasAchievement("a", 51),
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked,
         },
         53: {
             name: "23",
@@ -288,7 +288,7 @@ addLayer("a", {
                 if (this.unlocked() && player.s.stored_expansion.points.gt(0)) return true
             },
             tooltip: "Store expansions at least one time",
-            unlocked:() => hasAchievement("a", 51),
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked,
         },
         54: {
             name: "24",
@@ -296,7 +296,7 @@ addLayer("a", {
                 if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansions.points.gte(13)) return true
             },
             tooltip: "Gain 13 penny expansions with a highest points ever (reset to 0 by storing expansions) that is less than 5e10",
-            unlocked:() => hasAchievement("a", 51)
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
         },
         55: {
             name: "25",
@@ -306,7 +306,7 @@ addLayer("a", {
             },
             tooltip: `Reach 7.77 million pennies without gaining normal investment after storing your investment
                 <br><br>Lucky Penny ln becomes log2`,
-            unlocked:() => hasAchievement("a", 51),
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked,
             style() {
                 return {
                 "border-color": "blue",
@@ -437,9 +437,9 @@ addLayer("a", {
         82: {
             name: "37",
             done() {
-                return this.unlocked() && player.sys.upgrades.length >= 5
+                return this.unlocked() && player.sys.upgrades.length >= 2
             },
-            tooltip: `Buy 5 System upgrades<br><br>
+            tooltip: `Buy 2 System upgrades<br><br>
                 Buff the base conversion rate by 1% additive`,
             unlocked:() => hasAchievement("a", 81),
             style() {
@@ -481,9 +481,10 @@ addLayer("a", {
         85: {
             name: "40",
             done() {
-                return this.unlocked() && player.sys.points.gte(1)
+                return this.unlocked() && player.p.investment2.points.gt(5000)
             },
-            tooltip: "Reach 1 (held) dollars<br><br>Buff the base conversion rate by 2% additive and unlock the Bills tab in Dollars",
+            tooltip: `Have over 5000 Expansion Investment
+                <br><br>Buff the base conversion rate by 2% additive and multiply all investment gain by 1.2x`,
             unlocked:() => hasAchievement("a", 81),
             style() {
                 return {
@@ -495,9 +496,9 @@ addLayer("a", {
         91: {
             name: "41",
             done() {
-                return this.unlocked() && false
+                return this.unlocked() && player.quests.points.gte(15)
             },
-            tooltip: ``,
+            tooltip: `Complete 15 Quests`,
             unlocked:() => hasAchievement("a", 81)
         },
         92: {
@@ -519,6 +520,27 @@ addLayer("a", {
                 }
             }
         },
+        // NEED TO REIMPLEMENT 93 IN system --> onPrestige
+        // 93: {
+        //     name: "43",
+        //     done() { return false }, // handled by system.js --> onPrestige()
+        //     tooltip: "Perform a System reset without completing the Investent Challenge",
+        //     unlocked:() => hasAchievement("a", 81)
+        // },
+        // 94: {
+        //     name: "44",
+        //     done() {
+        //         return this.unlocked() && player.sys.bills.totalEnemyKills > 0
+        //     },
+        //     tooltip: "Defeat five orphans<br><br>Unlock a Quest",
+        //     unlocked:() => hasAchievement("a", 81),
+        //     style() {
+        //         return {
+        //         "border-color": "blue",
+        //         "border-width": "5px"
+        //         }
+        //     }
+        // }
     },
     milestones: {
         0: {
@@ -554,13 +576,13 @@ addLayer("a", {
                 return ret
             },
             done() { return player.a.achievements.length >= 22 },
-            unlocked:() => hasAchievement("a", 51)
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
         },
         5: {
             requirementDescription: "25 Achievements Finished",
             effectDescription: "There's A Coin For This? and Seriously? have the same exponent/effect and unlock more achievements and storage milestones",
             done() { return player.a.achievements.length >= 25 },
-            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked || player.sys.unlocked
         },
         6: {
             requirementDescription: "28 Achievements Finished",
@@ -571,7 +593,7 @@ addLayer("a", {
                 return ret
             },
             done() { return player.a.achievements.length >= 28 },
-            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked || player.sys.unlocked
         },
         7: {
             requirementDescription: "32 Achievements Finished",
@@ -582,7 +604,7 @@ addLayer("a", {
         8: {
             requirementDescription: "35 Achievements Finished",
             effectDescription:() => { return "Gain (1 + Achievements<sup>1.5</sup>/1000)x more Reset Time<br>Currently: "
-                + format(1 + player.a.achievements.length/1000, 3) + "x" },
+                + format(1 + player.a.achievements.length**1.5/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },

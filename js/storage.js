@@ -27,11 +27,14 @@ addLayer("s", {
     branches: ["p", "e"],
     layerShown:() => hasUpgrade("e", 33) || player.sys.unlocked,
     doReset(layer) {
-        let keptUpgrades = player.s.upgrades
-        let storedDollars = player.s.stored_dollars.points
-        layerDataReset("s")
-        player.s.stored_dollars.points = storedDollars
-        player.s.upgrades = keptUpgrades
+        if (layer == "sys") {
+            let keptUpgrades = player.s.upgrades
+            let storedDollars = player.s.stored_dollars.points
+            layerDataReset("s")
+            player.s.stored_dollars.points = storedDollars
+            player.s.upgrades = keptUpgrades
+            player.s.unlocked = false
+        }
     },
     milestones: {
         0: {
@@ -41,7 +44,7 @@ addLayer("s", {
         },
         1: {
             requirementDescription: "100,000 Stored Investment and 1,250 Stored Expansions",
-            effectDescription: "Reduce Penny Expansion loss rate to .9%",
+            effectDescription: "Multiply Penny Expansion loss rate by 9/10",
             done() { return player.s.stored_investment.points.gte(1e5) && player.s.stored_expansion.points.gte(1250) }
         },
         2: {
@@ -78,14 +81,11 @@ addLayer("s", {
     },
     upgrades: {
         11: {
-            title: "Cheater Behavior",
+            title: "Give Me All The Points",
             description: "Only while in the investment challenge, boost points and pennies (post-nerf) by 5x",
             cost: new Decimal("1e14"),
             unlocked:() => hasAchievement("a", 73) || player.sys.unlocked,
-            onPurchase:() => {
-                tmp.s.clickables[11].onClick()
-            },
-            pay() { player.s.stored_investment.points = decimalZero },
+            onPurchase:() => { tmp.s.clickables[11].onClick() },
             currencyDisplayName:() => "Stored Investment",
             currencyInternalName:() => "points",
             currencyLocation:() => player.s.stored_investment,
@@ -95,10 +95,7 @@ addLayer("s", {
             description: "Raise secondary effect of third stored expansion effect to the 1.5th power",
             cost: new Decimal("2e7"),
             unlocked:() => hasAchievement("a", 73) || player.sys.unlocked,
-            onPurchase() {
-                tmp.s.clickables[12].onClick()
-            },
-            pay() { player.s.stored_expansion.points = decimalZero },
+            onPurchase() { tmp.s.clickables[12].onClick() },
             currencyDisplayName:() => "Stored Expansion",
             currencyInternalName:() => "points",
             currencyLocation:() => player.s.stored_expansion,
@@ -110,35 +107,30 @@ addLayer("s", {
             unlocked:() => hasMilestone("sys", 1),
             effect() { return .05 },
             onPurchase() { tmp.s.clickables[13].onClick() },
-            pay() { player.s.stored_dollars.points = decimalZero },
             currencyDisplayName:() => "Stored Dollars",
             currencyInternalName:() => "points",
             currencyLocation:() => player.s.stored_dollars
         },
         14: {
-            title: "",
-            description: "Multiply the expansion investment gain softcap value by (1 + Stored Expansion)<sup>.05</sup>",
-            cost: new Decimal("5e20"),
+            title: "Spread Evenly",
+            description: "The third Stored Expansion effect also applies to investment gain",
+            cost: new Decimal("5e21"),
             unlocked:() => hasMilestone("sys", 1),
-            effect:() => player.s.stored_expansion.points.add(1).pow(.05),
-            effectDisplay:() => format(upgradeEffect("s", 14)) + "x",
             onPurchase() { tmp.s.clickables[11].onClick() },
-            pay() { player.s.stored_investment.points = decimalZero },
             currencyDisplayName:() => "Stored Investment",
             currencyInternalName:() => "points",
             currencyLocation:() => player.s.stored_investment,
         },
-        15: {
-            title: "",
-            description: "When storing expansions, gain stored investment at a rate of 10x",
-            cost: new Decimal("1e100"),
-            unlocked:() => hasMilestone("sys", 1),
-            onPurchase() { tmp.s.clickables[13].onClick() },
-            pay() { player.s.stored_dollars = decimalZero },
-            currencyDisplayName:() => "Stored Dollars",
-            currencyInternalName:() => "points",
-            currencyLocation:() => player.s.stored_dollars
-        }
+        // 15: {
+        //     title: "",
+        //     description: "When storing expansions, gain stored investment at a rate of 10x",
+        //     cost: new Decimal("1e100"),
+        //     unlocked:() => hasMilestone("sys", 1),
+        //     onPurchase() { tmp.s.clickables[13].onClick() },
+        //     currencyDisplayName:() => "Stored Dollars",
+        //     currencyInternalName:() => "points",
+        //     currencyLocation:() => player.s.stored_dollars
+        // }
     },
     clickables: {
         11: {
@@ -170,7 +162,7 @@ addLayer("s", {
         },
         12: {
             title: "Store Your Expansions",
-            display() { 
+            display() {
                 if (!this.canClick()) {
                     if (inAnyChallenge()) return "Cannot store inside of a challenge"
                     let ret = "Requires 1000 Expansions"
@@ -178,17 +170,10 @@ addLayer("s", {
                     return ret
                 }
                 let gain = player.e.points.mul(upgradeEffect("p", 42).pow(.25))
-                return "Gain " + format(gain) + " stored expansions"
+                return `Gain ${format(gain)} stored expansions`
             },
             canClick() { return player.e.points.gte(1000) && player.s.stored_investment.points.gte(5000) && !inAnyChallenge() },
             onClick() {
-                let gain = player.e.points.mul(upgradeEffect("p", 42).pow(.25))
-                gain = gain.mul(tmp.sys.effect)
-                if (hasUpgrade("sys", 12)) gain = gain.mul(upgradeEffect("sys", 12))
-
-                player.s.stored_expansion.points = player.s.stored_expansion.points.add(gain)
-                investmentReset(true, false)
-
                 let resetInvestment2Amt = decimalOne
                 if (hasMilestone("s", 1)) resetInvestment2Amt = resetInvestment2Amt.mul(player.s.stored_expansion.points.add(1).log2().pow_base(1.03).pow(5))
                 if (hasUpgrade("s", 12)) resetInvestment2Amt = resetInvestment2Amt.pow(1.5)
@@ -196,6 +181,13 @@ addLayer("s", {
                     player.a.achievements.push("65")
                     doPopup("achievement", tmp.a.achievements[65].name, "Achievement Unlocked!", 3, tmp.a.color)
                 }
+
+                let gain = player.e.points.mul(upgradeEffect("p", 42).pow(.25))
+                gain = gain.mul(tmp.sys.effect)
+                if (hasUpgrade("sys", 12)) gain = gain.mul(upgradeEffect("sys", 12))
+
+                player.s.stored_expansion.points = player.s.stored_expansion.points.add(gain)
+                investmentReset(true, false)
                 player.p.investment2.points = player.p.investment2.points.min(resetInvestment2Amt)
 
                 let keepUpgIndices = [33, 43]
@@ -238,8 +230,10 @@ addLayer("s", {
             onClick() {
                 player.sys.resetCount--
                 player.sys.total = player.sys.total.sub(tmp.sys.resetGain)
+                let gain = tmp.sys.resetGain.add(player.sys.points)
+                player.s.stored_dollars.points = player.s.stored_dollars.points.add(gain)
                 doReset("sys")
-                player.s.stored_dollars.points = player.s.stored_dollars.points.add(player.sys.points)
+                //player.s.stored_dollars.points = player.s.stored_dollars.points.add(player.sys.points)
                 player.sys.points = decimalZero
             },
             unlocked:() => hasMilestone("sys", 1)
@@ -265,7 +259,8 @@ addLayer("s", {
                 "blank", 
                 ["microtabs", "storageInfo"],
                 "blank",
-                () => hasAchievement("a", 73) ? ["display-text", "Purchasing an upgrade resets the related (stored) currency's value to 0 and then stores that currency<br><br>"] : "",
+                () => hasAchievement("a", 73) || player.sys.unlocked ? ["display-text", `Purchasing an upgrade also 
+                    stores that currency.<br><br>`] : "",
                 "upgrades"
             ]
         },
@@ -322,9 +317,9 @@ addLayer("s", {
                     ["display-text", function() {
                         let ret = `Because you have stored <span style="color: #AD6F69; text-shadow: 0px 0px 10px #AD6F69; font-family: Lucida Console, Courier New, monospace">
                             ${format(player.s.stored_investment.points)}</span> investment, you currently...<br>`
-                        ret = ret + "<br>1. Gain " + format(player.s.stored_investment.points.add(1).log10().div(10).add(1)) + "x more investment"
+                        ret = ret + `<br>1. Gain ${format(player.s.stored_investment.points.add(1).log10().div(10).add(1))}x more investment`
                         if (hasMilestone("s", 0)) {
-                            ret = ret + ",<br>2. Generate " + format(tmp.p.passiveGeneration * 100) 
+                            ret = ret + ",<br>2. Generate " + format(player.s.stored_investment.points.div(100).add(1).log2()) 
                                 + "% of your penny gain on reset per second"
                         }
                         if (hasMilestone("s", 1)) {
@@ -370,7 +365,9 @@ addLayer("s", {
                             }
                         }
                         if (hasMilestone("s", 1)) {
-                            ret = ret + ",<br>3. Multiply expansion investment gain by " + format(1.03**player.s.stored_expansion.points.add(1).log2()) + "x" 
+                            ret = ret + ",<br>3. Multiply "
+                            if (hasUpgrade("s", 14)) ret = ret + "investment and "
+                            ret = ret + "expansion investment gain by " + format(1.03**player.s.stored_expansion.points.add(1).log2()) + "x" 
                             ret = ret + " and maximum kept expansion investment is " 
                             if (!hasUpgrade("s", 12)) ret = ret + format((1.03**player.s.stored_expansion.points.add(1).log2())**5)
                             else ret = ret + format((1.03**player.s.stored_expansion.points.add(1).log2())**7.5)
@@ -409,9 +406,11 @@ addLayer("s", {
                         ${format(player.s.stored_dollars.points)}</span> dollars, you currently...<br>`
                         ret += `<br>1. Increase the Penny gain softcap exponent from 0.5 to 
                             ${format(player.s.stored_dollars.points.div(5).atan().mul(3).div(4).div(Math.PI).add(.5), 4)}`
-                        ret += `<br>2. Buff the base conversion rate by  
+                        ret += `,<br>2. Buff the base conversion rate by  
                             ${format(player.s.stored_dollars.points.root(3).mul(3))}% additive`
-                        ret += `<br>3. Produce ${format(player.s.stored_dollars.points.pow(2).add(10).log10())}x more apples per tree`
+                        ret += `,<br>3. Produce ${format(player.s.stored_dollars.points.pow(2).add(10).log10())}x more apples per tree`
+                        ret += `,<br>4. Multiply the expansion investment gain softcap and hardcap by 
+                            ${format(player.s.stored_dollars.points.add(1).pow(.1))}x`
                         return ret
                     }], "blank"
                 ],
@@ -525,8 +524,10 @@ addLayer("s", {
             completionLimit: 100,
             requirement:() => {
                 //if (challengeCompletions("s", 12) == 0) return new Decimal("16")
-                return 4**Math.cbrt(challengeCompletions("s", 12)) * 16**challengeCompletions("s", 12)
-            }
+                let x = challengeCompletions("s", 12)
+                return 4**(x + x**(2/3))
+            },
+            unlocked:() => hasMilestone("s", 4)
         }
     }
 })
