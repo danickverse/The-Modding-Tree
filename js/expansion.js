@@ -131,7 +131,7 @@ addLayer("e", {
             title: "It's Only Reasonable",
             description:() => {
                 if (player.shiftDown) {
-                    if (hasMilestone("sys", 1)) return "Uses Expansion Upgrades and System Upgrades<sup>2</sup>"
+                    if (hasMilestone("sys", 2)) return "Uses Expansion Upgrades and System Upgrades<sup>2</sup>"
                     return "Uses Expansion Upgrades"
                 }
                 let ret = "Increases base penny expansion gain by "
@@ -147,7 +147,7 @@ addLayer("e", {
             currencyLocation:() => player.e.penny_expansions,
             effect:() => {
                 let upgCount = player.e.upgrades.length
-                if (hasMilestone("sys", 1)) upgCount += player.sys.upgrades.length ** 2
+                if (hasMilestone("sys", 2)) upgCount += player.sys.upgrades.length ** 2
                 if (!hasUpgrade("e", 21)) return new Decimal(Math.log(4 + upgCount)/Math.log(4)/50)
                 if (!hasUpgrade("e", 31)) return new Decimal(Math.log(4 + upgCount)/10)
                 if (!hasUpgrade("e", 41)) return new Decimal(Math.log(4 + upgCount)/4)
@@ -208,7 +208,7 @@ addLayer("e", {
         15: {
             fullDisplay:() => {
                 let title = "<h3></b>QOL 1</h3></b>"
-                let description = "Autobuy One Man's Trash, reduce its investment requirement to 1, autobuy 1 Education buyable every 5 seconds"
+                let description = "Autobuy One Man's Trash, reduce its investment requirement to 1, autobuy 1 Education buyable every 2 seconds"
                 let requirement = "Requires: " + formatWhole(decimalOne.mul(2**player.e.upgrades.length).min(16)) + " Penny Expansions"
                 if (!(hasUpgrade("e", 11) && hasUpgrade("e", 12) && hasUpgrade("e", 13) && hasUpgrade("e", 14))) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -218,8 +218,10 @@ addLayer("e", {
                 return player.e.penny_expansions.points.gte(cost) && (hasUpgrade("e", 11) && hasUpgrade("e", 12) && hasUpgrade("e", 13) && hasUpgrade("e", 14))
             },
             onPurchase() {
-                player.p.autoBuyableCooldown = 5
-                if (!hasUpgrade("p", 15)) player.p.upgrades.push(15)
+                if (!hasMilestone("sys", 1)) player.p.autoBuyableCooldown = 2
+                else player.p.autoBuyableCooldown = 1
+                // if (!hasUpgrade("p", 15)) player.p.upgrades.push(15)
+                // why is this here????
             },
             currencyDisplayName:() => "Penny Expansions",
             currencyInternalName:() => "points",
@@ -356,7 +358,7 @@ addLayer("e", {
         35: {
             fullDisplay:() => {
                 let title = "<h3></b>QOL 3</h3></b>"
-                let description = "Reduces investment cooldown by 5 seconds and QOL 1 cooldown by 4 seconds"
+                let description = "Reduces investment cooldown by 5 seconds and autobuy Education buyables 2x faster"
                 let requirement = "Requires: " + formatWhole(decimalOne.mul(2**player.e.upgrades.length).div(4).min(4096).max(256)) + " Penny Expansions"
                 if (!(hasUpgrade("e", 31) && hasUpgrade("e", 32) && hasUpgrade("e", 33) && hasUpgrade("e", 34))) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -440,13 +442,14 @@ addLayer("e", {
                 let title = "<h3></b>QOL 4</h3></b>"
                 let description = !hasMilestone("sys", 5) ? `Double all Focused Production buffs, autobuy one more penny upgrade 
                     & seven more buyables per second, autobuy from row 4` 
-                    : "Triple all Focused Production buffs and autobuy nine more buyables per second"
+                    : "Triple all Focused Production buffs and autobuy seven more buyables per second"
                 let staticMult = 5
                 if (hasMilestone("a", 6)) staticMult *= 1.6
                 let requirement = "Requires: " + formatWhole(decimalOne.mul(staticMult**(player.e.upgrades.length-15)).max(decimalOne).mul(20000).min(new Decimal(81920000))) + " Penny Expansions"
                     
                 return title + "<br>" + description + "<br><br>" + requirement
             },
+            effect() { return !hasMilestone("sys", 5) ? 2 : 3 },
             canAfford:() => {
                 let staticMult = 5
                 if (hasMilestone("a", 6)) staticMult = staticMult * 1.6
@@ -515,7 +518,7 @@ addLayer("e", {
             canClick:() => getClickableState("e", 21) || getClickableState("e", 21) != !getClickableState("e", 22),
             effect() {
                 let ret = 1.5
-                if (hasUpgrade("e", 45)) ret *= 2
+                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
                 return ret
             }
         },
@@ -530,7 +533,7 @@ addLayer("e", {
             canClick:() => getClickableState("e", 22) || getClickableState("e", 21) != !getClickableState("e", 22),
             effect() {
                 let ret = 1.5
-                if (hasUpgrade("e", 45)) ret *= 2
+                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
                 return ret
             }
         },
@@ -545,7 +548,7 @@ addLayer("e", {
             canClick:() => getClickableState("e", 31) || getClickableState("e", 31) != !getClickableState("e", 32),
             effect() {
                 let ret = 3
-                if (hasUpgrade("e", 45)) ret *= 2
+                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
                 return ret
             },
             unlocked:() => hasAchievement("a", 63)
@@ -561,7 +564,7 @@ addLayer("e", {
             canClick:() => getClickableState("e", 32) || getClickableState("e", 32) != !getClickableState("e", 31),
             effect() {
                 let ret = 5
-                if (hasUpgrade("e", 45)) ret *= 2
+                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
                 return ret
             },
             unlocked:() => hasAchievement("a", 63)

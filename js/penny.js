@@ -825,18 +825,32 @@ addLayer("p", {
     automate() {
         if (!hasUpgrade("p", 31) && hasUpgrade("e", 15) && canAffordUpgrade("p", 31)) player.p.upgrades.push(31)
 
-        if (hasUpgrade("e", 15) && player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 21)) {
-            addBuyables("p", 21, 1)
-            player.p.autoBuyableCooldown = 5
-            if (hasUpgrade("e", 35)) player.p.autoBuyableCooldown = 1
-            if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = 1/8 // 8 per second
-        }
+        if (hasUpgrade("e", 15)) {
+            if (player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 21)) {
+                addBuyables("p", 21, 1)
 
-        if (hasUpgrade("e", 15) && player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 22)) {
-            addBuyables("p", 22, 1)
-            player.p.autoBuyableCooldown = 5
-            if (hasUpgrade("e", 35)) player.p.autoBuyableCooldown = 1
-            if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = 1/8 // 8 per second
+                // player.p.autoBuyableCooldown = 2
+                // if (hasUpgrade("e", 35)) player.p.autoBuyableCooldown = 1
+                // if (hasUpgrade("e", 45)) player.p.autoBuyableCooldown = 1/8 // 8 per second
+
+                let divisor = 1
+                if (hasUpgrade("e", 35)) divisor *= 2
+                if (hasUpgrade("e", 45)) divisor *= 8 // 8 per second
+                if (hasMilestone("sys", 1)) divisor *= 2
+
+                player.p.autoBuyableCooldown = 2 / divisor
+            }
+
+            if (player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 22)) {
+                addBuyables("p", 22, 1)
+
+                let divisor = 1
+                if (hasUpgrade("e", 35)) divisor *= 2
+                if (hasUpgrade("e", 45)) divisor *= 8 // 8 per second
+                if (hasMilestone("sys", 1)) divisor *= 2
+
+                player.p.autoBuyableCooldown = 2 / divisor
+            }
         }
 
         if (!hasMilestone("sys", 5)) {

@@ -159,7 +159,7 @@ addLayer("sys", {
         return tmp.sys.buyables[12].canAfford || tmp.sys.buyables[13].canAfford
     },
     effect() {
-        return player.sys.points.mul(2).add(1).pow(.5)
+        return player.sys.total.mul(2).add(1).pow(.5)
     },
     milestones: {
         0: {
@@ -171,12 +171,13 @@ addLayer("sys", {
         1: {
             requirementDescription: "2 Dollar Resets",
             effectDescription: "Unlock Stored Dollars and three Storage Upgrades, keep one row of achievements "
-                + "per milestone (up to 7), and It's Only Reasonable also uses System Upgrades<sup>2</sup>",
+                + "per milestone (up to 7), and autobuy Education buyables 2x faster",
             done() { return player.sys.resetCount >= 2 }
         },
         2: {
             requirementDescription: "3 Dollar Resets",
-            effectDescription: "The 6th Storage milestone only requires 1 Expansion challenge completion",
+            effectDescription: `The 6th Storage milestone only requires 1 Expansion challenge completion, and
+                It's Only Reasonable also uses System Upgrades<sup>2</sup>`,
             done() { return player.sys.resetCount >= 3 }
         },
         3: {
@@ -196,8 +197,8 @@ addLayer("sys", {
         //     ]
         // }
         // IF THIS MILESTONE IS CHANGED, FIX CONDITION IN penny --> automate() AND functions --> investmentReset()
-        // Dont forget to implement changes to QOL 2 and QOL 4
-        // 5: Always autobuy all penny upgrades instantly but QOL 2 and QOL 4 have new (better) effects,
+        // Dont forget to implement changes to QOL 2 and QOL 4 and the kept milestones
+        // 5: Always autobuy all penny upgrades, QOL 2/4 have new (better) effects, and keep 1 Storage milestone per System milestone
     },
     upgrades: {
         11: {
@@ -800,7 +801,7 @@ addLayer("sys", {
                 ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
                     penny gain, investment gain, and stored investment/expansion gain by 
-                    ${format(tmp.sys.effect)}<br><br>` 
+                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
                 }],
                 "prestige-button", "blank",
                 "resource-display", "blank",
@@ -815,7 +816,7 @@ addLayer("sys", {
                 ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
                     penny gain, investment gain, and stored investment/expansion gain by 
-                    ${format(tmp.sys.effect)}<br><br>` 
+                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
                 }],
                 "milestones"
             ]
@@ -825,7 +826,7 @@ addLayer("sys", {
                 ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
                     penny gain, investment gain, and stored investment/expansion gain by  
-                    ${format(tmp.sys.effect)}<br><br>` 
+                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
                 }],
                 ["display-text", "Press shift to see effective levels and cost formulas for each buyable"], 
                 ["buyables", [1, 2, 3]],
@@ -846,7 +847,7 @@ addLayer("sys", {
                 ["display-text", function() { let ret = `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
                     penny gain, investment gain, and stored investment/expansion gain by  
-                    ${format(tmp.sys.effect)}<br><br>
+                    ${format(tmp.sys.effect)} (based on total)<br><br>
                     You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.bills.spent)}</span></h2> spent dollars, which means you do ${format(tmp.sys.clickables[22].effect)} 
                     damage per smack attack.<br><br>
@@ -880,7 +881,7 @@ addLayer("sys", {
                 ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
                     penny gain, investment gain, and stored investment/expansion gain by 
-                    ${format(tmp.sys.effect)}<br><br>` 
+                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
                 }],
                 ["microtabs", "info"]
             ]

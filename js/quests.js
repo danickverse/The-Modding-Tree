@@ -23,6 +23,13 @@ addLayer("quests", {
     },
     tooltip: "Quests",
     layerShown() { return player.quests.unlocked },
+    milestones: {
+        0: {
+            requirementDescription: "1000 Quests (Placeholder)",
+            effectDescription: "Unlock Specks, The Shop, and a new Quest",
+            done() { return player.quests.points.gte(1000) }
+        }
+    },
     bars: {
         pointsBar: {
             direction: RIGHT,
@@ -348,6 +355,15 @@ addLayer("quests", {
                     ["display-text", tmp.quests.bars.enemyKillsBar.effectDisplay()], 
                     "blank"
                 ]] : ""
+            ]
+        },
+        "Milestones": {
+            content: [
+                ["display-text", function() { return `You have completed 
+                    <h2><span style="color: blue; text-shadow: 0px 0px 10px blue; font-family: Lucida Console, Courier New, monospace">
+                    ${formatWhole(player.quests.points)}</span></h2> quests`
+                }],
+                "blank", "milestones"
             ]
         },
         "Info": {

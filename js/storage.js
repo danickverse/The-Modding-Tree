@@ -77,7 +77,15 @@ addLayer("s", {
                 && player.s.stored_expansion.points.gte(1e8) && 
                 challengeCompletions("s", 12) >= (!hasMilestone("sys", 2) ? 2 : 1) },
             unlocked() { return hasAchievement("a", 73) }
-        }
+        },
+        // 6: {
+        //     requirementDescription: "",
+        //     effectDescription: "Unlock a Stored Dollar effect and unlock a Quest (TO SELF: THIS QUEST HAS TO DO W/ CHALLENGES)",
+        //     done() { return this.unlocked() && player.s.milestones.length >= 6
+        //         && add other requirements here!!!!
+        //     },
+        //     unlocked() { return hasMilestone("sys", 1) }
+        // }
     },
     upgrades: {
         11: {

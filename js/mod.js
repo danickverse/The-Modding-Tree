@@ -12,16 +12,24 @@ let modInfo = {
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
-	offlineLimit: 8,  // In hours
+	offlineLimit: 2,  // In hours
 }
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.0",
+	num: "0.2.0.1",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.0.1</h3><br>
+		- The Dollars effect is now based on total Dollars<br>
+		- Moved one effect of the 2nd Dollar milestone to the 3rd Dollar milestone,
+			and gave the 2nd Dollar milestone a new effect in its place<br>
+		- Buffed QOL 1's autobuyer speed by 2.5x<br>
+		- Reduced offline limit to 2 hours for... reasons<br>
+		- Added a placeholder milestone to the Quests layer (this very likely won't be touched for a while)<br><br>
+
 	<h3>v0.2.0</h3><br>
 		- The System layer is implemented, along with two new features and upgrades/milestones<br>
 		- The Quest side layer is implemented, along with 5 quests (more will be added soon!)<br>
