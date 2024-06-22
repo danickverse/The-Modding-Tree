@@ -16,9 +16,19 @@ addLayer("quests", {
                 wnbpBar: 0,
                 applesBar: 0,
                 smackBar: 0,
-                enemyKillsBar: 0
+                enemyKillsBar: 0,
+                fastSpecksBar: 0
             },
-            hideCompleted: false
+            hideCompleted: false,
+            specks: {
+                points: decimalZero,
+                speckCount: 0,
+                collected: 0, // just displayed to user, no use, ***does not represent specks resource points***
+                fastCollected: 0, // used for Specks Quest
+                tsls: 0, // increases every tick, measure of time since last spawn, tsls/maxTsls = base spawn chance
+                timer: 0, // maxes at 30, which is when it resets down to 0. used to try to spawn particles every 5 seconds
+                shopDisplay: ""
+            }
         }
     },
     tooltip: "Quests",
@@ -26,7 +36,7 @@ addLayer("quests", {
     milestones: {
         0: {
             requirementDescription: "1000 Quests (Placeholder)",
-            effectDescription: "Unlock Specks, The Shop, and a new Quest",
+            effectDescription: "Unlock Specks and a new Quest",
             done() { return player.quests.points.gte(1000) }
         }
     },
@@ -41,9 +51,11 @@ addLayer("quests", {
             display() { return `${format(player.points)}/${format(this.goal())} Points` },
             progress() { return this.completed() || player.points.add(1).log10().div(this.goal().log10()) },
             goal() {
-                let baseExp = 10
-                let scaling = 45 * Math.min(4, player.quests.completions.pointsBar)
-                let exp = baseExp + scaling
+                let baseExp = 5
+                let scaling = Math.min(5, 1 + player.quests.completions.pointsBar) ** 2
+                // let scaling = 45 * Math.min(4, player.quests.completions.pointsBar)
+                // let exp = baseExp + scaling
+                let exp = baseExp * scaling
 
                 return new Decimal(10).pow(exp)
             },
@@ -62,16 +74,17 @@ addLayer("quests", {
             display() { return `${format(player.p.points)}/${this.goal()} Pennies` },
             progress() { return this.completed() || player.p.points.add(1).log10().div(this.goal().log10()) },
             goal() {
-                let baseExp = 34
-                let scaling = 6 * Math.min(5, player.quests.completions.penniesBar)
+                let baseExp = 35
+                let scaling = 3 * Math.min(4, player.quests.completions.penniesBar)
                 let exp = baseExp + scaling
 
                 return new Decimal(10).pow(exp)
             },
             textStyle: {'color' : 'blue'},
-            completed:() => player.quests.completions.penniesBar >= 6,
+            completed:() => player.quests.completions.penniesBar >= 5,
             unlocked() { return !this.completed() || !player.quests.hideCompleted},
-            reward:() => 1 + .02 * player.quests.completions.penniesBar
+            reward:() => player.quests.completions.penniesBar == 0 ? 1
+                : 1 + .01 * player.quests.completions.penniesBar ** 3
         },
         dollarResetBar: {
             direction: RIGHT,
@@ -90,9 +103,6 @@ addLayer("quests", {
 
 
                 return `Perform a Dollar reset in under ${timeDisplay(goal, false)} ` + timeLeftText
-                // if (goal <= 60) return `Perform a Dollar reset in under ${goal} seconds ` + timeLeftText
-                // else if (goal <= 3600) return `Perform a Dollar reset in under ${goal/60} minutes ` + timeLeftText
-                // else return `Perform a Dollar reset in under ${goal/3600} hours ` + timeLeftText
             },
             progress() { 
                 return this.completed() ||
@@ -109,11 +119,6 @@ addLayer("quests", {
                     case 5: return 300
                     default:  throw Error(`Dollar Reset quest has invalid number of completions: ${completions}`)
                 }
-                // if (completions == 0) return 10800
-                // else if (completions == 1) return 3600
-                // else if (completions == 2) return 1800
-                // else if (completions == 3) return 600
-                // else if (completions >= 4) return 300
             },
             textStyle: {'color' : 'blue'},
             baseStyle: {'background-color' : 'red'},
@@ -195,7 +200,7 @@ addLayer("quests", {
             height: 50,
             title: "Apples Quest",
             effectDisplay:() => `Because you have completed this quest ${player.quests.completions.applesBar}/5 times,
-                you have ${tmp.quests.bars.applesBar.reward} more effective Apple Pickers`,
+                you have ${tmp.quests.bars.applesBar.reward}x more effective Apple Pickers`,
             display() { return `${format(player.sys.businesses.apples.points)}/${this.goal()} Apples` },
             progress() { return this.completed() || player.sys.businesses.apples.points.div(this.goal()) },
             goal() {
@@ -207,7 +212,7 @@ addLayer("quests", {
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.applesBar >= 5,
             unlocked() { return !this.completed() || !player.quests.hideCompleted},
-            reward:() => player.quests.completions.applesBar
+            reward:() => 1 + player.quests.completions.applesBar/5
         },
         smackBar: {
             direction: RIGHT,
@@ -248,10 +253,139 @@ addLayer("quests", {
             completed:() => player.quests.completions.enemyKillsBar >= 10,
             unlocked() { return hasAchievement("a", 94) && (!this.completed() || !player.quests.hideCompleted) },
             reward:() => 1.1 ** player.quests.completions.enemyKillsBar
+        },
+        fastSpecksBar: {
+            direction: RIGHT,
+            width: 500,
+            height: 50,
+            title: "Fast Specks Quest",
+            effectDisplay:() => `Because you have completed this quest ${player.quests.completions.fastSpecksBar}/10 times,
+                max TSLS is decreased by ${timeDisplay(tmp.quests.bars.fastSpecksBar.reward)}`,
+            display() { return `Collect ${player.quests.specks.fastCollected}/${this.goal()} Specks within 30 seconds of spawning`},
+            progress() { return this.completed() || player.sys.bills.totalEnemyKills/this.goal() },
+            goal() {
+                let base = 1
+                let scaling = factorial(1 + Math.min(4, player.quests.completions.fastSpecksBar))
+
+                return base * scaling
+            },
+            textStyle: {'color' : 'blue'},
+            completed:() => player.quests.completions.fastSpecksBar >= 5,
+            unlocked() { return hasMilestone("quests", 0) && (!this.completed() || !player.quests.hideCompleted) },
+            reward:() => 60 * player.quests.completions.enemyKillsBar
         }
+    },
+    specks: {
+        gain:() => {
+            return 1
+        },
+        maxSpecks:() => {
+            return 3
+        },
+        maxTsls:() => {
+            let ret = 3600
+
+            ret -= player.quests.grid[101].levels / 3 * 60 * 5
+            ret -= tmp.quests.bars.fastSpecksBar.reward
+            return ret
+        },
+        maxTimer:() => {
+            return 30
+        },
+        spawnChance:() => {
+            let ret = Math.min(player.quests.specks.tsls / tmp.quests.specks.maxTsls, 1) 
+            ret *= tmp.quests.specks.spawnChanceMultiplier
+            return ret
+        },
+        spawnChanceMultiplier:() => {
+            return .1
+        },
+        speckDimensions:() => {
+            return 15
+        }
+    },
+    grid: {
+        rows: 1, // If these are dynamic make sure to have a max value as well!
+        cols: 4,
+        getStartData(id) {
+            if (id === undefined) return 
+            return getStartShopItem(id)
+        },
+        // getUnlocked(id) { // Default
+        //     return true
+        // },
+        getCanClick(data, id) {
+            return player.quests.specks.points.gte(this.getCost(data, id)) && data.levels < data.maxLevels
+        },
+        onClick(data, id) {
+            player.quests.specks.points = player.quests.specks.points.sub(this.getCost(data, id))
+            data.levels++
+            updateShopDisplay(this.layer, id)
+        },
+        getEffect(data, id) {
+            if (data === undefined) return
+            switch (data.type) {
+                case "compounding": return data.effect ** data.levels
+                case "additive": return data.effect * data.levels
+                case "other":
+                    //if (id == ...) return thing
+                default: throw Error("Invalid shop effect type: " + data.type)
+            }
+        },
+        getTitle(data, id) {
+            return data.title
+        },
+        getDisplay(data, id) {
+            return `${data.levels}/${data.maxLevels}`
+        },
+        getCost(data, id) {
+            switch (id) {
+                // case used for special cases (scaling cost)
+                case 104: return data.cost * (data.levels + 1)
+                default: return data.cost
+            }
+        }
+    },
+    clickables: {
+        11: {
+            canClick() { 
+                return player.quests.specks.points.gte(1)
+            },
+            onClick() {
+                let cost = Math.max(1, player.quests.specks.points.div(5).floor())
+                if (!confirm(`Are you sure you want to spend ${cost} specks to reset their locations?`)) return
+                player.quests.specks.points = player.quests.specks.points.sub(cost)
+                for (p in particles) {
+                    let particle = particles[p]
+                    particle.x = Math.random() * (tmp.other.screenWidth - 100) + 50
+                    particle.y = Math.random() * (tmp.other.screenWidth - 100) + 50
+                }
+            }
+        },
     },
     update(diff) {
         if (!player.quests.unlocked) return
+
+        if (true || hasMilestone("quests", 0)) {
+            let speckData = player.quests.specks
+            let tmpSpeckData = tmp.quests.specks
+            
+            if (speckData.speckCount < tmpSpeckData.maxSpecks) {
+                speckData.timer += diff
+                speckData.tsls += diff
+                if (speckData.timer >= tmpSpeckData.maxTimer) {
+                    if (tmpSpeckData.spawnChance >= Math.random()) {
+                        console.log(`Spawn chance: ${tmpSpeckData.spawnChance}`)
+                        console.log(`TSLS: ${speckData.tsls}`)
+                        makeShinies(speckParticle)
+                        speckData.speckCount++
+                        speckData.tsls = 0
+                    }
+                    speckData.timer -= tmpSpeckData.maxTimer
+                }
+            }
+        }
+
         for (bar in tmp.quests.bars) {
             let quest = tmp.quests.bars[bar]
             if (typeof quest !== "string" && !quest.completed && quest.progress >= 1 && !quest.timeBased) {
@@ -362,20 +496,86 @@ addLayer("quests", {
                 ["display-text", function() { return `You have completed 
                     <h2><span style="color: blue; text-shadow: 0px 0px 10px blue; font-family: Lucida Console, Courier New, monospace">
                     ${formatWhole(player.quests.points)}</span></h2> quests`
-                }],
-                "blank", "milestones"
+                }], "blank", "milestones"
             ]
+        },
+        "Specks": {
+            content: [
+                ["display-text", function() { return `You have
+                    <h2><span style="color: white; text-shadow: 0px 0px 10px white; font-family: Lucida Console, Courier New, monospace">
+                    ${format(player.quests.specks.points, 2)}</span></h2> specks`
+                }], "blank",
+                ["display-text", function() { return `There is currently a ${format(tmp.quests.specks.spawnChance * 100)}% chance
+                    that a speck will spawn in ${format(Math.max(0, tmp.quests.specks.maxTimer - player.quests.specks.timer))} seconds.
+                    <br>${player.quests.specks.speckCount}/${tmp.quests.specks.maxSpecks} specks are spawned`
+                }], "blank", 
+                "grid", "blank",
+                ["display-text", function() { return player.quests.specks.shopDisplay }], "blank",
+                "clickables"
+            ],
+            unlocked:() => true || hasMilestone("quests", 0)
         },
         "Info": {
             content: [
-                ["display-text", `Quests are mini-challenges/milestones that provide unique boosts once completed. Many Quests are repeatable,
-                    and will provide an increasing effect based on how many times they are completed, while others can only be done once.
-                    <br><br>The requirements for these Quests vary, and some may not be feasible depending on your progression, but in time,
-                    you will be able to complete every Quest. More Quests will unlock as you progress through the game.
+                ["display-text", `<h2>Quests</h2><br>Quests are mini-challenges/milestones that provide unique boosts once completed. 
+                    Many Quests are repeatable, and will provide an increasing effect based on how many times they are completed, while others can 
+                    only be done once.<br><br>The requirements for these Quests vary, and some may not be feasible depending on your progression,
+                    but in time, you will be able to complete every Quest. More Quests will unlock as you progress through the game.
                     <br><br>As you progress through most Quests, their bars will fill up with white color to indicate how close you are to the goal.
-                    Some quests can be failed, however, and this is indicated by red fill color.`
-                ]
+                    Some quests can be failed, however, and this is indicated by red fill color.<br><br>`
+                ], "blank",
+                () => true || hasMilestone("quests", 0) ? ["microtabs", "info"] : ""
             ]
         }
     },
+    microtabs: {
+        info: {
+            "Specks": {
+                content: [
+                    "blank",
+                    ["display-text", `Specks can spawn anywhere on your screen, and will stay there until collected. You can collect specks by
+                        hovering your mouse over them (or tapping them on mobile), and will gain a proportional number of Specks as currency.
+                        They can hide within any other displayable object, such as buttons, text, or icons, though most will be easy to spot.`],
+                    "blank"
+                ]
+            },
+            "Spawning": {
+                content: [
+                    "blank",
+                    ["display-text", `Specks have a chance of spawning that changes based on how much time has passed since the last speck
+                        was spawned (TSLS). The code used to implement this is follows:<br><br>
+                        IF min(TSLS / maxTSLS, 1) * spawnChanceMultiplier < random(0, 1) THEN spawnSpeck()
+                        <br><br>Essentially, the larger the value of TSLS is, the more likely it is that a speck will spawn. maxTSLS is a
+                        variable that determines how much time can pass before your spawn chance is capped. It is initially set to 3600,
+                        which means that 1 hour can pass before your spawn chance is capped. spawnChanceMultiplier is used to scale your
+                        spawn chance. It is initially set to 0.1, which means that your spawn chance is initially capped at 0.1.
+                        <br><br>The check displayed above is <h3 style="color: red">not</h3> called every tick. It is called once every 30 
+                        seconds, which means that, no matter what your spawn chance is, only one speck can spawn per 30 seconds (at first).`],
+                    "blank"
+                ]
+            }
+        }
+    },
+    componentStyles: {
+        "buyable"() { return {'font-size':'12px', 'height':'100px', 'width':'100px'} },
+        "grid"() { return {'border-style':'solid', 'border-width':'5px', 'padding':'20px', 'max-width':'fit-content'} }
+    }
 })
+
+const speckParticle = {
+    time: Number.POSITIVE_INFINITY,
+    width:() => tmp.quests.specks.speckDimensions,
+    height:() => tmp.quests.specks.speckDimensions,
+    lifespan: 0,
+    onMouseOver() {
+        console.log("mouse detected over particle")
+        player.quests.specks.points = player.quests.specks.points.add(tmp.quests.specks.gain)
+        player.quests.specks.speckCount--
+        player.quests.specks.collected++
+        if (this.lifespan <= 30) player.quests.specks.fastCollected++
+        Vue.delete(particles, this.id)
+    },
+    onClick() {
+        return this.onMouseOver()
+    }
+}

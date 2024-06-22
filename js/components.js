@@ -172,7 +172,7 @@ function loadVue() {
 	Vue.component('upgrade', {
 		props: ['layer', 'data'],
 		template: `
-		<button v-if="tmp[layer].upgrades && tmp[layer].upgrades[data]!== undefined && tmp[layer].upgrades[data].unlocked" :id='"upgrade-" + layer + "-" + data' v-on:click="buyUpg(layer, data)" v-bind:class="{ [layer]: true, tooltipBox: true, upg: true, bought: hasUpgrade(layer, data), locked: (!(canAffordUpgrade(layer, data))&&!hasUpgrade(layer, data)), can: (canAffordUpgrade(layer, data)&&!hasUpgrade(layer, data))}"
+		<button v-if="tmp[layer].upgrades && tmp[layer].upgrades[data]!== undefined && tmp[layer].upgrades[data].unlocked" :id='"upgrade-" + layer + "-" + data' v-on:mousedown="handleMouseEvent" v-on:mouseenter="handleMouseEvent" v-bind:class="{ [layer]: true, tooltipBox: true, upg: true, bought: hasUpgrade(layer, data), locked: (!(canAffordUpgrade(layer, data))&&!hasUpgrade(layer, data)), can: (canAffordUpgrade(layer, data)&&!hasUpgrade(layer, data))}"
 			v-bind:style="[((!hasUpgrade(layer, data) && canAffordUpgrade(layer, data)) ? {'background-color': tmp[layer].color} : {}), tmp[layer].upgrades[data].style]">
 			<span v-if="layers[layer].upgrades[data].fullDisplay" v-html="run(layers[layer].upgrades[data].fullDisplay, layers[layer].upgrades[data])"></span>
 			<span v-else>
@@ -184,7 +184,15 @@ function loadVue() {
 			<tooltip v-if="tmp[layer].upgrades[data].tooltip" :text="tmp[layer].upgrades[data].tooltip"></tooltip>
 
 			</button>
-		`
+		`,
+		methods: {
+			handleMouseEvent(event) {
+				// event.buttons is a bitmask, 0b1 is primary mouse button (usually left)
+				if (event.buttons & 1) {
+					buyUpg(this.layer, this.data)
+				}
+			}
+		}
 	})
 
 	Vue.component('milestones', {
@@ -382,7 +390,7 @@ function loadVue() {
 		<div v-if="tmp[layer].grid" class="upgTable">
 			<div v-for="row in (data === undefined ? tmp[layer].grid.rows : data)" class="upgRow">
 				<div v-for="col in tmp[layer].grid.cols"><div v-if="run(layers[layer].grid.getUnlocked, layers[layer].grid, row*100+col)"
-					class="upgAlign" v-bind:style="{'margin': '1px',  'height': 'inherit',}">
+					class="upgAlign" v-bind:style="{'margin': '1px',  'height': 'inherit',}" v-on:mouseleave="updateShopDisplay(layer, data, true)">
 					<gridable :layer = "layer" :data = "row*100+col" v-bind:style="tmp[layer].componentStyles.gridable"></gridable>
 				</div></div>
 				<br>
@@ -398,6 +406,7 @@ function loadVue() {
 		v-if="tmp[layer].grid && player[layer].grid[data]!== undefined && run(layers[layer].grid.getUnlocked, layers[layer].grid, data)" 
 		v-bind:class="{ tile: true, can: canClick, locked: !canClick, tooltipBox: true,}"
 		v-bind:style="[canClick ? {'background-color': tmp[layer].color} : {}, gridRun(layer, 'getStyle', player[this.layer].grid[this.data], this.data)]"
+		v-on:mouseenter="updateShopDisplay(layer, data)"
 		v-on:click="clickGrid(layer, data)"  @mousedown="start" @mouseleave="stop" @mouseup="stop" @touchstart="start" @touchend="stop" @touchcancel="stop">
 			<span v-if= "layers[layer].grid.getTitle"><h3 v-html="gridRun(this.layer, 'getTitle', player[this.layer].grid[this.data], this.data)"></h3><br></span>
 			<span v-bind:style="{'white-space': 'pre-line'}" v-html="gridRun(this.layer, 'getDisplay', player[this.layer].grid[this.data], this.data)"></span>

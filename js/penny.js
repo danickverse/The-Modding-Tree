@@ -57,6 +57,7 @@ addLayer("p", {
         ret = ret.mul(buyableEffect("p", 23))
         ret = ret.mul(tmp.sys.businesses.apples.effect)
         ret = ret.mul(tmp.quests.bars.pointsBar.reward)
+        ret = ret.mul(gridEffect("quests", 101))
         return ret
     },
     softcap: new Decimal("1e9"),
@@ -254,7 +255,7 @@ addLayer("p", {
                 if (exp.gt(1)) ret = ret + format(base.pow(exp)) + "</sup>"
                 else ret = ret + format(base)
 
-                if (upgrade23LimitExp() > 1) return ret + " but limits Points to 10 + Pennies<sup>" + format(upgrade23LimitExp()) + "</sup> * 100"
+                if (upgrade23LimitExp() > 1) return ret + " but limits Points to 100 + Pennies<sup>" + format(upgrade23LimitExp()) + "</sup> * 100"
                 return ret + " but limits Points to 10 + Pennies * 100"
             },
             cost: new Decimal(250),
@@ -779,7 +780,6 @@ addLayer("p", {
                     let nextFormNum = getBuyableAmount("p", 23).add(1).mul(coeff).add(1)
                     return `<b><h3>Next:</b></h3> ${format(nextFormNum)}<sup>${format(nextFormNum)}</sup> = ${format(nextFormNum.pow(nextFormNum))}`
                 }
-                //let effFormula = "1.25<sup>x</sup><br>"
                 let costFormula = "<b><h3>Cost Formula:</h3></b><br>0.15*2^x"
                 return effFormulaBase + effFormula1 + effFormula2 + nextEffFormula2() + "<br><br>" +  costFormula
             },
@@ -787,8 +787,8 @@ addLayer("p", {
                 if (!this.unlocked()) return decimalOne
                 let base = x.mul(this.coefficient()).add(1)
                 let exp = x.mul(this.coefficient()).add(1)
+
                 // (1 + .25x)^(1 + x/10)
-                
                 // let base = new Decimal(1.25)
                 // let exp = getBuyableAmount("p", 23)
                 // 1.25^x

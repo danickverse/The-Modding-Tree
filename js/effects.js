@@ -22,7 +22,7 @@ addLayer("effects", {
         "Achievements": {
             content: [
                 ["display-text", function() {
-                    let ret = "You currently have " + player.a.achievements.length + " achievements."
+                    let ret = "You currently have " + player.a.achievements.length + " achievements. "
                     if (hasUpgrade("p", 23)) ret += `As seen in the Achievements layer, this number directly...<br>
                         <br>Multiplies point gain by ${format(upgradeEffect("p", 21))}`
                     if (hasUpgrade("p", 35)) ret += ",<br>Multiplies penny gain by " + format(upgradeEffect("p", 35))

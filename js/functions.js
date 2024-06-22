@@ -1,5 +1,24 @@
+function timeDisplay(time, showDecimal=true) {
+    if (showDecimal) funct = format
+    else funct = formatWhole
+    if (time < 60) return `${funct(time)} second` + (time > 1 ? "s" : "")
+    else if (time < 3600) return `${funct(time/60, 2)} minute` + (time/60 > 1 ? "s" : "")
+    else if (time < 86400) return `${funct(time/3600, 2)} hour` + (time/3600 > 1 ? "s" : "")
+    else return `${funct(time/86400, 2)} day` + (time/86400 > 1 ? "s" : "")
+}
+
+function factorial(x) {
+    if (x < 0) throw Error("lol " + x)
+    if (x == 0 || x == 1) return 1
+    let ret = x
+    for (let i = x - 1; i > 1; i--) {
+        ret *= i
+    }
+    return ret
+}
+
 function upgrade23Limit() {
-    let base = player.p.points.mul(100).pow(upgrade23LimitExp()).add(10)
+    let base = player.p.points.mul(100).pow(upgrade23LimitExp()).add(100)
     if (hasMilestone("a", 0) && base.lt(new Decimal("9.99e9"))) {
         let limit = new Decimal("1e10")
         let newValFactor = limit.sub(base).log10().div(20).add(1) // 1 + log10(L-B)/20
@@ -8,7 +27,7 @@ function upgrade23Limit() {
     if (getClickableState("e", 21) || getClickableState("e", 22)) base = base.div(5)
     if (getClickableState("e", 31)) base = base.mul(clickableEffect("e", 31))
     if (getClickableState("e", 32)) base = base.div(10)
-    return base.max(new Decimal("10"))
+    return base.max(100)
 }
 
 function upgrade23LimitExp() {
@@ -154,13 +173,26 @@ function investmentReset(resetInvestment, resetInvestment2) {
 
 function boostedTime(diff) {
     let ret = diff
-    if (hasMilestone("a", 8)) ret = ret * (1 + (player.a.achievements.length**1.5)/1000)
-    ret = ret * tmp.quests.bars.dollarResetBar.reward
+    if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**2)/1000)
+    ret *= tmp.quests.bars.dollarResetBar.reward
+    ret *= gridEffect("quests", 101)
     return ret
 }
 
 function conversionRate() {
-    let base = 1
+    let base = baseConversionRate()
+
+    let mul = 1
+    if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
+    if (hasUpgrade("sys", 14)) mul *= upgradeEffect("sys", 14)
+    mul *= tmp.quests.bars.penniesBar.reward
+    mul *= gridEffect("quests", 101)
+
+    return (base * mul) / 100
+}
+
+function baseConversionRate() {
+    let ret = 1
     let baseAdd = 0
     if (hasAchievement("a", 82)) baseAdd += .01
     if (hasAchievement("a", 83)) baseAdd += .01
@@ -168,19 +200,120 @@ function conversionRate() {
     if (hasAchievement("a", 85)) baseAdd += .02
     baseAdd += Number(player.s.stored_dollars.points.root(3).mul(3).div(100))
 
-    let mul = 1
-    if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
-    if (hasUpgrade("sys", 14)) mul *= upgradeEffect("sys", 14)
-    mul *= tmp.quests.bars.penniesBar.reward
-
-    return ((base + baseAdd) * mul) / 100
+    return ret + baseAdd
 }
 
-function timeDisplay(time, showDecimal=true) {
-    if (showDecimal) funct = format
-    else funct = formatWhole
-    if (time <= 60) return `${funct(time)} seconds`
-    else if (time <= 3600) return `${funct(time/60, 2)} minutes`
-    else if (time <= 86400) return `${funct(time/3600, 2)} hours`
-    else return `${funct(time/86400, 2)} days`
+function systemUpgradeCost(row) {
+    let boughtInRow = player.sys.upgrades.filter(
+        (index) => Math.floor(index / 10) == row
+    ).length
+
+    switch (row) {
+        case 1: return .15 + .15 * boughtInRow
+        case 2: return 1 + .25 * boughtInRow
+        default: throw Error("Invalid row supplied to systemUpgradeCost")
+    }
+}
+
+function updateBills(spent) {
+    let billsData = player.sys.bills
+    billsData.spent = billsData.spent.add(spent)
+    if (spent > 0) {
+        billsData.spentTotal = billsData.spentTotal.add(spent)
+        let denominationValues = {
+            9: 10000,
+            8: 1000,
+            7: 100, 
+            6: 50, 
+            5: 20, 
+            4: 10, 
+            3: 5, 
+            2: 2, 
+            1: 1
+        }
+        for (let i = 9; i >= 1; i--) {
+            let value = denominationValues[i]
+            if (billsData.spentTotal.gte(value ** 5) && billsData.highestDenominationIndex <= i) {
+                billsData.highestDenominationIndex = i
+                billsData.highestDenomination = value
+                billsData.nextDenominationUnlock = denominationValues[i+1] ** 5
+                return
+            }
+        }
+
+        // spent dollars < 1
+        billsData.highestDenominationIndex = 0
+        billsData.highestDenomination = 0
+        billsData.nextDenominationUnlock = 1
+    }
+}
+
+function attackEnemy(damage) {
+    player.sys.bills.enemyHealth = player.sys.bills.enemyHealth.sub(damage)
+    if (player.sys.bills.enemyHealth.lte(0)) {
+        // player.sys.points = player.sys.points.add(tmp.sys.bars.enemyBar.loot)
+        updateBills(tmp.sys.bars.enemyBar.loot)
+        player.sys.bills.totalEnemyKills += 1
+        player.sys.bills.currentEnemyKills += 1
+        player.sys.bills.enemyLevel += 1
+        player.sys.bills.enemyHealth = layers.sys.bars.enemyBar.maxHealth()
+    }
+}
+
+function getStartShopItem(id) {
+    let max; let title; let display; let cost; let type
+    switch (id) {
+        case 101:
+            max = 3; title = "Beginner Pack"; cost = 3
+            display = `Multiply point gain, post-nerf penny gain, expansion gain, 
+                        effective Apple Trees, time flux, and the conversion rate by 1.1x per level,
+                        and max TSLS (see Info) is reduced by 1 minute and 40 seconds per level`
+            effect = 1.2; type = "compounding"; break
+        case 102:
+            max = 10; title = "Points EX"; cost = 2
+            display = `Increase base point gain by 0.5 per level`
+            effect = .5; type = "additive"; break
+        case 103:
+            max = 10; title = "Points EX"; cost = 2
+            display = `Multiply penny gain by 1.1x per level`
+            effect = 1.1; type = "compounding"; break
+        case 104:
+            max = 10; title = "Conversion EX"; cost = 2
+            display = `Increase the base conversion rate by 5% per level`
+            effect = .05; type = "additive"; break
+        case 105:
+            max = 10; title = ""
+        default: throw Error(`Missing Shop grid case for id: ${id}`)
+    }
+    return {
+        levels: 0, maxLevels: max,
+        title: title, shopDisplay: display, cost: cost,
+        effect: effect, type: type
+    }
+}
+
+function updateShopDisplay(layer, id, exit=false) {
+    if (exit) { player.quests.specks.shopDisplay = ""; return }
+    if (layer != "quests") return
+
+    let data = getGridData(layer, id)
+
+    let cost = `Cost: ${tmp.quests.grid.getCost(data, id)} Specks`
+    let dis = data.shopDisplay
+    let eff = "Current effect: "
+    let effVal = toPlaces(gridEffect(layer, id), 2)
+
+    switch (data.type) {
+        case "compounding": 
+            if (id == 101) eff += effVal + "x, -" + timeDisplay(data.levels / 3 * 60 * 5, false);
+            else eff += effVal + "x"
+            break
+        case "additive": eff += "+" + effVal; break;
+        case "other":
+            
+            // do others
+        default: throw Error("Shop item has invalid type: " + data.type)
+    }
+
+    player.quests.specks.shopDisplay = `${cost}<br><br>${dis}<br><br>${eff}`
 }

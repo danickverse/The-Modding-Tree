@@ -10,7 +10,7 @@ function makeParticles(data, amount=1, type = "normal") {
 
             switch(thing) {
                 case 'onClick': // Functions that should be copied over
-                case 'onMouseEnter':
+                case 'onMouseOver': // changed from onMouseEnter typo
                 case 'onMouseLeave':
                 case 'update':
                     particle[thing] = data[thing]
@@ -55,6 +55,7 @@ function updateParticles(diff) {
 		}
         else {
             if (particle.update) run(particle.update, particle)
+            if (particle.lifespan !== undefined) particle.lifespan += diff
             particle.angle += particle.rotation
             particle.x += particle.xVel
             particle.y += particle.yVel

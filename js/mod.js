@@ -7,7 +7,7 @@ let modInfo = {
 		"tree.js", "achievements.js", "penny.js", 
 		"expansion.js", "storage.js", "system.js",
 		"quests.js", "effects.js", "functions.js"],
-	allowSmall: true,
+	allowSmall: false,
 
 	discordName: "",
 	discordLink: "",
@@ -22,15 +22,23 @@ let VERSION = {
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.2.0.1</h3><br>
+	<h3>v0.2.0.2</h3><br>
+		- Can now hold down and drag mouse to buy upgrades, credit to: @pg132<br>
+		- Reduced Points Quest base requirement and scaling<br>
+		- Reduced Pennies Quest base requirement and scaling<br>
+		- Tweaked (buffed) Apples Quest's reward<br>
+		- Nerfed 8th System upgrade for the future (it's not a big deal)<br>
+		- Other minor changes<br><br>
+	
+	<br><h3>v0.2.0.1</h3><br>
 		- The Dollars effect is now based on total Dollars<br>
 		- Moved one effect of the 2nd Dollar milestone to the 3rd Dollar milestone,
 			and gave the 2nd Dollar milestone a new effect in its place<br>
 		- Buffed QOL 1's autobuyer speed by 2.5x<br>
 		- Reduced offline limit to 2 hours for... reasons<br>
-		- Added a placeholder milestone to the Quests layer (this very likely won't be touched for a while)<br><br>
+		- Added a placeholder milestone to the Quests layer (this very likely won't be touched for a while)<br>
 
-	<h3>v0.2.0</h3><br>
+	<br><h3>v0.2.0</h3><br>
 		- The System layer is implemented, along with two new features and upgrades/milestones<br>
 		- The Quest side layer is implemented, along with 5 quests (more will be added soon!)<br>
 		- Moar Storage (but no milestones)!!! Also, Storage upgrades no longer reset currencies, it was a lame mechanic<br>
@@ -43,13 +51,13 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Buffed Expansion Challenge reward to make it more meaningful as the game progresses, and made it easier<br>
 		- Buffed 9th Achievement Milestone for the same reason<br>
 		- Slightly buffed QOL 4 just because<br>
-		- A lot of other stuff, like rebalancing, bug fixes, visual changes, and cleaner code<br><br>
+		- A lot of other stuff, like rebalancing, bug fixes, visual changes, and cleaner code<br>
 
-	<h3>v0.1.9.1</h3><br>
+	<br><h3>v0.1.9.1</h3><br>
 		- Helper function works as intended, affects Penny upgrades 18/23<br>
-		- 9th Achievement milestone effect cut in half<br><br>
+		- 9th Achievement milestone effect cut in half<br>
 	
-	<h3>v0.1.9</h3><br>
+	<br><h3>v0.1.9</h3><br>
 		- Added 4 Penny upgrades and introduced reset time<br>
 		- Added 2 Storage milestones (4 --> 6), two Storage upgrades, and one Storage challenge<br>
 		- Added 4 achievements (31 --> 35) and 2 achievement milestones (7 --> 9)<br>
@@ -64,18 +72,18 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Buffed It's Compassion Is Unmatched's first effect by 2.5x<br>
 		- Inflation from older saves *should* be fixed, values reset to reasonable v0.1.8.2 endgame values if surpassed<br>
 		- Other (mostly minor) visual/balance changes<br>
-		- Probably a bunch more stuff I didn't keep track of<br><br>
+		- Probably a bunch more stuff I didn't keep track of<br>
 	
-	<h3>v0.1.8.2</h3><br>
-		- Updated programmed Achievement 25 condition to match description<br><br>
+	<br><h3>v0.1.8.2</h3><br>
+		- Updated programmed Achievement 25 condition to match description<br>
 	
-	<h3>v0.1.8.1</h3><br>
+	<br><h3>v0.1.8.1</h3><br>
 		- Buffed Stored Investment effect 5<br>
 		- Focused Production is always accessible after unlocking Storage layer<br>
 		- Fixes: Storage milestone 4 kept (milestones+1) upgrades, which also revealed a bug
-			which occurs when it keeps QOL 1/2. Both issues are fixed now<br><br>
+			which occurs when it keeps QOL 1/2. Both issues are fixed now<br>
 
-	<h3>v0.1.8</h3><br>
+	<br><h3>v0.1.8</h3><br>
 		- IITU is now based on current expansion investment, not best expansion investment (it was a dumb idea). 
 			Stored Expansion effect 3 (secondary effect) buffed to compensate<br>
 		- 2 more Focused Production Clickables (2 --> 4)<br>
@@ -84,25 +92,25 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Investment Challenge (Storage layer) is implemented<br>
 		- Stored Expansion effect 4 and Storage milestone 4 are implemented<br>
 		- Slight rebalancing to Storage milestone requirements<br>
-		- Probably more stuff that I can't remember<br><br>
+		- Probably more stuff that I can't remember<br>
 
-	<h3>v0.1.7.4</h3><br>
-		- Added new minor layer to display investment effects rather than place them in Info tab of Penny layer<br><br>
+	<br><h3>v0.1.7.4</h3><br>
+		- Added new minor layer to display investment effects rather than place them in Info tab of Penny layer<br>
 
-	<h3>v0.1.7.3</h3><br>
+	<br><h3>v0.1.7.3</h3><br>
 		- Light balance changes (expansion upgrades --> row 4, col 1/2)
 		- Light visual updates
-		- You can finally see what your investment does in one place (Penny layer --> Info tab)<br><br>
+		- You can finally see what your investment does in one place (Penny layer --> Info tab)<br>
 
-	<h3>v0.1.7.2</h3><br>
+	<br><h3>v0.1.7.2</h3><br>
 		- Fixed accidental softlock brought on by new feature<br>
 		- Correctly implemented the 3rd Stored Investment effect<br>
-		- Fixed minor visual mistakes<br><br>
+		- Fixed minor visual mistakes<br>
 	
-	<h3>v0.1.7.1</h3><br>
-		- Quick change to the intended requirement for a new clickable<br><br>
+	<br><h3>v0.1.7.1</h3><br>
+		- Quick change to the intended requirement for a new clickable<br>
 	
-	<h3>v0.1.7</h3><br>
+	<br><h3>v0.1.7</h3><br>
 		- Added Storage layer: two clickables and three milestones<br>
 		- Expanded Expansions layer: 5 upgrades (15 -> 20), not yet balanced<br>
 		- 7 more achievements (20 -> 27), 6 of which are implemented<br>
@@ -111,22 +119,22 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Balance changes: QOL 2 now applies to the first three rows, row 3 expansion upgrades buffed
 			to make them more worthwhile<br>
 		- Various minor fixes (mainly visual inconsistencies), 
-			including one improperly implemented upgrade that could cause NaN errors<br><br>
+			including one improperly implemented upgrade that could cause NaN errors<br>
 
-	<h3>v0.1.5</h3><br>
+	<br><h3>v0.1.5</h3><br>
 		- Added Expansions layer: 15 upgrades and two clickables<br>
 		- Expanded Penny layer: 5 upgrades (15 -> 20), 2 buyables (2 -> 4)<br>
 		- 9 more achievements (11 -> 20)<br>
 		- 4 achievement milestones (0 -> 4)<br>
 		- Balance changes: Finishing v0.11 content is much faster in slow spots and game supports (encourages?) idle style to limited extent. 
-			Implemented softcaps to stop inflation<br><br>
+			Implemented softcaps to stop inflation<br>
 
-	<h3>v0.1.1</h3><br>
+	<br><h3>v0.1.1</h3><br>
 		- quick balance patch to stop big number do thing<br>
 		- like one person played before this so nothing happened<br>
-		- <s>exponentials are funny</s><br><br>
+		- <s>exponentials are funny</s><br>
 
-	<h3>v0.1</h3><br>
+	<br><h3>v0.1</h3><br>
 		- Added Penny layer: 15 upgrades, Investment (I? likely adding more), Education I<br>
 		- Added 11 achievements.<br>
 		- Added basic functionality for Expansions layer.<br>
@@ -169,6 +177,7 @@ function getPointGen() {
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
 	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).pow(.4))
+	gainMult = gainMult.mul(gridEffect("quests", 101))
 
 	let gainExp = decimalOne
 	if (hasUpgrade("p", 52)) gainExp = gainExp.add(upgradeEffect("p", 52))
@@ -201,7 +210,7 @@ function addedPlayerData() { return {
 var displayThings = [
 	() => boostedTime(1) != 1 || player.sys.unlocked ? 
 		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
-			: `Gaining ${format(boostedTime(1), 4)}x more reset time`)
+			: `Time Flux: ${format(boostedTime(1), 4)}x`)
 	: "",
 	"Current endgame: 4 Dollar Milestones, 40 Achievements",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
@@ -252,7 +261,7 @@ function fixOldSave(oldVersion){
 		player.s.high_scores[11].points = player.s.high_scores[11].points.min(new Decimal("1e15"))
 		player.resetTime = 0
 	}
-	if (oldVersion < "0.2") {
+	if (oldVersion < "0.2.0") {
 		player.resetTime = player.p.resetTime
 		if (player.a.achievements.indexOf(65) > -1) player.a.achievements[player.a.achievements.indexOf(65)] = "65"
 	}

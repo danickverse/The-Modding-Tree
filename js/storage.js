@@ -212,10 +212,10 @@ addLayer("s", {
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
 
-                setClickableState("e", 21, false)
-                setClickableState("e", 22, false)
-                setClickableState("e", 31, false)
-                setClickableState("e", 32, false)
+                // setClickableState("e", 21, false)
+                // setClickableState("e", 22, false)
+                // setClickableState("e", 31, false)
+                // setClickableState("e", 32, false)
 
                 player.highestPointsEver = decimalZero
                 player.e.points = decimalZero
@@ -515,10 +515,10 @@ addLayer("s", {
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
 
-                setClickableState("e", 21, false)
-                setClickableState("e", 22, false)
-                setClickableState("e", 31, false)
-                setClickableState("e", 32, false)
+                // setClickableState("e", 21, false)
+                // setClickableState("e", 22, false)
+                // setClickableState("e", 31, false)
+                // setClickableState("e", 32, false)
 
                 player.highestPointsEver = decimalZero
                 player.e.points = decimalZero

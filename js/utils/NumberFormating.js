@@ -90,7 +90,7 @@ function formatTime(s) {
 function toPlaces(x, precision, maxAccepted) {
     x = new Decimal(x)
     let result = x.toStringWithDecimalPlaces(precision)
-    if (new Decimal(result).gte(maxAccepted)) {
+    if (maxAccepted && new Decimal(result).gte(maxAccepted)) {
         result = new Decimal(maxAccepted - Math.pow(0.1, precision)).toStringWithDecimalPlaces(precision)
     }
     return result

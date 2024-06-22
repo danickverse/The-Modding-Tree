@@ -57,6 +57,7 @@ addLayer("e", {
         ret = ret.mul((player.s.stored_expansion.points.add(1).log10().div(2.5)).max(decimalOne))
 
         ret = ret.mul(1.25**player.sys.milestones.length)
+        ret = ret.mul(gridEffect("quests", 101))
         return ret
     },
     row: 0,

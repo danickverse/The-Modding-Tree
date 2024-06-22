@@ -540,7 +540,13 @@ addLayer("a", {
         //         "border-width": "5px"
         //         }
         //     }
-        // }
+        // },
+        95: {
+            name: "45",
+            done() { return this.unlocked && player.quests.specks.points.gte(3) },
+            tooltip: "Collect 3 Specks",
+            unlocked:() => hasAchievement("a", 81)
+        }
     },
     milestones: {
         0: {
@@ -603,8 +609,8 @@ addLayer("a", {
         },
         8: {
             requirementDescription: "35 Achievements Finished",
-            effectDescription:() => { return "Gain (1 + Achievements<sup>1.5</sup>/1000)x more Reset Time<br>Currently: "
-                + format(1 + player.a.achievements.length**1.5/1000, 3) + "x" },
+            effectDescription:() => { return "Multiply Time Flux by (1 + Achievements<sup>1.5</sup>/1000)x (more Reset Time)<br>Currently: "
+                + format(1 + player.a.achievements.length**2/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },
@@ -613,6 +619,12 @@ addLayer("a", {
             effectDescription:() => `Multiply the conversion rate by 1.01x per achievement after 35<br>
                 Currently: ${format(1.01 ** Math.max(0, player.a.achievements.length - 35), 4)}x`,
             done() { return this.unlocked && player.a.achievements.length >= 40 },
+            unlocked:() => hasAchievement("a", 81)
+        },
+        10: {
+            requirementDescription: "45 Achievements Finished",
+            effectDescription: "Unlock the Shop (Specks)",
+            done() { return this.unlocked && player.a.achievements.length >= 45 },
             unlocked:() => hasAchievement("a", 81)
         }
     },

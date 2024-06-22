@@ -1,60 +1,3 @@
-function systemUpgradeCost(row) {
-    let boughtInRow = player.sys.upgrades.filter(
-        (index) => Math.floor(index / 10) == row
-    ).length
-
-    switch (row) {
-        case 1: return .15 + .15 * boughtInRow
-        case 2: return 1 + .25 * boughtInRow
-        default: throw Error("Invalid row supplied to systemUpgradeCost")
-    }
-}
-
-function updateBills(spent) {
-    let billsData = player.sys.bills
-    billsData.spent = billsData.spent.add(spent)
-    if (spent > 0) {
-        billsData.spentTotal = billsData.spentTotal.add(spent)
-        let denominationValues = {
-            9: 10000,
-            8: 1000,
-            7: 100, 
-            6: 50, 
-            5: 20, 
-            4: 10, 
-            3: 5, 
-            2: 2, 
-            1: 1
-        }
-        for (let i = 9; i >= 1; i--) {
-            let value = denominationValues[i]
-            if (billsData.spentTotal.gte(value ** 5) && billsData.highestDenominationIndex <= i) {
-                billsData.highestDenominationIndex = i
-                billsData.highestDenomination = value
-                billsData.nextDenominationUnlock = denominationValues[i+1] ** 5
-                return
-            }
-        }
-
-        // spent dollars < 1
-        billsData.highestDenominationIndex = 0
-        billsData.highestDenomination = 0
-        billsData.nextDenominationUnlock = 1
-    }
-}
-
-function attackEnemy(damage) {
-    player.sys.bills.enemyHealth = player.sys.bills.enemyHealth.sub(damage)
-    if (player.sys.bills.enemyHealth.lte(0)) {
-        // player.sys.points = player.sys.points.add(tmp.sys.bars.enemyBar.loot)
-        updateBills(tmp.sys.bars.enemyBar.loot)
-        player.sys.bills.totalEnemyKills += 1
-        player.sys.bills.currentEnemyKills += 1
-        player.sys.bills.enemyLevel += 1
-        player.sys.bills.enemyHealth = layers.sys.bars.enemyBar.maxHealth()
-    }
-}
-
 addLayer("sys", {
     symbol: "Sys",
     position: 0,
@@ -160,6 +103,11 @@ addLayer("sys", {
     },
     effect() {
         return player.sys.total.mul(2).add(1).pow(.5)
+    },
+    effectDescription:() => {
+        return `which currently multiplies 
+            penny gain, investment gain, and stored investment/expansion gain by 
+            ${format(tmp.sys.effect)} (based on total)`
     },
     milestones: {
         0: {
@@ -270,9 +218,9 @@ addLayer("sys", {
         },
         23: {
             title: "Hacking in Extra Points",
-            description: "Increase base point gain by 0.5 per Quest completion",
+            description: "Increase base point gain by 0.25 per Quest completion",
             cost:() => systemUpgradeCost(2),
-            effect:() => player.quests.points.div(2),
+            effect:() => player.quests.points.div(5),
             effectDisplay:() => `+${format(upgradeEffect("sys", 23), 1)}`
         },
         24: {
@@ -329,6 +277,7 @@ addLayer("sys", {
             effectiveLevels:() => {
                 let ret = getBuyableAmount("sys", 11)
                 if (hasAchievement("a", 92)) ret = ret.add(1)
+                ret = ret.mul(gridEffect("quests", 101))
 
                 return ret
             },
@@ -364,11 +313,15 @@ addLayer("sys", {
             },
             effectiveLevels:() => {
                 let ret = getBuyableAmount("sys", 12)
-                ret = ret.add(tmp.quests.bars.applesBar.reward) 
                 
+                ret = ret.mul(tmp.quests.bars.applesBar.reward)
                 return ret
             },
-            effect() { return tmp.sys.buyables[12].effectiveLevels.mul(.25) },
+            effect() { 
+                let ret = tmp.sys.buyables[12].effectiveLevels.mul(.25)
+
+                return ret
+            },
             canAfford() { return player.sys.businesses.apples.points.gte(this.cost()) },
             buy() { 
                 player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost()) 
@@ -798,11 +751,7 @@ addLayer("sys", {
     tabFormat: {
         "Main": {
             content: [
-                ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
-                    penny gain, investment gain, and stored investment/expansion gain by 
-                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
-                }],
+                "main-display",
                 "prestige-button", "blank",
                 "resource-display", "blank",
                 ["display-text", function () { return "Current conversion rate is " + format(100*conversionRate(), 4) + " : 100 OoM" }],
@@ -823,11 +772,7 @@ addLayer("sys", {
         },
         "Businesses": {
             content: [
-                ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
-                    penny gain, investment gain, and stored investment/expansion gain by  
-                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
-                }],
+                "main-display",
                 ["display-text", "Press shift to see effective levels and cost formulas for each buyable"], 
                 ["buyables", [1, 2, 3]],
                 ["display-text", function() { return `You have <span style="color: maroon; font-family: Lucida Console, Courier New, monospace">
@@ -844,14 +789,12 @@ addLayer("sys", {
         },
         "Bills": {
             content: [
+                "main-display",
                 ["display-text", function() { let ret = `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
-                    penny gain, investment gain, and stored investment/expansion gain by  
-                    ${format(tmp.sys.effect)} (based on total)<br><br>
-                    You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.bills.spent)}</span></h2> spent dollars, which means you do ${format(tmp.sys.clickables[22].effect)} 
-                    damage per smack attack.<br><br>
-                    Because you have spent a total of <h3><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
+                    ${format(player.sys.bills.spent)}</span></h2> spent dollars<br><br>`
+                    //which means you do ${format(tmp.sys.clickables[22].effect)} damage per smack attack.<br><br>
+                    
+                    ret += `Because you have spent a total of <h3><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.bills.spentTotal)}</h3></span> dollars, the highest denomination available to you is 
                     the <h3>${player.sys.bills.highestDenomination}</h3> dollar bill`
                     
@@ -878,11 +821,7 @@ addLayer("sys", {
         },
         "Info": {
             content: [
-                ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
-                    penny gain, investment gain, and stored investment/expansion gain by 
-                    ${format(tmp.sys.effect)} (based on total)<br><br>` 
-                }],
+                "main-display",
                 ["microtabs", "info"]
             ]
         }
