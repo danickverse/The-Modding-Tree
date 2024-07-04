@@ -347,6 +347,7 @@ addLayer("quests", {
         getStartData(id) {
             if (id === undefined) return 
             return getStartShopItem(id)
+            // THIS SHOULD ONLY REALISTICALLY RETURN LEVELS, THE REST DOESN'T NEED TO BE STORED IN PLAYER DATA
         },
         // getUnlocked(id) { // Default
         //     return true

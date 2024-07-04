@@ -17,20 +17,6 @@ addLayer("sys", {
             acceleratorPower: {
                 points: decimalZero
             },
-        },
-        bills: {
-            spent: decimalZero,
-            spentTotal: decimalZero,
-            highestDenomination: 0,
-            highestDenominationIndex: 0,
-            nextDenominationUnlock: 1,
-            timers: new Array(9).fill(0),
-            currentEnemyKills: 0,
-            maxEnemyKills: 100,
-            totalEnemyKills: 0,
-            enemyLevel: 0,
-            enemyHealth: new Decimal(100),
-            totalSmackDamage: decimalZero
         }
     }},
     color: "gray",

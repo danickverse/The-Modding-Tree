@@ -17,11 +17,19 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.1",
+	num: "0.2.1.1",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.1.1</h3><br>
+		- Fixed bug where buyable autobuyer would buy more buyables than you could afford due to a timer having a large value<br>
+		- Fixed incredibly stupid code that would cause NaN errors with sufficiently large values of
+			"highest points ever" stat<br>
+		- Used stronger duct tape to patch up a bug with the Expansion layer. Offline gains are affected, but
+			should generally be in a positive way rather than negative (I think). Offline gains are no
+			longer limited (except in the negative direction :/)<br><br>
+
 	<h3>v0.2.1 (mostly clean up)</h3><br>
 		- Added a Dollar milestone<br>
 		- Added 2 Quests; one of them is only implemented up to 2 completions<br>
@@ -280,5 +288,8 @@ function fixOldSave(oldVersion){
 			delete player.sys.acceleratorPower
 		}
 		if (typeof player.sys.appleTimer != "undefined") delete player.sys.appleTimer
+	}
+	if (oldVersion < "0.2.1.1") {
+		if (typeof player.sys.bills != "undefined") delete player.sys.bills
 	}
 }

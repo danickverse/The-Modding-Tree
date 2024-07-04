@@ -36,7 +36,7 @@ addLayer("e", {
         }
 
         if (player.highestPointsEver.lt(1e10)) return decimalZero
-        let base = new Decimal(Math.log10(Math.log10(player.highestPointsEver)) - 1)
+        let base = new Decimal(player.highestPointsEver.log10().log10().sub(1))
         return base.add(boost)
     },
     gainMult() {
@@ -67,21 +67,19 @@ addLayer("e", {
         return visible
     },
     update(diff) {
-        if (!player.e.unlocked || diff > 60) return
+        if (!player.e.unlocked) return
 
         if (getResetGain(this.layer).gt(decimalZero)) {
             let eGain = tmp.e.resetGain.times(diff)
-            let eLoss = player.e.points.mul(.3).div(100).times(diff)
-            player.e.points = player.e.points.add(eGain.sub(eLoss))
-            // layerData.points = layerData.points.add(tmp[this.layer].resetGain.times(diff))
-            // layerData.points = layerData.points.sub(layerData.points.mul(.3).div(100).times(diff))
+            player.e.points = player.e.points.add(eGain)
+            let eLoss = player.e.points.mul(.3/100).times(diff)
+            player.e.points = player.e.points.sub(eLoss).max(0)
         }
 
         let pGain = tmp.e.penny_expansions.getResetGain.times(diff)
+        player.e.penny_expansions.points = player.e.penny_expansions.points.add(pGain)
         let pLoss = player.e.penny_expansions.points.times(tmp.e.penny_expansions.lossRate).times(diff)
-        player.e.penny_expansions.points = player.e.penny_expansions.points.add(pGain.sub(pLoss))
-        // penny_expansions.points = penny_expansions.points.add(tmp.e.penny_expansions.getResetGain.times(diff))
-        // penny_expansions.points = penny_expansions.points.sub(penny_expansions.points.div(hasMilestone("s", 1) ? 1000/9 : 100).times(diff))
+        player.e.penny_expansions.points = player.e.penny_expansions.points.sub(pLoss).max(0)
     },
     canReset() {return false},
     penny_expansions: {

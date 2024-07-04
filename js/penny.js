@@ -893,6 +893,7 @@ addLayer("p", {
             player.p.autoUpgCooldown = Math.max(0, player.p.autoUpgCooldown - diff)
         }
 
+        
         if (hasUpgrade("e", 15) || hasMilestone("sys", 0)) {
             player.p.autoBuyableCooldown += diff
 
@@ -906,8 +907,10 @@ addLayer("p", {
             while (player.p.autoBuyableCooldown >= cooldown) {
                 if (canBuyBuyable("p", 21)) {
                     addBuyables("p", 21, 1)
+                    updateBuyableTemp("p")
                 } else if (canBuyBuyable("p", 22)) {
                     addBuyables("p", 22, 1)
+                    updateBuyableTemp("p")
                 }
                 player.p.autoBuyableCooldown -= cooldown
             }
