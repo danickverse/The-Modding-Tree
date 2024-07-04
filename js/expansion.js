@@ -72,14 +72,18 @@ addLayer("e", {
         if (getResetGain(this.layer).gt(decimalZero)) {
             let eGain = tmp.e.resetGain.times(diff)
             player.e.points = player.e.points.add(eGain)
-            let eLoss = player.e.points.mul(.3/100).times(diff)
-            player.e.points = player.e.points.sub(eLoss).max(0)
+            let eLossFactor = (1 - .3/100) ** diff
+            player.e.points = player.e.points.mul(eLossFactor)
+            // let eLoss = player.e.points.mul(.3/100).times(diff)
+            // player.e.points = player.e.points.sub(eLoss).max(0)
         }
 
         let pGain = tmp.e.penny_expansions.getResetGain.times(diff)
         player.e.penny_expansions.points = player.e.penny_expansions.points.add(pGain)
-        let pLoss = player.e.penny_expansions.points.times(tmp.e.penny_expansions.lossRate).times(diff)
-        player.e.penny_expansions.points = player.e.penny_expansions.points.sub(pLoss).max(0)
+        let pLossFactor = (1 - tmp.e.penny_expansions.lossRate) ** diff
+        player.e.penny_expansions.points = player.e.penny_expansions.points.mul(pLossFactor)
+        // let pLoss = player.e.penny_expansions.points.times(tmp.e.penny_expansions.lossRate).times(diff)
+        // player.e.penny_expansions.points = player.e.penny_expansions.points.sub(pLoss).max(0)
     },
     canReset() {return false},
     penny_expansions: {

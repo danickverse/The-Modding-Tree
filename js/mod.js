@@ -17,11 +17,15 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.1.1",
+	num: "0.2.1.2",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.1.2</h3><br>
+		- ACTUALLY fixed offline expansion gains with a formula that ACTUALLY makes sense, credit to
+			@pimgd for making me see the error of my ways<br><br>
+
 	<h3>v0.2.1.1</h3><br>
 		- Fixed bug where buyable autobuyer would buy more buyables than you could afford due to a timer having a large value<br>
 		- Fixed incredibly stupid code that would cause NaN errors with sufficiently large values of
