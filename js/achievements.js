@@ -391,9 +391,9 @@ addLayer("a", {
         73: {
             name: "33",
             done() {
-                return (this.unlocked() && player.p.investment2.points.eq(tmp.p.buyables[12].hardcap))
+                return (this.unlocked() && player.p.investment2.points.gte(5000))
             },
-            tooltip: "Reach the expansion investment hardcap<br><br>Unlock storage upgrades and more storage milestones",
+            tooltip: "Reach 5000 Expansion Investment<br><br>Unlock storage upgrades and more storage milestones",
             unlocked:() => hasMilestone("s", 3) || player.sys.unlocked,
             style() {
                 return {
@@ -480,11 +480,9 @@ addLayer("a", {
         },
         85: {
             name: "40",
-            done() {
-                return this.unlocked() && player.p.investment2.points.gt(5000)
-            },
-            tooltip: `Have over 5000 Expansion Investment
-                <br><br>Buff the base conversion rate by 2% additive and multiply all investment gain by 1.2x`,
+            done() { return false }, // handled by expansion investment buyable
+            tooltip: `Gain over 1337 Expansion Investment at once
+                <br><br>Buff the base conversion rate by 2% additive and multiply all investment gain by 1.5x`,
             unlocked:() => hasAchievement("a", 81),
             style() {
                 return {
@@ -504,11 +502,11 @@ addLayer("a", {
         92: {
             name: "42",
             done() {
-                return this.unlocked() && player.p.investment.points.eq(0) && player.p.investment2.points.eq(0) 
+                return this.unlocked() && player.p.investment.points.eq(0)
                     && player.s.stored_expansion.points.eq(0) && player.s.stored_investment.points.eq(0) 
-                    && player.e.points.eq(0) && player.p.points.gte(1e8)
+                    && player.e.points.eq(0) && player.p.points.gte(3e7)
             },
-            tooltip: `Reach 100 million pennies with 0 of any investment, 
+            tooltip: `Reach 30 million pennies with 0 investment, 
                 no resources in the Expansion layer, 
                 and no stored investment or expansion<br><br>
                 Have one more effective Apple Tree`,
@@ -520,27 +518,26 @@ addLayer("a", {
                 }
             }
         },
-        // NEED TO REIMPLEMENT 93 IN system --> onPrestige
-        // 93: {
-        //     name: "43",
-        //     done() { return false }, // handled by system.js --> onPrestige()
-        //     tooltip: "Perform a System reset without completing the Investent Challenge",
-        //     unlocked:() => hasAchievement("a", 81)
-        // },
-        // 94: {
-        //     name: "44",
-        //     done() {
-        //         return this.unlocked() && player.sys.bills.totalEnemyKills > 0
-        //     },
-        //     tooltip: "Defeat five orphans<br><br>Unlock a Quest",
-        //     unlocked:() => hasAchievement("a", 81),
-        //     style() {
-        //         return {
-        //         "border-color": "blue",
-        //         "border-width": "5px"
-        //         }
-        //     }
-        // },
+        93: {
+            name: "43",
+            done() { return false }, // handled by system.js --> onPrestige()
+            tooltip: "Perform a System reset without completing the Investment Challenge",
+            unlocked:() => hasAchievement("a", 81)
+        },
+        94: {
+            name: "44",
+            done() {
+                return this.unlocked() && player.bills.totalEnemyKills > 0
+            },
+            tooltip: "Defeat five orphans<br><br>Unlock a Quest",
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
         95: {
             name: "45",
             done() { return this.unlocked && player.quests.specks.points.gte(3) },
@@ -610,7 +607,7 @@ addLayer("a", {
         8: {
             requirementDescription: "35 Achievements Finished",
             effectDescription:() => { return "Multiply Time Flux by (1 + Achievements<sup>1.5</sup>/1000)x (more Reset Time)<br>Currently: "
-                + format(1 + player.a.achievements.length**2/1000, 3) + "x" },
+                + format(1 + player.a.achievements.length**1.5/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },

@@ -6,36 +6,42 @@ let modInfo = {
 	modFiles: [
 		"tree.js", "achievements.js", "penny.js", 
 		"expansion.js", "storage.js", "system.js",
-		"quests.js", "effects.js", "functions.js"],
+		"bills.js", "quests.js", "effects.js", "functions.js"],
 	allowSmall: false,
 
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
-	offlineLimit: 2,  // In hours
+	offlineLimit: 8,  // In hours
 }
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.0.1",
+	num: "0.2.1",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.2.0.2</h3><br>
+	<h3>v0.2.1 (mostly clean up)</h3><br>
+		- Added a Dollar milestone<br>
+		- Added 2 Quests; one of them is only implemented up to 2 completions<br>
+		- Storing dollars no longer doesn't increase reset count (it was dumb)<br>
 		- Can now hold down and drag mouse to buy upgrades, credit to: @pg132<br>
-		- Reduced Points Quest base requirement and scaling<br>
-		- Reduced Pennies Quest base requirement and scaling<br>
-		- Tweaked (buffed) Apples Quest's reward<br>
-		- Nerfed 8th System upgrade for the future (it's not a big deal)<br>
-		- Other minor changes<br><br>
+		- Reduced base requirement and scaling for both Points and Pennies Quest<br>
+		- Tweaked rewards of some Quests and several System upgrades for the future (it's not a big deal)<br>
+		- 4th System Milestone also keeps Expansion Investment at the same rate<br>
+		- Added the other, intended effects of the 4th Storage upgrade (i forgor)<br>
+		- Implemented the 3rd Stored Dollars effect (i forgor)<br>
+		- Fixed the prestige process of storing Dollars<br>
+		- Made Achievement 42 easier<br>
+		- Other minor balances, fixes, changes, and visual updates
+			(WNBP and Storage are <i>much</i> cleaner code-wise)<br>
 	
 	<br><h3>v0.2.0.1</h3><br>
 		- The Dollars effect is now based on total Dollars<br>
 		- Moved one effect of the 2nd Dollar milestone to the 3rd Dollar milestone,
 			and gave the 2nd Dollar milestone a new effect in its place<br>
-		- Buffed QOL 1's autobuyer speed by 2.5x<br>
-		- Reduced offline limit to 2 hours for... reasons<br>
+		- Buffed QOL 1's autobuyer speed by 2x<br>
 		- Added a placeholder milestone to the Quests layer (this very likely won't be touched for a while)<br>
 
 	<br><h3>v0.2.0</h3><br>
@@ -176,7 +182,8 @@ function getPointGen() {
 	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
 	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
-	if (hasMilestone('s', 3)) gainMult = gainMult.mul(player.s.stored_investment.points.div(1e6).add(1).pow(.4))
+	if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
+	if (hasUpgrade("p", 61)) gainMult = gainMult.mul(upgradeEffect('p', 61))
 	gainMult = gainMult.mul(gridEffect("quests", 101))
 
 	let gainExp = decimalOne
@@ -212,16 +219,16 @@ var displayThings = [
 		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
 			: `Time Flux: ${format(boostedTime(1), 4)}x`)
 	: "",
-	"Current endgame: 4 Dollar Milestones, 40 Achievements",
+	"Current endgame: 5 Dollar Milestones, 2 WNBP Quest Completions",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
-		<br>The game is not balanced here, content may be scrapped/rebalanced, and more content 
-		will be added that may make progression easier.
+		<br>The game is not balanced here, and is subject to bugs and inflation.
+		<br>Content may be scrapped/rebalanced in the future.
 		<br>Be careful.</p>` : ""
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.sys.milestones.length >= 4 && player.a.achievements.length >= 40
+	return player.sys.milestones.length >= 5 && player.quests.completions.wnbpBar >= 2
 }
 
 
@@ -264,5 +271,14 @@ function fixOldSave(oldVersion){
 	if (oldVersion < "0.2.0") {
 		player.resetTime = player.p.resetTime
 		if (player.a.achievements.indexOf(65) > -1) player.a.achievements[player.a.achievements.indexOf(65)] = "65"
+	}
+	if (oldVersion < "0.2.1") {
+		if (typeof player.sys.bills != "undefined") delete player.sys.bills
+		if (!player.sys.milestones.includes('3')) player.sys.acceleratorPower.points = decimalZero
+		if (typeof player.sys.acceleratorPower != "undefined") {
+			player.sys.businesses.acceleratorPower.points = new Decimal(player.sys.acceleratorPower.points)
+			delete player.sys.acceleratorPower
+		}
+		if (typeof player.sys.appleTimer != "undefined") delete player.sys.appleTimer
 	}
 }

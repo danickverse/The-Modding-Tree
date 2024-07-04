@@ -58,7 +58,7 @@ addLayer("effects", {
                         if (hasAchievement("a", 51)) ret += ",<br>Increasing the Where Did These Come From??? exponent by .02"
                         if (hasAchievement("a", 55)) ret += ",<br>Reducing the Lucky Penny logarithm from ln to log2, effectively multiplying its effect by ~1.44x"
                         if (hasAchievement("a", 64)) ret += ",<br>Removing the divisor from Still Can't Afford Water"
-                        if (conversionRateBaseBoost > 0) ret += ",<br>Increasing the conversion rate base by " + conversionRateBaseBoost + " additive"
+                        if (conversionRateBaseBoost > 0) ret += ",<br>Increasing the conversion base rate by " + (conversionRateBaseBoost * 100) + "%"
                         if (hasAchievement("a", 92)) ret += ",<br>Granting you an additional effective Apple Tree"
                         ret += ",<br>and unlocking various things"
                     }

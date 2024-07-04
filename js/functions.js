@@ -8,7 +8,7 @@ function timeDisplay(time, showDecimal=true) {
 }
 
 function factorial(x) {
-    if (x < 0) throw Error("lol " + x)
+    if (x < 0 || x % 1 != 0) throw Error("lol factorial " + x)
     if (x == 0 || x == 1) return 1
     let ret = x
     for (let i = x - 1; i > 1; i--) {
@@ -35,29 +35,29 @@ function upgrade23LimitExp() {
     if (hasUpgrade("p", 34)) exp = exp.add(upgradeEffect("p", 34))
     if (hasUpgrade("e", 12)) exp = exp.add(upgradeEffect("e", 12))
     if (hasAchievement('a', 35) && !hasAchievement("a", 81)) exp = exp.add(.01)
-    if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(250))
+    if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][0])
     if (hasUpgrade("sys", 22)) exp = exp.mul(upgradeEffect("sys", 22))
     return exp
 }
 
-function upgrade23Eff() {
+function upgrade23EffBase() {
     let base = new Decimal("10")
     if (hasMilestone("a", 7)) base = base.add(1)
 
-    let exp = decimalOne
-    if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
-    if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(30))
-    if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
+    return base
+    // let exp = decimalOne
+    // if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
+    // if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(30))
+    // if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
 
-    return base.pow(exp)
+    // return base.pow(exp)
 }
 
 function upgrade23EffExp() {
     let exp = decimalOne
     if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
-    if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(30))
+    if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][1])
     if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
-    exp = exp.add(tmp.quests.bars.wnbpBar.reward)
     return exp
 }
 
@@ -79,7 +79,7 @@ function penniesTaxFactor() {
 function pennyTaxStart() {
     let baseTaxes = new Decimal("1e6")
     if (hasUpgrade("p", 45)) baseTaxes = baseTaxes.mul(upgradeEffect("p", 42))
-    if (hasMilestone("s", 2)) baseTaxes = baseTaxes.mul(player.s.stored_expansion.points.add(1).log10().sub(2).max(decimalOne))
+    if (hasMilestone("s", 2)) baseTaxes = baseTaxes.mul(tmp.s.stored_expansion.effects[4])
     if (inChallenge("s", 11)) baseTaxes = baseTaxes.div(1e4)
     return baseTaxes
 }
@@ -87,20 +87,19 @@ function pennyTaxStart() {
 function pennyTaxExp() {
     let baseExp = new Decimal("2.5")
     if (inChallenge("s", 11)) baseExp = baseExp.sub(1)
-    if (hasMilestone("s", 5)) {
-        baseExp = baseExp.sub(player.s.stored_investment.points.add(10).log10().div(1000))
-    }
-    return baseExp.max(decimalOne)
+    if (hasMilestone("s", 5)) baseExp = baseExp.sub(tmp.s.stored_investment.effects[7])
+    if (hasUpgrade("p", 62)) baseExp = baseExp.sub(upgradeEffect("p", 62))
+    return baseExp.max(1)
 }
 
 function investmentGain() {
     if (inAnyChallenge()) {
         let ret = decimalOne
         if (inChallenge("s", 12)) ret = ret.div(10)
-        if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
+        if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
         if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
         if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
-        if (hasAchievement("a", 85)) ret = ret.mul(1.2)
+        if (hasAchievement("a", 85)) ret = ret.mul(1.5)
         return ret
     }
     let investmentExponent = new Decimal(".5")
@@ -111,12 +110,12 @@ function investmentGain() {
     if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
     if (hasUpgrade("p", 43)) ret = ret.mul(upgradeEffect("p", 43))
     if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
-    ret = ret.mul(player.s.stored_investment.points.add(1).log10().div(10).add(1))
-    if (hasMilestone("s", 4)) ret = ret.mul(player.s.stored_investment.points.add(1).log10().sub(12).max(0).pow_base(1.1))
+    ret = ret.mul(tmp.s.stored_investment.effects[1])
+    if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
     ret = ret.mul(player.sys.points.add(1).pow(1.5))
     if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
-    if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(1.03**player.s.stored_expansion.points.add(1).log2())
-    if (hasAchievement("a", 85)) ret = ret.mul(1.2)
+    if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
+    if (hasAchievement("a", 85)) ret = ret.mul(1.5)
 
     if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
     return ret
@@ -126,9 +125,9 @@ function investment2Gain() {
     let investmentExponent = new Decimal(".4")
     let ret = player.p.investment.points.div(10000).pow(investmentExponent)
     if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
-    if (hasMilestone("s", 1)) ret = ret.mul(1.03**player.s.stored_expansion.points.add(1).log2())
+    if (hasMilestone("s", 1)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
     if (hasMilestone("a", 6)) ret = ret.mul(1.01**(player.a.milestones.length+player.a.achievements.length-28))
-    if (hasAchievement("a", 85)) ret = ret.mul(1.2)
+    if (hasAchievement("a", 85)) ret = ret.mul(1.5)
     
     let softcapStart = tmp.p.buyables[12].softcap
     if (ret.gte(softcapStart)) {
@@ -153,17 +152,15 @@ function investmentReset(resetInvestment, resetInvestment2) {
     player.p.total = decimalZero
     player.resetTime = 0
     
-    let keepUpgrades = [21, 25, 35, 41, 42, 51, 52, 53, 54, 55]
-    if (player.e.everUpg23 && !hasMilestone("sys", 5)) keepUpgrades.push(23)
-    function removeUpgrades(index) {
-        return keepUpgrades.indexOf(index) != -1 // keeps upgrades with indices gte 25 + achievement upgrades
-    }
-    player.p.upgrades = player.p.upgrades.filter(removeUpgrades)
+    let keepUpgrades = [21, 25, 35, 41, 42, 51, 52, 53, 54, 55, 61, 62, 63, 64, 65]
+    if (player.e.everUpg23) keepUpgrades.push(23)
+    keepUpgrades = keepUpgrades.filter(
+        (index) => hasUpgrade("p", index)
+    )
+    player.p.upgrades = keepUpgrades
 
-    let buyableIndices = [21, 22]
-    for (const index of buyableIndices) {
-        player.p.buyables[index] = decimalZero
-    }
+    setBuyableAmount("p", 21, decimalZero)
+    setBuyableAmount("p", 22, decimalZero)
 
     player.points = decimalZero
 
@@ -173,7 +170,7 @@ function investmentReset(resetInvestment, resetInvestment2) {
 
 function boostedTime(diff) {
     let ret = diff
-    if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**2)/1000)
+    if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**1.5)/1000)
     ret *= tmp.quests.bars.dollarResetBar.reward
     ret *= gridEffect("quests", 101)
     return ret
@@ -198,7 +195,7 @@ function baseConversionRate() {
     if (hasAchievement("a", 83)) baseAdd += .01
     if (hasAchievement("a", 84)) baseAdd += .01
     if (hasAchievement("a", 85)) baseAdd += .02
-    baseAdd += Number(player.s.stored_dollars.points.root(3).mul(3).div(100))
+    baseAdd += Number(tmp.s.stored_dollars.effects[2])
 
     return ret + baseAdd
 }
@@ -209,17 +206,20 @@ function systemUpgradeCost(row) {
     ).length
 
     switch (row) {
-        case 1: return .15 + .15 * boughtInRow
-        case 2: return 1 + .25 * boughtInRow
+        case 1: return new Decimal(.15 + .15 * boughtInRow)
+        case 2: return new Decimal(1 + .25 * boughtInRow)
         default: throw Error("Invalid row supplied to systemUpgradeCost")
     }
 }
 
 function updateBills(spent) {
-    let billsData = player.sys.bills
-    billsData.spent = billsData.spent.add(spent)
+    let billsData = player.bills
+    billsData.points = billsData.points.add(spent)
+    // spent > 0 --> adding spent dollars, from convert clickable, closer to next denomination
+    // spent < 0 --> from buying buyable
     if (spent > 0) {
-        billsData.spentTotal = billsData.spentTotal.add(spent)
+        billsData.total = billsData.total.add(spent)
+        if (billsData.highestDenominationIndex == 9) return
         let denominationValues = {
             9: 10000,
             8: 1000,
@@ -233,10 +233,10 @@ function updateBills(spent) {
         }
         for (let i = 9; i >= 1; i--) {
             let value = denominationValues[i]
-            if (billsData.spentTotal.gte(value ** 5) && billsData.highestDenominationIndex <= i) {
+            if (billsData.total.gte(value * 10) && billsData.highestDenominationIndex <= i) {
                 billsData.highestDenominationIndex = i
                 billsData.highestDenomination = value
-                billsData.nextDenominationUnlock = denominationValues[i+1] ** 5
+                billsData.nextDenominationUnlock = denominationValues[i+1] * 10
                 return
             }
         }
@@ -245,18 +245,29 @@ function updateBills(spent) {
         billsData.highestDenominationIndex = 0
         billsData.highestDenomination = 0
         billsData.nextDenominationUnlock = 1
+    } else {
+        let ELO = decimalZero
+        for (const id of [11, 12, 13, 21, 22, 23, 31, 32, 33]) {
+            let amt = getBuyableAmount("bills", id)
+            let denomination = tmp.bills.buyables[id].denomination
+            ELO = ELO.add(amt * denomination)
+        }
+        billsData.elo = ELO
     }
 }
 
 function attackEnemy(damage) {
-    player.sys.bills.enemyHealth = player.sys.bills.enemyHealth.sub(damage)
-    if (player.sys.bills.enemyHealth.lte(0)) {
+    player.bills.enemyHealth = player.bills.enemyHealth.sub(damage)
+    if (player.bills.enemyHealth.lte(0)) {
         // player.sys.points = player.sys.points.add(tmp.sys.bars.enemyBar.loot)
-        updateBills(tmp.sys.bars.enemyBar.loot)
-        player.sys.bills.totalEnemyKills += 1
-        player.sys.bills.currentEnemyKills += 1
-        player.sys.bills.enemyLevel += 1
-        player.sys.bills.enemyHealth = layers.sys.bars.enemyBar.maxHealth()
+        updateBills(tmp.bills.bars.enemyBar.loot)
+        player.bills.totalEnemyKills += 1
+        player.bills.currentEnemyKills += 1
+        if (player.bills.currentEnemyKills < tmp.bills.maxEnemyKills) {
+            player.bills.currentEnemyKills = 0
+            player.bills.enemyLevel += 1
+        }
+        player.bills.enemyHealth = layers.bills.bars.enemyBar.maxHealth()
     }
 }
 
