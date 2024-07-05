@@ -17,13 +17,19 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.1.2",
+	num: "0.2.1.3",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.1.3</h3><br>
+		- Added one achievement (45 -> 46)<br>
+		- Further improved offline expansion calculations for as clean/precise of results as I could hope for.
+			May introduce some lag (let me know if it sucks for you)<br>
+		- Several bug fixes and visual updates, as well as behind-the-scenes preparation for upcoming features<br><br>
+
 	<h3>v0.2.1.2</h3><br>
-		- ACTUALLY fixed offline expansion gains with a formula that ACTUALLY makes sense, credit to
+		- ACTUALLY fixed offline expansion calculations with a formula that ACTUALLY makes sense, credit to
 			@pimgd for making me see the error of my ways<br><br>
 
 	<h3>v0.2.1.1</h3><br>
@@ -37,6 +43,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 	<h3>v0.2.1 (mostly clean up)</h3><br>
 		- Added a Dollar milestone<br>
 		- Added 2 Quests; one of them is only implemented up to 2 completions<br>
+		- Added 3 achievements (42 -> 45)<br>
 		- Storing dollars no longer doesn't increase reset count (it was dumb)<br>
 		- Can now hold down and drag mouse to buy upgrades, credit to: @pg132<br>
 		- Reduced base requirement and scaling for both Points and Pennies Quest<br>
@@ -57,7 +64,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added a placeholder milestone to the Quests layer (this very likely won't be touched for a while)<br>
 
 	<br><h3>v0.2.0</h3><br>
-		- The System layer is implemented, along with two new features and upgrades/milestones<br>
+		- The System layer is implemented, along with 1 new feature and upgrades/milestones<br>
 		- The Quest side layer is implemented, along with 5 quests (more will be added soon!)<br>
 		- Moar Storage (but no milestones)!!! Also, Storage upgrades no longer reset currencies, it was a lame mechanic<br>
 		- Added 7 achievements (35 -> 42) and 1 achievement milestone (9 -> 10)<br>
@@ -183,7 +190,7 @@ function getPointGen() {
 
 	let baseGain = decimalOne
 	if (hasUpgrade('p', 12)) baseGain = baseGain.add(upgradeEffect('p', 12))
-	if (hasAchievement('a', 35) && !hasAchievement('a', 81)) baseGain = baseGain.add(1)
+	if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) baseGain = baseGain.add(1)
 	if (hasUpgrade("sys", 23)) baseGain = baseGain.add(upgradeEffect("sys", 23))
 
 	let gainMult = decimalOne
@@ -231,7 +238,7 @@ var displayThings = [
 		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
 			: `Time Flux: ${format(boostedTime(1), 4)}x`)
 	: "",
-	"Current endgame: 5 Dollar Milestones, 2 WNBP Quest Completions",
+	"Current endgame: 5 Dollar Milestones, 44 Achievements",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
 		<br>The game is not balanced here, and is subject to bugs and inflation.
 		<br>Content may be scrapped/rebalanced in the future.
@@ -240,7 +247,7 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.sys.milestones.length >= 5 && player.quests.completions.wnbpBar >= 2
+	return player.sys.milestones.length >= 5 && player.achievements.length >= 44
 }
 
 
@@ -295,5 +302,8 @@ function fixOldSave(oldVersion){
 	}
 	if (oldVersion < "0.2.1.1") {
 		if (typeof player.sys.bills != "undefined") delete player.sys.bills
+	}
+	if (oldVersion < "0.2.1.3") {
+		if (player.quests.grid != "undefined") player.quests.grid = getStartGrid("quests")
 	}
 }

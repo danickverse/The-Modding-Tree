@@ -38,7 +38,7 @@ addLayer("quests", {
     milestones: {
         0: {
             requirementDescription: "1000 Quests (Placeholder)",
-            effectDescription: "Unlock Specks and a new Quest",
+            effectDescription: "Unlock Specks, a new Quest, and more achievements/achievement milestones",
             done() { return false }
         }
     },
@@ -280,14 +280,25 @@ addLayer("quests", {
                 : `${player.bills.totalEnemyKills}/${this.goal()} Enemy Kills`},
             progress() { return this.completed() || player.bills.totalEnemyKills/this.goal() },
             goal() {
-                let base = 10
-                let scaling = Math.max(1, 10 * Math.min(9, player.quests.completions.enemyKillsBar))
-
-                return base * scaling
+                let completions = player.quests.completions.enemyKillsBar
+                switch (completions) {
+                    case 0: return 10
+                    case 1: return 100
+                    case 2: return 200
+                    case 3: return 400
+                    case 4: return 1000
+                    case 5: return 1500
+                    case 6: return 2500
+                    case 7: return 4000
+                    case 8: return 6000
+                    case 9:
+                    case 10: return 10000
+                    default: throw Error(`Enemy Kills Quest has invalid number of completions: ${completions}`)
+                }
             },
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.enemyKillsBar >= 10,
-            unlocked() { return hasAchievement("a", 94) && (!this.completed() || !player.quests.hideCompleted) },
+            unlocked() { return hasAchievement("a", 95) && (!this.completed() || !player.quests.hideCompleted) },
             reward:() => 1.1 ** player.quests.completions.enemyKillsBar
         },
         fastSpecksBar: {
@@ -322,7 +333,7 @@ addLayer("quests", {
         maxTsls:() => {
             let ret = 3600
 
-            ret -= player.quests.grid[101].levels / 3 * 60 * 5
+            ret -= player.quests.grid[101] / 3 * 60 * 5
             ret -= tmp.quests.bars.fastSpecksBar.reward
             return ret
         },
@@ -346,41 +357,43 @@ addLayer("quests", {
         cols: 4,
         getStartData(id) {
             if (id === undefined) return 
-            return getStartShopItem(id)
+            // return getStartShopItem(id)
             // THIS SHOULD ONLY REALISTICALLY RETURN LEVELS, THE REST DOESN'T NEED TO BE STORED IN PLAYER DATA
+
+            return 0
         },
         // getUnlocked(id) { // Default
         //     return true
         // },
         getCanClick(data, id) {
-            return player.quests.specks.points.gte(this.getCost(data, id)) && data.levels < data.maxLevels
+            return player.quests.specks.points.gte(this.getCost(data, id)) && data < getShopData(id).maxLevels
         },
         onClick(data, id) {
             player.quests.specks.points = player.quests.specks.points.sub(this.getCost(data, id))
-            data.levels++
+            player.quests.grid[id]++
             updateShopDisplay(this.layer, id)
         },
         getEffect(data, id) {
             if (data === undefined) return
-            switch (data.type) {
-                case "compounding": return data.effect ** data.levels
-                case "additive": return data.effect * data.levels
+            switch (getShopData(id).type) {
+                case "compounding": return getShopData(id).effect ** data
+                case "additive": return getShopData(id).effect * data
                 case "other":
                     //if (id == ...) return thing
-                default: throw Error("Invalid shop effect type: " + data.type)
+                default: throw Error("Invalid shop effect type: " + getShopData(id).type)
             }
         },
         getTitle(data, id) {
-            return data.title
+            return getShopData(id).title
         },
         getDisplay(data, id) {
-            return `${data.levels}/${data.maxLevels}`
+            return `${data}/${getShopData(id).maxLevels}`
         },
         getCost(data, id) {
             switch (id) {
                 // case used for special cases (scaling cost)
-                case 104: return data.cost * (data.levels + 1)
-                default: return data.cost
+                case 104: return getShopData(id).cost * (data + 1)
+                default: return getShopData(id).cost
             }
         }
     },
@@ -453,24 +466,24 @@ addLayer("quests", {
             // 0 <= progress <= 1, moves to 0 due to timer
             let timeBasedBars = ["dollarResetBar"]
             
-            // "normal" quests, not affected by time, progress >= 1 for completed quests
+            // "normal" quests, not affected by time, progress >= 1 for completed quests, activated on resets
             let resetBasedBars = ["dollarGainBar"]
 
             for (const bar of timeBasedBars) {
                 let quest = tmp.quests.bars[bar]
                 if (!quest.completed && quest.progress > 0) {
-                    player.quests.completions.dollarResetBar += 1
+                    player.quests.completions[bar] += 1
                     player.quests.points = player.quests.points.add(1)
-                    doPopup("quest", tmp.quests.bars.dollarResetBar.title, "Quest Complete!", 3, tmp.quests.color)
+                    doPopup("quest", tmp.quests.bars[bar].title, "Quest Complete!", 3, tmp.quests.color)
                 }
             }
 
             for (const bar of resetBasedBars) {
                 let quest = tmp.quests.bars[bar]
                 if (!quest.completed && quest.progress >= 1) {
-                    player.quests.completions.dollarResetBar += 1
+                    player.quests.completions[bar] += 1
                     player.quests.points = player.quests.points.add(1)
-                    doPopup("quest", tmp.quests.bars.dollarResetBar.title, "Quest Complete!", 3, tmp.quests.color)
+                    doPopup("quest", tmp.quests.bars[bar].title, "Quest Complete!", 3, tmp.quests.color)
                 }
             }
         }

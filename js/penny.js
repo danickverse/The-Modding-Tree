@@ -132,6 +132,8 @@ addLayer("p", {
             setBuyableAmount("p", 23, tempBuyable23)
             player.p.upgrades = keptUpgrades
             player.p.investment2.points = keptExpansionInvestment
+            player.p.autoUpgCooldown = 0
+            player.p.autoBuyableCooldown = 0
         }
     },
     upgrades: {
@@ -197,20 +199,12 @@ addLayer("p", {
             unlocked:() => hasUpgrade("p", 13) || hasUpgrade("p", 25)
         },
         15: {
-            title: "Biggest Bestest Coin",
-            description:() => {
-                if (hasUpgrade("p", 51)) {
-                    if (player.shiftDown) return "Originally, this multiplied point and penny gain by 1.25"
-                    return "Multiply point and penny gain by log(10 + Pennies)<sup>1.25</sup>"
-                }
-                return "Multiply point and penny gain by 1.25"
-            },
             fullDisplay:() => {
                 let title = "<b><h3>Biggest Bestest Coin</b></h3>"
                 let description = hasUpgrade("p", 51) ? (
-                    player.shiftDown ? "Originally, this multiplied point and penny gain by 1.25"
-                        : "Multiply point and penny gain by log(10 + Best Pennies)<sup>1.25</sup>"
-                ) : "Multiply point and penny gain by 1.25"
+                    player.shiftDown ? "Originally, this multiplied point/penny gain by 1.25"
+                        : "Multiply point/penny gain by log10(10 + Best Pennies)<sup>1.25</sup>"
+                ) : "Multiply point/penny gain by 1.25"
                 let effect = hasUpgrade("p", 51) ? `Currently: ${format(upgradeEffect("p", 15))}x<br>` : ""
                 let cost = "Cost: 25 pennies"
                 return title + "<br>" + description + "<br>" + effect + "<br>" + cost
@@ -619,12 +613,30 @@ addLayer("p", {
             effectDisplay:() => `-${format(upgradeEffect("p", 62), 4)}`,
             unlocked:() => player.quests.completions.wnbpBar >= 2
         },
-        // 63: {
-
-        // },
-        // 64: {
-
-        // }
+        63: {
+            title: "Placeholder",
+            description: "Placeholder",
+            cost: new Decimal("1e60"),
+            effect:() => 0,
+            effectDisplay:() => `${format(upgradeEffect("p", 63))}`,
+            unlocked:() => player.quests.completions.wnbpBar >= 3
+        },
+        64: {
+            title: "Placeholder",
+            description: "Placeholder",
+            cost: new Decimal("1e80"),
+            effect:() => 0,
+            effectDisplay:() => `${format(upgradeEffect("p", 64))}`,
+            unlocked:() => player.quests.completions.wnbpBar >= 4
+        },
+        65: {
+            title: "Placeholder",
+            description: "Placeholder",
+            cost: new Decimal("1e100"),
+            effect:() => 0,
+            effectDisplay:() => `${format(upgradeEffect("p", 65))}`,
+            unlocked:() => player.quests.completions.wnbpBar >= 5
+        }
     },
     buyables: {
         showRespec:() => hasUpgrade("p", 35) && !hasUpgrade("e", 33),
@@ -706,7 +718,7 @@ addLayer("p", {
             softcap:() => {
                 let ret = new Decimal("1000")
                 ret = ret.mul(tmp.s.stored_dollars.effects[4])
-                if (hasUpgrade("sys", 21)) ret = ret.mul(4)
+                if (hasUpgrade("sys", 21)) ret = ret.mul(5)
                 ret = ret.mul(tmp.quests.bars.dollarGainBar.reward)
 
                 return ret
@@ -945,7 +957,10 @@ addLayer("p", {
         // }
 
         if (hasMilestone("sys", 5)) {
-	        autobuyUpgrades(this.layer)
+            for (id in tmp[layer].upgrades)
+                if (id > "60") continue
+                if (isPlainObject(tmp[layer].upgrades[id]) && (layers[layer].upgrades[id].canAfford === undefined || layers[layer].upgrades[id].canAfford() === true))
+                    buyUpg(layer, id) 
         } else if (hasUpgrade("e", 25) || hasMilestone("sys", 0) && player.p.autoUpgCooldown == 0) {
             let upgIndices = [11, 12, 13, 14, 15, 21, 22]
             if (!player.sys.lockWNBP) upgIndices.push(23)
@@ -960,7 +975,7 @@ addLayer("p", {
                 if (canAffordUpgrade("p", upgIndex)) {
                     player.p.autoUpgCooldown = .5
                     if (hasUpgrade("e", 45)) player.p.autoUpgCooldown = 1/3 // 3 per second
-                    player.p.upgrades.push(upgIndex)
+                    buyUpg("p", upgIndex)
                     break
                 }
             }

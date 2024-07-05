@@ -196,14 +196,14 @@ addLayer("a", {
                 if (this.unlocked() && player.e.upgrades.length < 2 && player.p.points.gte("1.5e9")) return true
             },
             tooltip:() => {
-                let ret = `Reach 1.5 billion pennies with at most one expansion upgrade. How did you manage that?`
+                let ret = `Reach 1.5 billion pennies with at most 1 expansion upgrade. How did you manage that?`
                 let eff = "<br><br>Increase base point gain by 1 and WNBP exponent by .01"
                 if (hasAchievement("a", 81)) return ret + "<s>" + eff + "</s>"
                 return ret + eff
             },
             unlocked:() => hasAchievement("a", 31),
             style() {
-                if (hasAchievement("a", 81)) return {
+                if (hasAchievement("a", 81) && !hasAchievement("a", 94)) return {
                     "border-color": "red",
                     "border-width": "5px"
                 }
@@ -526,6 +526,19 @@ addLayer("a", {
         },
         94: {
             name: "44",
+            done() { return this.unlocked && player.p.points.gte(3.33e33) && player.e.upgrades.length <= 3 },
+            tooltip: `Reach 3.33e33 Pennies with at most 3 Expansion upgrades. How did you manage that?
+                <br><br>Reapply the effects of Ach 15`,
+            unlocked:() => hasAchievement("a", 81),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        95: {
+            name: "45",
             done() {
                 return this.unlocked() && player.bills.totalEnemyKills > 0
             },
@@ -538,11 +551,11 @@ addLayer("a", {
                 }
             }
         },
-        95: {
-            name: "45",
+        101: {
+            name: "46",
             done() { return this.unlocked && player.quests.specks.points.gte(3) },
             tooltip: "Collect 3 Specks",
-            unlocked:() => hasAchievement("a", 81)
+            unlocked:() => hasMilestone("quests", 0)
         }
     },
     milestones: {
@@ -619,10 +632,10 @@ addLayer("a", {
             unlocked:() => hasAchievement("a", 81)
         },
         10: {
-            requirementDescription: "45 Achievements Finished",
+            requirementDescription: "46 Achievements Finished",
             effectDescription: "Unlock the Shop (Specks)",
             done() { return this.unlocked && player.a.achievements.length >= 45 },
-            unlocked:() => hasAchievement("a", 81)
+            unlocked:() => hasMilestone("quests", 0)
         }
     },
     clickables: {

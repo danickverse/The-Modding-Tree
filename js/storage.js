@@ -186,7 +186,7 @@ addLayer("s", {
             effect() { return .05 },
             onPurchase() { 
                 player.sys.resetTime = 3000000
-                player.s.resetCount -= 1
+                player.sys.resetCount -= 1
                 tmp.s.clickables[13].onClick() 
             },
             currencyDisplayName:() => "Stored Dollars",
@@ -285,8 +285,8 @@ addLayer("s", {
                 player.e.points = decimalZero
                 player.e.penny_expansions.points = decimalZero
                 if (!hasMilestone("sys", 0)) {
-                if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
-                if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
+                    if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
+                    if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
                 }
             }
         },

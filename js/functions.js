@@ -34,7 +34,7 @@ function upgrade23LimitExp() {
     let exp = decimalOne
     if (hasUpgrade("p", 34)) exp = exp.add(upgradeEffect("p", 34))
     if (hasUpgrade("e", 12)) exp = exp.add(upgradeEffect("e", 12))
-    if (hasAchievement('a', 35) && !hasAchievement("a", 81)) exp = exp.add(.01)
+        if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) exp = exp.add(.01)
     if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][0])
     if (hasUpgrade("sys", 22)) exp = exp.mul(upgradeEffect("sys", 22))
     return exp
@@ -168,6 +168,18 @@ function investmentReset(resetInvestment, resetInvestment2) {
     if (resetInvestment2) player.p.investment2.points = decimalZero
 }
 
+function expanPassGen(diff) {
+    if (getResetGain("e").gt(decimalZero)) {
+        let eGain = tmp.e.resetGain.times(diff)
+        let eLossFactor = (1 - .3/100) ** diff
+        player.e.points = player.e.points.add(eGain).mul(eLossFactor)
+    }
+
+    let pGain = tmp.e.penny_expansions.getResetGain.times(diff)
+    let pLossFactor = (1 - tmp.e.penny_expansions.lossRate) ** diff
+    player.e.penny_expansions.points = player.e.penny_expansions.points.add(pGain).mul(pLossFactor)
+}
+
 function boostedTime(diff) {
     let ret = diff
     if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**1.5)/1000)
@@ -271,13 +283,13 @@ function attackEnemy(damage) {
     }
 }
 
-function getStartShopItem(id) {
+function getShopData(id) {
     let max; let title; let display; let cost; let type
     switch (id) {
         case 101:
             max = 3; title = "Beginner Pack"; cost = 3
             display = `Multiply point gain, post-nerf penny gain, expansion gain, 
-                        effective Apple Trees, time flux, and the conversion rate by 1.1x per level,
+                        effective Apple Trees, time flux, and the conversion rate by 1.2x per level,
                         and max TSLS (see Info) is reduced by 1 minute and 40 seconds per level`
             effect = 1.2; type = "compounding"; break
         case 102:
@@ -297,8 +309,8 @@ function getStartShopItem(id) {
         default: throw Error(`Missing Shop grid case for id: ${id}`)
     }
     return {
-        levels: 0, maxLevels: max,
-        title: title, shopDisplay: display, cost: cost,
+        maxLevels: max, title: title, 
+        shopDisplay: display, cost: cost,
         effect: effect, type: type
     }
 }
@@ -307,23 +319,24 @@ function updateShopDisplay(layer, id, exit=false) {
     if (exit) { player.quests.specks.shopDisplay = ""; return }
     if (layer != "quests") return
 
-    let data = getGridData(layer, id)
+    let shopData = getShopData(id)
+    let levels = getGridData(layer, id)
 
-    let cost = `Cost: ${tmp.quests.grid.getCost(data, id)} Specks`
-    let dis = data.shopDisplay
+    let cost = `Cost: ${tmp.quests.grid.getCost(levels, id)} Specks`
+    let dis = shopData.shopDisplay
     let eff = "Current effect: "
     let effVal = toPlaces(gridEffect(layer, id), 2)
 
-    switch (data.type) {
+    switch (shopData.type) {
         case "compounding": 
-            if (id == 101) eff += effVal + "x, -" + timeDisplay(data.levels / 3 * 60 * 5, false);
+            if (id == 101) eff += effVal + "x, -" + timeDisplay(levels / 3 * 60 * 5, false);
             else eff += effVal + "x"
             break
         case "additive": eff += "+" + effVal; break;
         case "other":
             
             // do others
-        default: throw Error("Shop item has invalid type: " + data.type)
+        default: throw Error("Shop item has invalid type: " + shopData.type)
     }
 
     player.quests.specks.shopDisplay = `${cost}<br><br>${dis}<br><br>${eff}`

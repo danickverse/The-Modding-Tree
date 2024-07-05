@@ -99,7 +99,7 @@ addLayer("sys", {
     milestones: {
         0: {
             requirementDescription: "1 Dollar Reset",
-            effectDescription:() => `Unlock Education III, Businesses, and Quests, keep the QOL 1 autobuyer,
+            effectDescription:() => `Unlock Education III, Businesses, and Quests, keep the QOL 1/2 autobuyers,
                 and multiply Expansion/Penny Expansion gain by 1.25x per milestone<br>Currently: 
                 ${format(1.25**player.sys.milestones.length)}x`,
             done() { return player.sys.resetCount >= 1 }
@@ -136,10 +136,10 @@ addLayer("sys", {
         // IF THIS MILESTONE IS CHANGED, FIX CONDITION IN penny --> automate() AND functions --> investmentReset()
         // Dont forget to implement changes to QOL 2 and QOL 4
         // 5: {
-        //     requirementDescription: "Placeholder",
-        //     effectDescription: `Always autobuy all penny upgrades, QOL 2/4 have new (better) effects,
-        //         keep QOL 1, and unlock Bills`,
-        //     done() { return false }
+        //     requirementDescription: "7 Dollar Resets and 44 Achievements",
+        //     effectDescription: `Autobuy penny upgrades up to row 5 instantly, QOL 2/4 have new (better) effects,
+        //         and unlock Bills & a new Quest`,
+        //     done() { return player.sys.resetCount >= 7 && player.a.achievements.length >= 44 }
         // }
         
         // 6: Unlock a Stored Dollars effect (auto-gen investment) and more achievements
@@ -199,7 +199,7 @@ addLayer("sys", {
         21: {
             fullDisplay() {
                 let title = "A Whole Dollar"
-                let desc = "Multiply the expansion investment hardcap by 2 and its softcap by 4"
+                let desc = "Multiply the expansion investment hardcap by 2 and its softcap by 5"
                 let cost = `Cost: ${format(this.cost())} dollars`
                 return `<h3>${title}</h3><br>${desc}<br><br>${cost}`
             },
@@ -450,7 +450,7 @@ addLayer("sys", {
     tabFormat: {
         "Main": {
             content: [
-                "main-display",
+                ["main-display", 2],
                 "prestige-button", "blank",
                 "resource-display", "blank",
                 ["display-text", function () { return "Current conversion rate is " + format(100*conversionRate(), 4) + " : 100 OoM" }],
@@ -461,11 +461,9 @@ addLayer("sys", {
         },
         "Milestones": {
             content: [
-                ["display-text", function() { return `You have <h2><span style="color: gray; text-shadow: 0px 0px 10px gray; font-family: Lucida Console, Courier New, monospace">
-                    ${format(player.sys.points)}</span></h2> dollars, which currently multiplies 
-                    penny gain, investment gain, and stored investment/expansion gain by 
-                    ${format(tmp.sys.effect)} (based on total)
-                    <br><br>You have done a total of ${player.sys.resetCount} System resets` 
+                ["main-display", 2],
+                ["display-text", function() { 
+                    return `You have done a total of ${player.sys.resetCount} System resets` 
                 }],
                 "milestones"
             ]

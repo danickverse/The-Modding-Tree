@@ -69,21 +69,17 @@ addLayer("e", {
     update(diff) {
         if (!player.e.unlocked) return
 
-        if (getResetGain(this.layer).gt(decimalZero)) {
-            let eGain = tmp.e.resetGain.times(diff)
-            player.e.points = player.e.points.add(eGain)
-            let eLossFactor = (1 - .3/100) ** diff
-            player.e.points = player.e.points.mul(eLossFactor)
-            // let eLoss = player.e.points.mul(.3/100).times(diff)
-            // player.e.points = player.e.points.sub(eLoss).max(0)
+        if (diff > 1) {
+            let x = diff
+            while (x > 1) {
+                expanPassGen(1)
+                tmp.e.penny_expansions.getResetGain = layers.e.penny_expansions.getResetGain()
+                x -= 1
+            }
+            expanPassGen(x)
+        } else {
+            expanPassGen(diff)
         }
-
-        let pGain = tmp.e.penny_expansions.getResetGain.times(diff)
-        player.e.penny_expansions.points = player.e.penny_expansions.points.add(pGain)
-        let pLossFactor = (1 - tmp.e.penny_expansions.lossRate) ** diff
-        player.e.penny_expansions.points = player.e.penny_expansions.points.mul(pLossFactor)
-        // let pLoss = player.e.penny_expansions.points.times(tmp.e.penny_expansions.lossRate).times(diff)
-        // player.e.penny_expansions.points = player.e.penny_expansions.points.sub(pLoss).max(0)
     },
     canReset() {return false},
     penny_expansions: {
@@ -492,8 +488,10 @@ addLayer("e", {
                     return index == 33 || index == 43
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
-                player.p.autoUpgCooldown = -1
-                player.p.autoBuyableCooldown = -1
+                if (!hasMilestone("sys", 0)) {
+                    player.p.autoUpgCooldown = -1
+                    player.p.autoBuyableCooldown = -1
+                }
             },
             canClick() {
                 return player.e.upgrades.length > 0
