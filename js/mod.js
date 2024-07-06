@@ -17,11 +17,14 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.1.3",
+	num: "0.2.1.4",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.1.4</h3><br>
+		- Bug fixes and attempted to fix upgrade purchasing for mobile<br>
+	
 	<h3>v0.2.1.3</h3><br>
 		- Added one achievement (45 -> 46)<br>
 		- Further improved offline expansion calculations for as clean/precise of results as I could hope for.
@@ -247,7 +250,7 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.sys.milestones.length >= 5 && player.achievements.length >= 44
+	return player.sys.milestones.length >= 5 && player.a.achievements.length >= 44
 }
 
 

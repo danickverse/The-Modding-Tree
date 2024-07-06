@@ -50,7 +50,7 @@ addLayer("effects", {
                         if (hasAchievement("a", 85)) conversionRateBaseBoost += .02
 
                         ret += "<br>Multiplying investment gain by " + format(investmentBoost) + "x"
-                        if (allInvestmentBoost > 1) ret += ",<br>Multiplying all investment gain by " + format(expansionInvestmentBoost) + "x, including in challenges"
+                        if (allInvestmentBoost > 1) ret += ",<br>Multiplying all investment gain by " + format(allInvestmentBoost) + "x, including in challenges"
                         if (expansionBoost > 1) ret += ",<br>Multiplying expansion gain by " + format(expansionBoost) + "x"
                         if (pennyBoost > 1) ret += ",<br>Multiplying penny gain by " + format(pennyBoost) + "x"
 
