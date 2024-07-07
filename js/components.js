@@ -189,7 +189,6 @@ function loadVue() {
 		methods: {
 			handleMouseEvent(event) {
 				// event.buttons is a bitmask, 0b1 is primary mouse button (usually left)
-				console.log(event)
 				if (event.buttons & 1) {
 					buyUpg(this.layer, this.data)
 				}

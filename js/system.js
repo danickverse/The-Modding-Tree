@@ -7,6 +7,8 @@ addLayer("sys", {
         best: decimalZero,
         total: decimalZero,
         resetCount: 0,
+        autoEduBuyable: false,
+        autoPennyUpg: false,
         everWNBP: false,
         lockWNBP: false,
         businesses: {
@@ -99,10 +101,14 @@ addLayer("sys", {
     milestones: {
         0: {
             requirementDescription: "1 Dollar Reset",
-            effectDescription:() => `Unlock Education III, Businesses, and Quests, keep the QOL 1/2 autobuyers,
+            effectDescription:() => `Unlock Education III, Businesses, and Quests, keep the QOL 1/2 autobuyers (toggles),
                 and multiply Expansion/Penny Expansion gain by 1.25x per milestone<br>Currently: 
                 ${format(1.25**player.sys.milestones.length)}x`,
-            done() { return player.sys.resetCount >= 1 }
+            done() { return player.sys.resetCount >= 1 },
+            toggles: [
+                ["sys", "autoEduBuyable"],
+                ["sys", "autoPennyUpg"]
+            ]
         },
         1: {
             requirementDescription: "2 Dollar Resets",

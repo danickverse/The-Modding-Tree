@@ -906,7 +906,7 @@ addLayer("p", {
         }
 
         
-        if (hasUpgrade("e", 15) || hasMilestone("sys", 0)) {
+        if (hasUpgrade("e", 15) || (hasMilestone("sys", 0) && player.sys.autoEduBuyable)) {
             player.p.autoBuyableCooldown += diff
 
             let divisor = 1
@@ -932,38 +932,14 @@ addLayer("p", {
         if (!hasUpgrade("p", 31) && hasUpgrade("e", 15) && canAffordUpgrade("p", 31)) 
             player.p.upgrades.push(31)
 
-        // if (hasUpgrade("e", 15) || hasMilestone("sys", 0)) {
-        //     if (player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 21)) {
-        //         addBuyables("p", 21, 1)
-
-        //         let divisor = 1
-        //         if (hasUpgrade("e", 35)) divisor *= 2.5
-        //         if (hasUpgrade("e", 45)) divisor *= 8
-        //         if (hasMilestone("sys", 1)) divisor *= 2
-
-        //         player.p.autoBuyableCooldown = 2.5 / divisor
-        //     }
-
-        //     if (player.p.autoBuyableCooldown == 0 && canBuyBuyable("p", 22)) {
-        //         addBuyables("p", 22, 1)
-
-        //         let divisor = 1
-        //         if (hasUpgrade("e", 35)) divisor *= 2.5
-        //         if (hasUpgrade("e", 45)) divisor *= 8
-        //         if (hasMilestone("sys", 1)) divisor *= 2
-
-        //         player.p.autoBuyableCooldown = 2.5 / divisor
-        //     }
-        // }
-
         if (hasMilestone("sys", 5)) {
             for (id in tmp[layer].upgrades)
                 if (id > "60") continue
                 if (isPlainObject(tmp[layer].upgrades[id]) && (layers[layer].upgrades[id].canAfford === undefined || layers[layer].upgrades[id].canAfford() === true))
                     buyUpg(layer, id) 
-        } else if (hasUpgrade("e", 25) || hasMilestone("sys", 0) && player.p.autoUpgCooldown == 0) {
+        } else if (hasUpgrade("e", 25) || (hasMilestone("sys", 0) && player.sys.autoPennyUpg) && player.p.autoUpgCooldown == 0) {
             let upgIndices = [11, 12, 13, 14, 15, 21, 22]
-            if (!player.sys.lockWNBP) upgIndices.push(23)
+            //if (!player.sys.lockWNBP) upgIndices.push(23)
             upgIndices = upgIndices.concat([24, 25, 31, 32, 33, 34, 35])
             if (hasUpgrade("e", 45)) upgIndices.push(41, 42, 43, 44, 45)
             function findUpg(index) {

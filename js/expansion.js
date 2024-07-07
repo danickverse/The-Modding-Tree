@@ -282,7 +282,8 @@ addLayer("e", {
         25: {
             fullDisplay:() => {
                 let title = "<h3></b>QOL 2</h3></b>"
-                let description = "Autobuy two penny upgrades from the first three rows per second"
+                let description = "Autobuy two penny upgrades from the first three rows per second<sup>*</sup"
+                if (player.shiftDown) description = "Does not autobuy WNBP"
                 let requirement = "Requires: " + formatWhole(decimalOne.mul(2**player.e.upgrades.length).div(2).min(256).max(16)) + " Penny Expansion"
                 if (!(hasUpgrade("e", 21) && hasUpgrade("e", 22) && hasUpgrade("e", 23) && hasUpgrade("e", 24))) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -613,7 +614,7 @@ addLayer("e", {
                 "blank",
             ],
             unlocked(){
-                return player.e.points.gte(".1") || player.s.unlocked
+                return player.e.points.gte(".1") || player.s.unlocked || player.sys.unlocked
             },
         },
         "Focused Production": {

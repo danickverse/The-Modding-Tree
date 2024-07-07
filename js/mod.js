@@ -17,12 +17,14 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.1.4",
+	num: "0.2.1.5",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.2.1.4</h3><br>
+	<h3>v0.2.1.4/v0.2.1.5</h3><br>
+		- Added toggles to System milestone 1 to avoid locking the player out of Ach 9<br>
+		- QOL 2 autobuyer no longer autobuys the WNBP upgrade, only affects gameplay after the 1st System reset<br>
 		- Bug fixes and attempted to fix upgrade purchasing for mobile<br>
 	
 	<h3>v0.2.1.3</h3><br>
