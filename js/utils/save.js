@@ -102,7 +102,7 @@ function getStartClickables(layer) {
 	if (layers[layer].clickables) {
 		for (id in layers[layer].clickables)
 			if (isPlainObject(layers[layer].clickables[id]))
-				data[id] = "";
+				data[id] = layer != "sys" ? "" : decimalZero;
 	}
 	return data;
 }

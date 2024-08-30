@@ -1,3 +1,101 @@
+function questTabFormat() {
+    // content: [
+    //     ["display-text", function() { return `You have completed 
+    //         <h2><span style="color: blue; text-shadow: 0px 0px 10px blue; font-family: Lucida Console, Courier New, monospace">
+    //         ${formatWhole(player.quests.points)}</span></h2> quests`
+    //     }],
+    //     "blank",
+    //     ["row", [
+    //         ["display-text", "Hide completed Quests:&ensp;"], 
+    //         ["toggle", ["quests", "hideCompleted"]]
+    //     ]],
+    //     "blank",
+    //     () => tmp.quests.bars["pointsBar"].unlocked ? ["column", [
+    //         ["bar", "pointsBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars["pointsBar"].effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.penniesBar.unlocked ? ["column", [
+    //         ["bar", "penniesBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.penniesBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.dollarResetBar.unlocked ? ["column", [
+    //         ["bar", "dollarResetBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.dollarResetBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.dollarGainBar.unlocked ? ["column", [
+    //         ["bar", "dollarGainBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.dollarGainBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.wnbpBar.unlocked ? ["column", [
+    //         ["bar", "wnbpBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.wnbpBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.applesBar.unlocked ? ["column", [
+    //         ["bar", "applesBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.applesBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.acceleratorBar.unlocked ? ["column", [
+    //         ["bar", "acceleratorBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.acceleratorBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.smackBar.unlocked ? ["column", [
+    //         ["bar", "smackBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.smackBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : "",
+    //     () => tmp.quests.bars.enemyKillsBar.unlocked ? ["column", [
+    //         ["bar", "enemyKillsBar"],
+    //         "blank",
+    //         ["display-text", tmp.quests.bars.enemyKillsBar.effectDisplay()], 
+    //         "blank"
+    //     ]] : ""
+    // ]
+
+    if (typeof tmp.quests == "undefined") return [
+        ["display-text", "uh-oh --> quest tab format (call the dev if you see this for more than a single tick)"]
+    ]
+    let ret = []
+    ret.push(["display-text", `You have completed 
+        <h2><span style="color: blue; text-shadow: 0px 0px 10px blue; font-family: Lucida Console, Courier New, monospace">
+        ${formatWhole(player.quests.points)}</span></h2> quests`
+    ])
+    ret.push("blank")
+    ret.push(["row", [
+        ["display-text", "Hide completed Quests:&ensp;"], 
+        ["toggle", ["quests", "hideCompleted"]]
+    ]])
+    ret.push("blank")
+    
+    for (barId in tmp.quests.bars) {
+        if (barId == "quests") continue
+
+        if (tmp.quests.bars[barId].unlocked) {
+            ret.push(["column", [
+                ["bar", barId],
+                "blank",
+                ["display-text", tmp.quests.bars[barId].effectDisplay()], 
+                "blank"
+            ]])
+        }
+    }
+    return ret
+}
+
 addLayer("quests", {
     symbol: "Q",
     row: "side",
@@ -17,6 +115,7 @@ addLayer("quests", {
                 applesBar: 0,
                 acceleratorBar: 0,
                 smackBar: 0,
+                zoneBar: 0,
                 enemyKillsBar: 0,
                 fastSpecksBar: 0
             },
@@ -121,11 +220,11 @@ addLayer("quests", {
                 switch (completions) {
                     case 0: return 10800
                     case 1: return 3600
-                    case 2: return 1800
-                    case 3: return 600
+                    case 2: return 1200
+                    case 3: return 300
                     case 4:
-                    case 5: return 300
-                    default:  throw Error(`Dollar Reset quest has invalid number of completions: ${completions}`)
+                    case 5: return 60
+                    default: throw Error(`Dollar Reset quest has invalid number of completions: ${completions}`)
                 }
             },
             textStyle: {'color' : 'blue'},
@@ -141,7 +240,7 @@ addLayer("quests", {
             title: "Dollar Gain Quest",
             special: true,
             effectDisplay:() => `Because you have completed this quest ${player.quests.completions.dollarGainBar}/6 times,
-                the expansion investment hardcap and softcap are multiplied by ${format(tmp.quests.bars.dollarGainBar.reward)}`,
+                the expansion investment hardcap is multiplied by ${format(tmp.quests.bars.dollarGainBar.reward)}`,
             display() { return this.completed() ? "DONE"
                 : `Gain ${this.goal()} Dollars on reset` },
             progress() { 
@@ -176,6 +275,7 @@ addLayer("quests", {
                 unlock ${tmp.quests.bars.wnbpBar.reward} Penny upgrades that are kept`,
             display() {
                 if (this.completed()) return "DONE"
+                if (player.shiftDown) return "Useful toggles in Dollar Milestone 5"
                 let ret = `Reach ${format(this.goal())} Pennies without purchasing WNBP`
                 if (player.sys.everWNBP) ret = ret + " (Failed)"
                 return ret
@@ -187,16 +287,14 @@ addLayer("quests", {
                 return this.completed() || player.p.points.add(1).log10().div(this.goal().log10())
             },
             goal() {
-                let base = new Decimal("1e9")
-                
                 let completions = player.quests.completions.wnbpBar
                 switch (completions) {
-                    case 0: return base
-                    case 1: return base.pow(25/9)
-                    case 2: return base.pow(40/9)
-                    case 3: return base.pow(50/9)
+                    case 0: return new Decimal(1e9)
+                    case 1: return new Decimal(1e25)
+                    case 2: return new Decimal(1e50)
+                    case 3: return new Decimal(1e80)
                     case 4:
-                    case 5: return base.pow(60/9)
+                    case 5: return new Decimal(1e105)
                     default: throw Error(`WNBP quest has invalid number of completions: ${completions}`)
                 }
             },
@@ -246,7 +344,7 @@ addLayer("quests", {
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.acceleratorBar >= 5,
             unlocked() { return hasMilestone("sys", 3) && (!this.completed() || !player.quests.hideCompleted) },
-            reward:() => 1 + player.quests.completions.acceleratorBar/10
+            reward:() => 1 + (player.quests.completions.acceleratorBar ** 2) /10
         },
         smackBar: {
             direction: RIGHT,
@@ -254,20 +352,39 @@ addLayer("quests", {
             height: 50,
             title: "Smack Attack Quest",
             effectDisplay:() => `Because you have completed this quest ${player.quests.completions.smackBar}/10 times,
-                damage per smack is multiplied by ${format(tmp.quests.bars.smackBar.reward)}`,
+                pre-scaled damage per smack is multiplied by ${format(tmp.quests.bars.smackBar.reward)}`,
             display() { return this.completed() ? "DONE"
                 : `${format(player.bills.totalSmackDamage)}/${format(this.goal())} Damage from Smack Attacks`},
             progress() { return this.completed() || player.bills.totalSmackDamage.div(this.goal()) },
             goal() {
-                let base = 500
-                let scaling = 10 ** Math.min(9, player.quests.completions.smackBar)
+                let base = 50
+                let scaling = 100 ** Math.min(9, player.quests.completions.smackBar)
 
                 return base * scaling
             },
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.smackBar >= 10,
-            unlocked() { return player.bills.unlocked && (!this.completed() || !player.quests.hideCompleted) },
-            reward:() => 1 + player.quests.completions.smackBar / 5
+            unlocked() { return hasUpgrade("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
+            reward:() => 1 + (player.quests.completions.smackBar ** 2) / 10
+        },
+        zoneBar: {
+            direction: RIGHT,
+            width: 500,
+            height: 50,
+            title: "Zone Quest",
+            effectDisplay:() => `Because you have completed this quest ${player.quests.completions.zoneBar}/10 times,
+                Time Flux is multiplied by ${format(tmp.quests.bars.zoneBar.reward)}x`,
+            display() { return this.completed() ? "DONE"
+                : `${tmp.bills.highestZoneCompleted}/${this.goal()} Highest Zone Completed`},
+            progress() { return this.completed() || tmp.bills.highestZoneCompleted/this.goal() },
+            goal() {
+                let completions = player.quests.completions.zoneBar
+                return 10 * (completions + 1)
+            },
+            textStyle: {'color' : 'blue'},
+            completed:() => player.quests.completions.zoneBar >= 10,
+            unlocked() { return hasUpgrade("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
+            reward:() => 1 + .1 * player.quests.completions.zoneBar
         },
         enemyKillsBar: {
             direction: RIGHT,
@@ -278,28 +395,28 @@ addLayer("quests", {
                 enemies drop ${format(tmp.quests.bars.enemyKillsBar.reward)}x more spent dollars`,
             display() { return this.completed() ? "DONE"
                 : `${player.bills.totalEnemyKills}/${this.goal()} Enemy Kills`},
-            progress() { return this.completed() || player.bills.totalEnemyKills/this.goal() },
+            progress() { return this.completed() || player.bills.totalEnemyKills / this.goal() },
             goal() {
                 let completions = player.quests.completions.enemyKillsBar
                 switch (completions) {
                     case 0: return 10
-                    case 1: return 100
-                    case 2: return 200
-                    case 3: return 400
-                    case 4: return 1000
-                    case 5: return 1500
-                    case 6: return 2500
-                    case 7: return 4000
-                    case 8: return 6000
+                    case 1: return 500
+                    case 2: return 2500
+                    case 3: return 5000
+                    case 4: return 10000
+                    case 5: return 20000
+                    case 6: return 50000
+                    case 7: return 125000
+                    case 8: return 500000
                     case 9:
-                    case 10: return 10000
+                    case 10: return 1000000
                     default: throw Error(`Enemy Kills Quest has invalid number of completions: ${completions}`)
                 }
             },
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.enemyKillsBar >= 10,
-            unlocked() { return hasAchievement("a", 95) && (!this.completed() || !player.quests.hideCompleted) },
-            reward:() => 1.1 ** player.quests.completions.enemyKillsBar
+            unlocked() { return hasUpgrade("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
+            reward:() => 1.25 ** player.quests.completions.enemyKillsBar
         },
         fastSpecksBar: {
             direction: RIGHT,
@@ -320,7 +437,7 @@ addLayer("quests", {
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.fastSpecksBar >= 5,
             unlocked() { return hasMilestone("quests", 0) && (!this.completed() || !player.quests.hideCompleted) },
-            reward:() => 120 * player.quests.completions.enemyKillsBar // 2 mins per completion
+            reward:() => 120 * player.quests.completions.fastSpecksBar // 2 mins per completion
         }
     },
     specks: {
@@ -490,72 +607,7 @@ addLayer("quests", {
     },
     tabFormat: {
         "Main": {
-            content: [
-                ["display-text", function() { return `You have completed 
-                    <h2><span style="color: blue; text-shadow: 0px 0px 10px blue; font-family: Lucida Console, Courier New, monospace">
-                    ${formatWhole(player.quests.points)}</span></h2> quests`
-                }],
-                "blank",
-                ["row", [
-                    ["display-text", "Hide completed Quests:&ensp;"], 
-                    ["toggle", ["quests", "hideCompleted"]]
-                ]],
-                "blank",
-                () => tmp.quests.bars.pointsBar.unlocked ? ["column", [
-                    ["bar", "pointsBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.pointsBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.penniesBar.unlocked ? ["column", [
-                    ["bar", "penniesBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.penniesBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.dollarResetBar.unlocked ? ["column", [
-                    ["bar", "dollarResetBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.dollarResetBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.dollarGainBar.unlocked ? ["column", [
-                    ["bar", "dollarGainBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.dollarGainBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.wnbpBar.unlocked ? ["column", [
-                    ["bar", "wnbpBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.wnbpBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.applesBar.unlocked ? ["column", [
-                    ["bar", "applesBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.applesBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.acceleratorBar.unlocked ? ["column", [
-                    ["bar", "acceleratorBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.acceleratorBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.smackBar.unlocked ? ["column", [
-                    ["bar", "smackBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.smackBar.effectDisplay()], 
-                    "blank"
-                ]] : "",
-                () => tmp.quests.bars.enemyKillsBar.unlocked ? ["column", [
-                    ["bar", "enemyKillsBar"],
-                    "blank",
-                    ["display-text", tmp.quests.bars.enemyKillsBar.effectDisplay()], 
-                    "blank"
-                ]] : ""
-            ]
+            content: questTabFormat
         },
         "Milestones": {
             content: [

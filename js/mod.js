@@ -4,24 +4,44 @@ let modInfo = {
 	author: "@.danick",
 	pointsName: "points",
 	modFiles: [
+		"functions.js",
 		"tree.js", "achievements.js", "penny.js", 
 		"expansion.js", "storage.js", "system.js",
-		"bills.js", "quests.js", "effects.js", "functions.js"],
+		"bills.js", //"factory.js",
+		// remember to uncomment statement in getPointGen() when uncomment factory.js
+		"quests.js", "effects.js"],
 	allowSmall: false,
 
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
-	offlineLimit: 8,  // In hours
+	offlineLimit:() => {
+		let ret = 2
+		return ret
+	},  // In hours
 }
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.1.5",
+	num: "0.2.2",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.2</h3><br>
+		- Added 1 System milestone, 5 upgrades for Businesses, a new Business in the Apple industry (purchasable in next update)<br>
+		- Added Bills layer, connected to the System, with 6 upgrades and 3 related Quests (for now)<br>
+		- Added a few achievements but removed others (46 -> 48) and 1 achievement milestone (10 --> 11)<br>
+		- Accelerator Power effect majorly buffed (^.02 -> ^.05 in its formula)<br>
+		- Changed effect of System upgrade Witchcraft<br>
+		- WNBP quest completion requirements increased past 2 completions, 3rd completion reward implemented<br>
+		- Reduced offline time limit from 8 hrs to 2 hrs (can be increased in the future)<br>
+		- Expansion layer resource generation is finally as accurate and fast as possible, credit to @pg132<br>
+		- Various minor bug fixes and rebalancing<br>
+		- Probably a bunch of other stuff<br>
+		- Definitely a bunch of more other stuff<br>
+		- im so lazy this took so long im so dead or something<br>
+
 	<h3>v0.2.1.4/v0.2.1.5</h3><br>
 		- Added toggles to System milestone 1 to avoid locking the player out of Ach 9<br>
 		- QOL 2 autobuyer no longer autobuys the WNBP upgrade, only affects gameplay after the 1st System reset<br>
@@ -50,7 +70,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added 2 Quests; one of them is only implemented up to 2 completions<br>
 		- Added 3 achievements (42 -> 45)<br>
 		- Storing dollars no longer doesn't increase reset count (it was dumb)<br>
-		- Can now hold down and drag mouse to buy upgrades, credit to: @pg132<br>
+		- Can now hold down and drag mouse to buy upgrades, inspiration from @pg132<br>
 		- Reduced base requirement and scaling for both Points and Pennies Quest<br>
 		- Tweaked rewards of some Quests and several System upgrades for the future (it's not a big deal)<br>
 		- 4th System Milestone also keeps Expansion Investment at the same rate<br>
@@ -226,24 +246,26 @@ function getPointGen() {
 
 	directMult = directMult.mul(buyableEffect("p", 23))
 
-	let ret = baseGain.mul(gainMult).pow(gainExp)
-	ret = ret.mul(directMult)
+	//if (player.factory.unlocked) directMult = directMult.mul(tmp.factory.effect)
+
+	let ret = baseGain.mul(gainMult).pow(gainExp).mul(directMult)
 	return ret
 }
 
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
 function addedPlayerData() { return {
 	highestPointsEver: new Decimal("0"),
-	resetTime: 0
+	resetTime: 0,
+	shiftDown: false
 }}
 
 // Display extra things at the top of the page
 var displayThings = [
-	() => boostedTime(1) != 1 || player.sys.unlocked ? 
+	() => timeFlux() != 1 || player.sys.unlocked ? 
 		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
-			: `Time Flux: ${format(boostedTime(1), 4)}x`)
+			: `Time Flux: ${format(timeFlux(), 4)}x`)
 	: "",
-	"Current endgame: 5 Dollar Milestones, 44 Achievements",
+	"Current endgame: Zone 10 Completed, 100k Apples",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
 		<br>The game is not balanced here, and is subject to bugs and inflation.
 		<br>Content may be scrapped/rebalanced in the future.
@@ -252,7 +274,8 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.sys.milestones.length >= 5 && player.a.achievements.length >= 44
+	return tmp.bills.highestZoneCompleted >= 10 
+		&& player.sys.businesses.apples.best.gte(100000)
 }
 
 
@@ -310,5 +333,23 @@ function fixOldSave(oldVersion){
 	}
 	if (oldVersion < "0.2.1.3") {
 		if (player.quests.grid != "undefined") player.quests.grid = getStartGrid("quests")
+	}
+	if (oldVersion < "0.2.1.5") {
+		player.sys.autoWNBP = false
+	}
+	if (oldVersion < "0.2.2") {
+		player.sys.buyables[11] = player.sys.buyables[11].min(10)
+		player.sys.buyables[12] = player.sys.buyables[12].min(20)
+		player.sys.buyables[13] = player.sys.buyables[13].min(15)
+		
+		delete player.bills.maxEnemyKills
+		delete player.bills.timers
+		delete player.bills.highestDenomination
+		delete player.bills.nextDenominationUnlock
+		delete player.bills.killsByZone
+		delete player.bills.enemyLevel
+		delete player.bills.elo
+
+		player.quests.completions.wnbpBar = Math.min(2, player.quests.completions.wnbpBar)
 	}
 }

@@ -28,12 +28,33 @@ addLayer("s", {
     layerShown:() => hasUpgrade("e", 33) || player.sys.unlocked,
     doReset(layer) {
         if (layer == "sys") {
+            updateMilestones("s")
             let keptUpgrades = player.s.upgrades
             let storedDollars = player.s.stored_dollars.points
+            let keptMilestones = []
+            let keptExpChall = 0
+            let invHighScore = decimalZero
+            let keptStoredInv = decimalZero
+            let keptExpInv = decimalZero
+            if (hasMilestone("sys", 6)) keptExpChall = player.s.challenges[12]
+            if (hasMilestone("sys", 7)) invHighScore = player.s.high_scores[11].points.min(1e25)
+            if (hasMilestone("s", 6)) keptMilestones.push('6')
+            if (hasMilestone("s", 7)) {
+                keptMilestones.push('7')
+                keptStoredInv = player.s.stored_investment.points.min(1e6)
+                keptExpInv = player.s.stored_expansion.points.min(2e4)
+            }
+
             layerDataReset("s")
+
             player.s.stored_dollars.points = storedDollars
             player.s.upgrades = keptUpgrades
             if (player.s.stored_dollars.points.eq(0)) player.s.unlocked = false
+            for (const id of keptMilestones) player.s.milestones.push(id)
+            player.s.challenges[12] = keptExpChall
+            player.s.high_scores[11].points = invHighScore
+            player.s.stored_investment.points = keptStoredInv
+            player.s.stored_expansion.points = keptExpInv
         }
     },
     stored_investment: {
@@ -46,7 +67,7 @@ addLayer("s", {
         },
         effects: {
             1: () => player.s.stored_investment.points.add(1).log10().div(10).add(1),
-            2: () => player.s.stored_investment.points.div(100).add(1).log2().mul(1.5).div(100),
+            2: () => player.s.stored_investment.points.div(100).add(1).log2().mul(1.5).div(100).min(.95),
             3: () => [player.s.stored_investment.points.add(1).log2().div(250), 
                 player.s.stored_investment.points.add(1).log2().div(30)],
             4: () => player.s.stored_investment.points.add(1).log10().div(10).add(1.7).max(2).min(4),
@@ -102,9 +123,12 @@ addLayer("s", {
                 return ret.div(100) // as a percentage
                 // return player.s.stored_dollars.points.root(3).mul(3).div(100)
             },
-            3: () => player.s.stored_dollars.points.pow(2).add(1).log10().add(1),
+            3: () => player.s.stored_dollars.points.add(1).log10().mul(2).add(1),
             // 3 => player.s.stored_dollars.points.pow(2).add(10).log10(),
-            4: () => player.s.stored_dollars.points.add(1).pow(.15)
+            4: () => player.s.stored_dollars.points.add(1).pow(.15),
+            5: () => player.s.stored_dollars.points.max(1).log2(),
+            //6: () => player.s.stored_dollars.points.sqrt().div(10).add(2).log2(),
+            6: () => player.s.stored_dollars.points.add(1).root(5),
         }
     },
     milestones: {
@@ -122,19 +146,19 @@ addLayer("s", {
             requirementDescription: "500,000 Stored Investment and 12,000 Stored Expansion",
             effectDescription: "Increase Unuselessifier exponent from 3 to 3.5 and reduce investment cooldown by 5 seconds",
             done() { return this.unlocked() && player.s.stored_investment.points.gte(5e5) && player.s.stored_expansion.points.gte(12000) },
-            unlocked() { return hasMilestone("a", 5) }
+            unlocked() { return hasMilestone("a", 5) || hasMilestone("sys", 5) }
         },
         3: {
             requirementDescription: "250,000,000 Stored Investment and 300,000 Stored Expansion",
             effectDescription: "Keep 1 Penny Expansion upgrade when storing expansion per milestone and unlock more achievements",
             done() { return this.unlocked() && player.s.stored_investment.points.gte(2.5e8) && player.s.stored_expansion.points.gte(3e5) },
-            unlocked() { return hasMilestone("a", 5) }
+            unlocked() { return hasMilestone("a", 5) || hasMilestone("sys", 5) }
         },
         4: {
             requirementDescription: "2e12 Stored Investment and 8e6 Stored Expansion",
             effectDescription: "Unlock the Expansion Challenge",
             done() { return this.unlocked() && player.s.stored_investment.points.gte(2e12) && player.s.stored_expansion.points.gte(8e6) },
-            unlocked() { return hasAchievement("a", 73) }
+            unlocked() { return hasAchievement("a", 73) || hasMilestone("sys", 5) }
         },
         5: {
             requirementDescription:() => {
@@ -146,16 +170,21 @@ addLayer("s", {
             done() { return this.unlocked() && player.s.stored_investment.points.gte(1e16) 
                 && player.s.stored_expansion.points.gte(1e8) && 
                 challengeCompletions("s", 12) >= (!hasMilestone("sys", 2) ? 2 : 0) },
-            unlocked() { return hasAchievement("a", 73) }
+            unlocked() { return hasAchievement("a", 73) || hasMilestone("sys", 5) }
         },
-        // 6: {
-        //     requirementDescription: "",
-        //     effectDescription: "Unlock a Stored Dollar effect and unlock a Quest (TO SELF: THIS QUEST HAS TO DO W/ CHALLENGES)",
-        //     done() { return this.unlocked() && player.s.milestones.length >= 6
-        //         && add other requirements here!!!!
-        //     },
-        //     unlocked() { return hasMilestone("sys", 1) }
-        // }
+        6: {
+            requirementDescription: "1.25 Stored Dollars, 8 Expansion Challenge Completions",
+            effectDescription:() => `Unlock a Stored Dollars effect and increase the base conversion rate by 1% per Expansion Challenge completion after 5
+                <br>Currently: +${Math.max(0, challengeCompletions("s", 12) - 5)}%`,
+            done() { return this.unlocked() && player.s.stored_dollars.points.gte(1.25) && challengeCompletions("s", 12) >= 8 },
+            unlocked() { return hasMilestone("sys", 6) }
+        },
+        7: {
+            requirementDescription: "3 Stored Dollars, 3.33e33 Investment Challenge score",
+            effectDescription:() => `Unlock another Stored Dollars effect and keep 1e6/2e4 Stored Investment/Expansion on reset`,
+            done() { return this.unlocked() && player.s.stored_dollars.points.gte(3) && player.s.high_scores[11].points.gte(3.33e33) },
+            unlocked() { return hasMilestone("sys", 6) }
+        }
     },
     upgrades: {
         11: {
@@ -288,6 +317,7 @@ addLayer("s", {
                     if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
                     if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
                 }
+                updateTempData(layers["e"], tmp["e"], funcs["e"])
             }
         },
         13: {
@@ -311,6 +341,7 @@ addLayer("s", {
 
                 // update temp before doing reset and updating quests to not give free quest completions
                 // also grants system milestones to keep expansion investment and apples/not force additional resets once already done
+                // same idea with storage milestones
                 updateMilestones("sys")
                 tmp.quests.bars.dollarResetBar.progress = layers.quests.bars.dollarResetBar.progress()
 
@@ -387,7 +418,7 @@ addLayer("s", {
                 "blank",
                 "challenges"
             ],
-            unlocked:() => hasUpgrade("e", 43)
+            unlocked:() => hasUpgrade("e", 43) || hasMilestone("s", 4)
         }
     },
     microtabs: {
@@ -502,6 +533,10 @@ addLayer("s", {
                         ret += `,<br>3. Produce ${format(tmp.s.stored_dollars.effects[3])}x more apples per tree`
                         ret += `,<br>4. Multiply the expansion investment gain softcap and hardcap by 
                             ${format(tmp.s.stored_dollars.effects[4])}x`
+                        if (hasMilestone("s", 6)) ret += `,<br>5. Passively generate
+                            ${format(tmp.s.stored_dollars.effects[5])}% of investment gain per second`
+                        if (hasMilestone("s", 7)) ret += `,<br>6. Multiply loot gain by 
+                            ${format(tmp.s.stored_dollars.effects[6])}x`
                         return ret
                     }], "blank"
                 ],
@@ -512,21 +547,22 @@ addLayer("s", {
     challenges: {
         11: {
             name: "Investment Challenge",
-            challengeDescription:() => "Raise point/penny gain ^.5 (after tax), Tax starts 1e4x earlier, subtract 1 from the Tax exponent, and investment gain is initially 1",
+            challengeDescription:() => "Point/penny gain ^.5 (after tax), Tax starts 1e4x earlier, subtract 1 from Tax exponent, and investment gain is 1",
             goalDescription() { return format(player.s.high_scores[11].points.max(1e6)) + " points" },
             rewardDescription:() => {
-                let ret = "Increases the IITU effect exponent based on high score"
-                if (challengeEffect("s", 11).gte(.3)) {
-                    if (!player.shiftDown) return ret + " (softcapped*)"
-                    return "Effect after .3 is divided by 10 --> +(.3 + [Remaining Effect]/10)"
-                }
-                return ret
+                if (player.shiftDown) return "Softcapped at .1/.2, capped at .35"
+                return "Increases the IITU effect exponent based on high score"
             },
             rewardEffect() { 
                 let ret = player.s.high_scores[11].points.add(1).log2().div(500)
-                if (ret.gte(.3)) ret = .3 + (ret.sub(.3).div(10))
-                if (ret.gte(.35)) return new Decimal(.35)
+                if (ret.gte(2.1)) return new Decimal(.35)
+                else if (ret.gte(.6)) return ret.sub(.6).div(10).add(.2)
+                else if (ret.gte(.1)) return ret.sub(.1).div(5).add(.1)
                 return ret
+
+                // if (ret.gte(.1)) ret = ret.sub(.1).div(5).add(.1)
+                // if (ret.gte(.2)) ret = ret.sub(.2).div(2).add(.2)
+                // return ret.min(.35)
             },
             rewardDisplay() { 
                 return "+" + format(challengeEffect("s", 11), 3) 
@@ -553,19 +589,24 @@ addLayer("s", {
             onExit() {
                 if (player.points.gt(player.s.high_scores[11].points)) player.s.high_scores[11].points = player.points
             },
-            marked() { return this.rewardEffect() == .35 }
+            marked() { return this.rewardEffect() == .35 },
+            unlocked:() => hasUpgrade("e", 43)
         },
         12: {
             name: "Expansion Challenge",
-            challengeDescription:() => "Raise point/penny gain ^.25 (after tax), investment gain is initially 0.1, "
-                + "Why Do These Matter??? base is 1.02, but second stored expansion effect always applies",
+            challengeDescription:() => `Point/penny gain ^.25 (after tax), investment gain is 0.1,
+                Why Do These Matter??? base is 1.02, cap It's Only Reasonable at +5, 
+                but 2nd stored expansion effect always applies`,
             goalDescription() { return format(this.requirement()) + " penny expansion" },
             rewardDescription:() => "Multiply penny expansion gain by (1 + challenge completions)<sup>1.5</sup>",
             rewardEffect() { 
-                return Math.pow(challengeCompletions("s", 12) + 1, 1.5)
+                return [
+                    Math.pow(challengeCompletions("s", 12) + 1, 1.5), // penny expansion gain
+                    Math.max(0, challengeCompletions("s", 12) - 5) * .01 // base conversion rate
+                ]
             },
             rewardDisplay() { 
-                return format(challengeEffect("s", 12), 2) + "x"
+                return format(challengeEffect("s", 12)[0], 2) + "x"
                     + "<br>Completion count: " + challengeCompletions("s", 12) + "/" + this.completionLimit
             },
             canComplete() {
@@ -609,6 +650,7 @@ addLayer("s", {
                     if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
                     if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
                 }
+                updateTempData(layers["e"], tmp["e"], funcs["e"])
             },
             // onExit() {
             //     return
@@ -621,5 +663,9 @@ addLayer("s", {
             },
             unlocked:() => hasMilestone("s", 4)
         }
+        // 13: dollar challenge --> all boosts from row 1 are nullified
+        // perform dollar storage, but also resets toys
+        // main objective is to grind toys for more dollars (see "sell toys")
+        // more dollars = better row 2 boosts = more points = higher score
     }
 })

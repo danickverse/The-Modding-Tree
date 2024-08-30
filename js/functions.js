@@ -1,7 +1,20 @@
+let denominationValues = {
+    10: -1,
+    9: 1000000000000,
+    8: 10000000000,
+    7: 100000000, 
+    6: 5000000, 
+    5: 200000, 
+    4: 10000, 
+    3: 500, 
+    2: 20, 
+    1: 1
+}
+
 function timeDisplay(time, showDecimal=true) {
     if (showDecimal) funct = format
     else funct = formatWhole
-    if (time < 60) return `${funct(time)} second` + (time > 1 ? "s" : "")
+    if (time < 60) return `${funct(time)} second` + (time != 1 ? "s" : "")
     else if (time < 3600) return `${funct(time/60, 2)} minute` + (time/60 > 1 ? "s" : "")
     else if (time < 86400) return `${funct(time/3600, 2)} hour` + (time/3600 > 1 ? "s" : "")
     else return `${funct(time/86400, 2)} day` + (time/86400 > 1 ? "s" : "")
@@ -15,6 +28,40 @@ function factorial(x) {
         ret *= i
     }
     return ret
+}
+
+function getLogisticTimeConstant(current, gain, loss){
+    // stolen from @pg132's Tree of Life
+    if (current.eq(gain.div(loss))) return Infinity
+    if (current.gt(gain.div(loss))) return current.times(loss).sub(gain).ln().div(-1).div(loss)
+    return current.times(loss).sub(gain).times(-1).ln().div(-1).div(loss)
+}
+
+function getLogisticAmount(current, gain, loss, diff){
+    // stolen from @pg132's Tree of Life
+    if (current.eq(gain.div(loss))) return current
+    if (gain.gte("ee10")) return gain.div(loss)
+    if (current.lt(gain.div(loss))) {
+            c = getLogisticTimeConstant(current, gain, loss)
+            
+            val1 = c.plus(diff) // t+c
+            val2 = val1.times(-1).times(loss) // -B(t+c)
+            val3 = Decimal.exp(val2) // this should be A-Bx
+            val4 = gain.sub(val3) // should be A-(A-Bx) = Bx
+            val5 = val4.div(loss) // should be x
+
+            return val5.max(0)
+    } else {
+            c = getLogisticTimeConstant(current, gain, loss)
+            
+            val1 = c.plus(diff) // t+c
+            val2 = val1.times(-1).times(loss) // -B(t+c)
+            val3 = Decimal.exp(val2) // this should be Bx-A
+            val4 = gain.plus(val3) // should be (Bx-A)+A
+            val5 = val4.div(loss) // should be x
+
+            return val5.max(0)
+    }
 }
 
 function upgrade23Limit() {
@@ -36,7 +83,6 @@ function upgrade23LimitExp() {
     if (hasUpgrade("e", 12)) exp = exp.add(upgradeEffect("e", 12))
         if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) exp = exp.add(.01)
     if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][0])
-    if (hasUpgrade("sys", 22)) exp = exp.mul(upgradeEffect("sys", 22))
     return exp
 }
 
@@ -58,6 +104,7 @@ function upgrade23EffExp() {
     if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
     if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][1])
     if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
+    if (hasUpgrade("sys", 22)) exp = exp.mul(upgradeEffect("sys", 22))
     return exp
 }
 
@@ -92,60 +139,6 @@ function pennyTaxExp() {
     return baseExp.max(1)
 }
 
-function investmentGain() {
-    if (inAnyChallenge()) {
-        let ret = decimalOne
-        if (inChallenge("s", 12)) ret = ret.div(10)
-        if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
-        if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
-        if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
-        if (hasAchievement("a", 85)) ret = ret.mul(1.5)
-        return ret
-    }
-    let investmentExponent = new Decimal(".5")
-    let ret = player.p.points.div(1000000).pow(investmentExponent)
-    if (hasAchievement("a", 25)) ret = ret.mul(2)
-    if (hasAchievement("a", 34)) ret = ret.mul(1.1)
-    if (hasAchievement("a", 44)) ret = ret.mul(1.2)
-    if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
-    if (hasUpgrade("p", 43)) ret = ret.mul(upgradeEffect("p", 43))
-    if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
-    ret = ret.mul(tmp.s.stored_investment.effects[1])
-    if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
-    ret = ret.mul(player.sys.points.add(1).pow(1.5))
-    if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
-    if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
-    if (hasAchievement("a", 85)) ret = ret.mul(1.5)
-
-    if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
-    return ret
-}
-
-function investment2Gain() {
-    let investmentExponent = new Decimal(".4")
-    let ret = player.p.investment.points.div(10000).pow(investmentExponent)
-    if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
-    if (hasMilestone("s", 1)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
-    if (hasMilestone("a", 6)) ret = ret.mul(1.01**(player.a.milestones.length+player.a.achievements.length-28))
-    if (hasAchievement("a", 85)) ret = ret.mul(1.5)
-    
-    let softcapStart = tmp.p.buyables[12].softcap
-    if (ret.gte(softcapStart)) {
-        // EX: 5000 softcap base, 4000 ex inv, 4200 ret --> saved = 1000, ret = 4200 - saved = 3200
-        // then, apply softcap to remaining gain (which is stored in ret) --> ret = 3200^.4 = 25.24
-        // return saved + ret = 1000 + 25.24
-        // if ex inv >= 5000, no tricky business b/c of .max(0), simply apply softcap to ret
-        // let saved = softcapStart.sub(player.p.investment2.points).max(decimalZero)
-        // ret = ret.sub(saved)
-        // return saved.add(ret.pow(.4))
-
-        let excess = ret.sub(softcapStart)
-        return softcapStart.add(excess.pow(.4))
-    }
-
-    return ret
-}
-
 function investmentReset(resetInvestment, resetInvestment2) {
     player.p.points = decimalZero
     player.p.best = decimalZero
@@ -168,22 +161,12 @@ function investmentReset(resetInvestment, resetInvestment2) {
     if (resetInvestment2) player.p.investment2.points = decimalZero
 }
 
-function expanPassGen(diff) {
-    if (getResetGain("e").gt(decimalZero)) {
-        let eGain = tmp.e.resetGain.times(diff)
-        let eLossFactor = (1 - .3/100) ** diff
-        player.e.points = player.e.points.add(eGain).mul(eLossFactor)
-    }
-
-    let pGain = tmp.e.penny_expansions.getResetGain.times(diff)
-    let pLossFactor = (1 - tmp.e.penny_expansions.lossRate) ** diff
-    player.e.penny_expansions.points = player.e.penny_expansions.points.add(pGain).mul(pLossFactor)
-}
-
-function boostedTime(diff) {
-    let ret = diff
+function timeFlux() {
+    let ret = 1
     if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**1.5)/1000)
     ret *= tmp.quests.bars.dollarResetBar.reward
+    ret *= tmp.quests.bars.zoneBar.reward
+    if (hasUpgrade("bills", 21)) ret *= upgradeEffect("bills", 21)
     ret *= gridEffect("quests", 101)
     return ret
 }
@@ -194,6 +177,7 @@ function conversionRate() {
     let mul = 1
     if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
     if (hasUpgrade("sys", 14)) mul *= upgradeEffect("sys", 14)
+    if (hasUpgrade("sys", 114)) mul *= upgradeEffect("sys", 114)
     mul *= tmp.quests.bars.penniesBar.reward
     mul *= gridEffect("quests", 101)
 
@@ -208,6 +192,7 @@ function baseConversionRate() {
     if (hasAchievement("a", 84)) baseAdd += .01
     if (hasAchievement("a", 85)) baseAdd += .02
     baseAdd += Number(tmp.s.stored_dollars.effects[2])
+    if (tmp.s.challenges[12].unlocked && hasMilestone("s", 6)) baseAdd += challengeEffect("s", 12)[1]
 
     return ret + baseAdd
 }
@@ -219,7 +204,7 @@ function systemUpgradeCost(row) {
 
     switch (row) {
         case 1: return new Decimal(.15 + .15 * boughtInRow)
-        case 2: return new Decimal(1 + .25 * boughtInRow)
+        case 2: return new Decimal(1 + .5 * boughtInRow)
         default: throw Error("Invalid row supplied to systemUpgradeCost")
     }
 }
@@ -227,60 +212,67 @@ function systemUpgradeCost(row) {
 function updateBills(spent) {
     let billsData = player.bills
     billsData.points = billsData.points.add(spent)
-    // spent > 0 --> adding spent dollars, from convert clickable, closer to next denomination
+    // spent > 0 --> adding spent dollars, can be from convert clickable, closer to next denomination
     // spent < 0 --> from buying buyable
     if (spent > 0) {
         billsData.total = billsData.total.add(spent)
+        billsData.best = billsData.best.max(billsData.points)
+        
         if (billsData.highestDenominationIndex == 9) return
-        let denominationValues = {
-            9: 10000,
-            8: 1000,
-            7: 100, 
-            6: 50, 
-            5: 20, 
-            4: 10, 
-            3: 5, 
-            2: 2, 
-            1: 1
-        }
         for (let i = 9; i >= 1; i--) {
             let value = denominationValues[i]
-            if (billsData.total.gte(value * 10) && billsData.highestDenominationIndex <= i) {
+            if (billsData.total.gte(value) && billsData.highestDenominationIndex <= i) {
                 billsData.highestDenominationIndex = i
-                billsData.highestDenomination = value
-                billsData.nextDenominationUnlock = denominationValues[i+1] * 10
                 return
             }
         }
-
-        // spent dollars < 1
-        billsData.highestDenominationIndex = 0
-        billsData.highestDenomination = 0
-        billsData.nextDenominationUnlock = 1
-    } else {
-        let ELO = decimalZero
-        for (const id of [11, 12, 13, 21, 22, 23, 31, 32, 33]) {
-            let amt = getBuyableAmount("bills", id)
-            let denomination = tmp.bills.buyables[id].denomination
-            ELO = ELO.add(amt * denomination)
-        }
-        billsData.elo = ELO
     }
 }
 
 function attackEnemy(damage) {
-    player.bills.enemyHealth = player.bills.enemyHealth.sub(damage)
-    if (player.bills.enemyHealth.lte(0)) {
-        // player.sys.points = player.sys.points.add(tmp.sys.bars.enemyBar.loot)
-        updateBills(tmp.bills.bars.enemyBar.loot)
-        player.bills.totalEnemyKills += 1
-        player.bills.currentEnemyKills += 1
-        if (player.bills.currentEnemyKills < tmp.bills.maxEnemyKills) {
-            player.bills.currentEnemyKills = 0
-            player.bills.enemyLevel += 1
-        }
-        player.bills.enemyHealth = layers.bills.bars.enemyBar.maxHealth()
+    let enemyHP = player.bills.enemyHealth
+    if (damage.gte(enemyHP)) {
+        // kill the enemy, and potentially more if you have enough damage
+        let remainder = damage.sub(enemyHP)
+        let maxHP = layers.bills.bars.enemyBar.maxHealth()
+        let bulk = remainder.div(maxHP).floor()
+        bulk = Number(bulk)
+        // if not enough damage to kill multiple, bulk = 0
+        // if can kill current + 1 more enemy, bulk = 1
+        // etc
+        let kills = 1 + bulk // thus, kills = 1 + bulk
+        updateBills(tmp.bills.bars.enemyBar.loot.mul(kills))
+        if (player.bills.zone == player.bills.highestZone) player.bills.highestZoneKills += kills
+        player.bills.totalEnemyKills += kills
+        player.bills.currentEnemyKills += kills
+        player.bills.enemyHealth = maxHP.mul(kills).sub(remainder)
+        // player.bills.enemyHealth = maxHp.sub(remainder % maxHp) equivalent expression(?)
+    } else {
+        player.bills.enemyHealth = enemyHP.sub(damage)
     }
+}
+
+function updateZone(dx) {
+    if (dx == 0) throw Error("updateZone() took in a dx of 0")
+    player.bills.zone += dx
+    tmp.bills.effLvl = layers.bills.effLvl()
+    tmp.bills.isEnemyBoss = layers.bills.isEnemyBoss()
+    player.bills.enemyHealth = layers.bills.bars.enemyBar.maxHealth()
+    player.bills.currentEnemyKills = 0
+    if (player.bills.zone > player.bills.highestZone) {
+        player.bills.highestZone = player.bills.zone
+        player.bills.highestZoneKills = 0
+    }
+}
+
+function isZoneAvailable(zone) {
+    if (zone < 0) return false
+    if (zone <= player.bills.highestZone) return true
+    // edge cases taken care of: go backwards at zone 0, go within inclusive range of 0 and highest zone
+
+    // last case: currently at highest zone; player.bills.highestZone + 1 == zone
+    // want to have enough zone kills in highestZone to move on to new zone
+    return player.bills.highestZoneKills >= (tmp.bills.isEnemyBoss ? 3 : 10)
 }
 
 function getShopData(id) {
@@ -306,6 +298,7 @@ function getShopData(id) {
             effect = .05; type = "additive"; break
         case 105:
             max = 10; title = ""
+        // auto-skip stages
         default: throw Error(`Missing Shop grid case for id: ${id}`)
     }
     return {

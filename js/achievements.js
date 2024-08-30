@@ -19,7 +19,7 @@ addLayer("a", {
     },
     color: "yellow",
     row: "side",
-    tooltip:() => player.a.achievements.length + " Achievements",
+    tooltip:() => `${player.a.achievements.length}/${Object.entries(tmp.a.achievements).length-2} Achievements`,
     doReset(layer) {
         if (layer == "sys") {
             // handle achievements
@@ -198,7 +198,7 @@ addLayer("a", {
             tooltip:() => {
                 let ret = `Reach 1.5 billion pennies with at most 1 expansion upgrade. How did you manage that?`
                 let eff = "<br><br>Increase base point gain by 1 and WNBP exponent by .01"
-                if (hasAchievement("a", 81)) return ret + "<s>" + eff + "</s>"
+                if (hasAchievement("a", 81) && !hasAchievement("a", 94)) return ret + "<s>" + eff + "</s>"
                 return ret + eff
             },
             unlocked:() => hasAchievement("a", 31),
@@ -254,7 +254,7 @@ addLayer("a", {
         45: {
             name: "20",
             done() {
-                if (this.unlocked() && investmentGain().gte(2000)) return true
+                if (this.unlocked() && tmp.p.buyables[11].gain.gte(2000)) return true
             },
             tooltip: "Reach 2000 investment earned in a single investment reset",
             unlocked:() => hasUpgrade("e", 23) || player.s.unlocked || player.sys.unlocked
@@ -540,10 +540,10 @@ addLayer("a", {
         95: {
             name: "45",
             done() {
-                return this.unlocked() && player.bills.totalEnemyKills > 0
+                return this.unlocked() && player.bills.totalEnemyKills >= 50
             },
-            tooltip: "Defeat five orphans<br><br>Unlock a Quest",
-            unlocked:() => hasAchievement("a", 81),
+            tooltip: "Beat up 50 orphans (you <i>monster</i>!)<br><br>Increase base loot gain by 5%",
+            unlocked:() => hasMilestone("sys", 5),
             style() {
                 return {
                 "border-color": "blue",
@@ -551,12 +551,57 @@ addLayer("a", {
                 }
             }
         },
+        103: {
+            name: "48",
+            done() {
+                return this.unlocked() && getBuyableAmount("sys", 14).gte(1)
+            },
+            tooltip: "Buy an Apple Visionary",
+            unlocked:() => hasMilestone("sys", 5)
+        },
         101: {
             name: "46",
-            done() { return this.unlocked && player.quests.specks.points.gte(3) },
-            tooltip: "Collect 3 Specks",
-            unlocked:() => hasMilestone("quests", 0)
-        }
+            done() {
+                return player.bills.zone % 10 == 0 && player.bills.currentEnemyKills > 0
+            },
+            tooltip: "Take down a beefy opponent for their loot<br><br>Unlock Automation in the Bills layer",
+            unlocked:() => hasMilestone("sys", 5),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        102: {
+            name: "47",
+            done() { // handled by player.p.buyables[12].buy()
+                return false
+            },
+            tooltip: `Gain over 1337 Expansion Investment at once in the Investment Challenge
+                <br><br>Multiply the Expansion Investment hardcap by 1.1x`,
+            unlocked:() => hasMilestone("sys", 6),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        103: {
+            name: "48",
+            done() {
+                return this.unlocked() && getBuyableAmount("sys", 14).gte(1)
+            },
+            tooltip: "Buy an Apple Visionary",
+            unlocked:() => hasMilestone("sys", 6)
+        },
+        // ID: {
+        //     name: "NUMBER",
+        //     done() { return this.unlocked && player.quests.specks.points.gte(3) },
+        //     tooltip: "Collect 3 Specks",
+        //     unlocked:() => hasMilestone("quests", 0)
+        // }
     },
     milestones: {
         0: {
@@ -633,10 +678,17 @@ addLayer("a", {
         },
         10: {
             requirementDescription: "46 Achievements Finished",
-            effectDescription: "Unlock the Shop (Specks)",
-            done() { return this.unlocked && player.a.achievements.length >= 45 },
-            unlocked:() => hasMilestone("quests", 0)
+            effectDescription:() => `Multiply loot gain by Achievements / 40
+                <br>Currently: ${player.a.achievements.length/40}x`,
+            done() { return this.unlocked && player.a.achievements.length >= 46 },
+            unlocked:() => hasAchievement("a", 81)
         }
+        // ID: {
+        //     requirementDescription: "__ Achievements Finished",
+        //     effectDescription: "Unlock the Shop (Specks)",
+        //     done() { return this.unlocked && player.a.achievements.length >= __ },
+        //     unlocked:() => hasMilestone("quests", 0)
+        // }
     },
     clickables: {
         11: {

@@ -69,19 +69,33 @@ addLayer("e", {
     update(diff) {
         if (!player.e.unlocked) return
 
-        if (diff > 1) {
-            let x = diff
-            while (x > 1) {
-                expanPassGen(1)
-                tmp.e.penny_expansions.getResetGain = layers.e.penny_expansions.getResetGain()
-                x -= 1
+        let e = player.e
+        let pE = e.penny_expansions
+        //let dE = e.dollar_expansions
+        let tmpE = tmp.e
+        let tmpPE = tmpE.penny_expansions
+        //let tmpDE = tmpE.dollar_expansions
+        e.points = getLogisticAmount(e.points, tmpE.getResetGain, tmpE.lossRate, diff)
+        pE.points = getLogisticAmount(pE.points, tmpPE.getResetGain, tmpPE.lossRate, diff)
+        //dE.points = getLogisticAmount(dE.points, tmpDE.getResetGain, tmpDE.lossRate, diff)
+
+    },
+    automate() {
+        if (hasMilestone("sys", 7)) {
+            for (upg in tmp.e.upgrades) {
+                let id = Number(upg)
+                if (id > 100) break
+                
+                if (isPlainObject(tmp.e.upgrades[id]) && (layers.e.upgrades[id].canAfford === undefined || layers.e.upgrades[id].canAfford() === true))
+                    buyUpg("e", id) 
             }
-            expanPassGen(x)
-        } else {
-            expanPassGen(diff)
         }
     },
     canReset() {return false},
+    lossRate() {
+        let ret = .3 / 100
+        return ret
+    },
     penny_expansions: {
         getResetGain() {
             if (player.e.points.lessThan(decimalOne)) return decimalZero
@@ -94,7 +108,7 @@ addLayer("e", {
             let ret = decimalOne
             if (hasUpgrade("e", 24)) ret = ret.times(upgradeEffect("e", 24))
             if (hasMilestone("a", 1)) ret = ret.times(1.05**player.a.milestones.length)
-            ret = ret.mul(challengeEffect("s", 12))
+            if (tmp.s.challenges[12].unlocked) ret = ret.mul(challengeEffect("s", 12)[0])
             if (inChallenge("s", 12) && hasMilestone("s", 5)) ret = ret.mul(upgradeEffect("p", 14))
             ret = ret.mul(1.25**player.sys.milestones.length)
             if (hasUpgrade("sys", 24)) ret = ret * upgradeEffect("sys", 24)
@@ -131,16 +145,29 @@ addLayer("e", {
                 return ret
             },
             cost:() => decimalOne.mul(2**player.e.upgrades.length).min(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             effect:() => {
-                let upgCount = player.e.upgrades.length
+                let upgCount = 4 + player.e.upgrades.length
                 if (hasMilestone("sys", 2)) upgCount += player.sys.upgrades.length ** 2
-                if (!hasUpgrade("e", 21)) return new Decimal(Math.log(4 + upgCount)/Math.log(4)/50)
-                if (!hasUpgrade("e", 31)) return new Decimal(Math.log(4 + upgCount)/10)
-                if (!hasUpgrade("e", 41)) return new Decimal(Math.log(4 + upgCount)/4)
-                return new Decimal(Math.log2(4 + upgCount) * 5)
+
+                let ret
+                if (hasUpgrade("e", 41)) ret = Decimal.log2(upgCount).mul(5)
+                else if (hasUpgrade("e", 31)) ret = Decimal.ln(upgCount).div(4)
+                else if (hasUpgrade("e", 21)) ret = Decimal.ln(upgCount).div(10)
+                else ret = Decimal.log(upgCount, 4).div(50)
+
+                if (inChallenge("s", 12)) ret = ret.min(5)
+
+                return ret
+
+                // let upgCount = player.e.upgrades.length
+                // if (hasMilestone("sys", 2)) upgCount += player.sys.upgrades.length ** 2
+                // if (!hasUpgrade("e", 21)) return new Decimal(Math.log(4 + upgCount)/Math.log(4)/50)
+                // if (!hasUpgrade("e", 31)) return new Decimal(Math.log(4 + upgCount)/10)
+                // if (!hasUpgrade("e", 41)) return new Decimal(Math.log(4 + upgCount)/4)
+                // return new Decimal(Math.log2(4 + upgCount) * 5)
             },
             effectDisplay:() => "+" + format(upgradeEffect("e", 11))
         },
@@ -156,8 +183,8 @@ addLayer("e", {
                 return ret + "/6"
             },
             cost:() => decimalOne.mul(2**player.e.upgrades.length).min(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             effect:() => {
                 let exp = .1
@@ -177,8 +204,8 @@ addLayer("e", {
             title: "Cheaper Education",
             description: "Unlocks the Education II buyable (Base Cost: 5e7 Pennies)",
             cost:() => decimalOne.mul(2**player.e.upgrades.length).min(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions
         },
         14: {
@@ -188,8 +215,8 @@ addLayer("e", {
                 return "Increases " + name + " exponent from .2 -> .8"
             },
             cost:() => decimalOne.mul(2**player.e.upgrades.length).min(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             effect: .8
 
@@ -209,16 +236,16 @@ addLayer("e", {
             onPurchase() {
                 player.p.autoBuyableCooldown = 0
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions
         },
         21: {
             title: "It's Even Reasonabler",
             description: "Reduces above upgrade's log4 to ln and reduce divisor to 10",
             cost:() => decimalOne.mul(2**player.e.upgrades.length).div(2).min(256).max(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 15)
         },
@@ -226,8 +253,8 @@ addLayer("e", {
             title: "GIVE ME MORE!!!",
             description: "Reduces divisor of upgrade above this one to 10",
             cost:() => decimalOne.mul(2**player.e.upgrades.length).div(2).min(256).max(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 15)
         },
@@ -250,8 +277,8 @@ addLayer("e", {
                     if (!hasUpgrade("p", 23)) player.p.upgrades.push(23)
                 }
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 15)
         },
@@ -267,8 +294,8 @@ addLayer("e", {
                 return "Maxes out at 40 achievements"
             },
             cost:() => decimalOne.mul(2 ** player.e.upgrades.length).div(2).min(256).max(16),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             effect:() => {
                 let ret = new Decimal("1.1")
@@ -282,7 +309,7 @@ addLayer("e", {
         25: {
             fullDisplay:() => {
                 let title = "<h3></b>QOL 2</h3></b>"
-                let description = "Autobuy two penny upgrades from the first three rows per second<sup>*</sup"
+                let description = "Autobuy two penny upgrades from the first three rows per second<sup>*</sup>"
                 if (player.shiftDown) description = "Does not autobuy WNBP"
                 let requirement = "Requires: " + formatWhole(decimalOne.mul(2**player.e.upgrades.length).div(2).min(256).max(16)) + " Penny Expansion"
                 if (!(hasUpgrade("e", 21) && hasUpgrade("e", 22) && hasUpgrade("e", 23) && hasUpgrade("e", 24))) requirement = requirement + ", 4 upgrades in this row"
@@ -296,8 +323,8 @@ addLayer("e", {
                 player.p.autoUpgCooldown = .5
                 // if (!hasUpgrade("p", 25)) player.p.upgrades.push(25)
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 15)
         },
@@ -305,8 +332,8 @@ addLayer("e", {
             title: "It's So Beautiful",
             description: "Reduce divisor of upgrade two rows above this one to 4",
             cost:() => decimalOne.mul(2**player.e.upgrades.length).div(4).min(4096).max(256),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 25)
         },
@@ -314,8 +341,8 @@ addLayer("e", {
             title: "The Machine Is Hungry...",
             description: "Reduces divisor of upgrade two rows above this one to 7.5",
             cost:() => decimalOne.mul(2**player.e.upgrades.length).div(4).min(4096).max(256),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 25)
         },
@@ -326,20 +353,20 @@ addLayer("e", {
             onPurchase() {
                 player.s.unlocked = true
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 33) || hasUpgrade("e", 25)
         },
         34: {
-            title: "This Is Pretty Lazy",
+            title: "Earning Your Pay",
             description:() => {
                 let name = hasMilestone("a", 5) ? "There's A Coin For This?" : "Seriously"
                 return "Increases " + name + " exponent  from .8 -> 1.8"
             },
             cost:() => decimalOne.mul(2**player.e.upgrades.length).div(4).min(4096).max(256),
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             effect: 1.8,
             unlocked:() => hasUpgrade("e", 25)
@@ -359,8 +386,8 @@ addLayer("e", {
             onPurchase() {
                 if (!hasUpgrade("p", 35)) player.p.upgrades.push(35)
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 25)
         },
@@ -372,8 +399,8 @@ addLayer("e", {
                 if (hasMilestone("a", 6)) staticMult = staticMult * 1.6
                 return decimalOne.mul(staticMult**(player.e.upgrades.length-15)).max(decimalOne).mul(20000).min(new Decimal(81920000))
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 35)
         },
@@ -386,8 +413,8 @@ addLayer("e", {
                 if (hasMilestone("a", 6)) staticMult = staticMult * 1.6
                 return decimalOne.mul(staticMult**(player.e.upgrades.length-15)).max(decimalOne).mul(20000).min(new Decimal(81920000))
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 35)
         },
@@ -406,8 +433,8 @@ addLayer("e", {
                 if (hasMilestone("a", 6)) staticMult = staticMult * 1.6
                 return decimalOne.mul(staticMult**(player.e.upgrades.length-15)).max(decimalOne).mul(20000).min(new Decimal(81920000))
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             canAfford:() => player.s.milestones.length >= 3,
             unlocked:() => hasUpgrade("e", 43) || hasUpgrade("e", 35)
@@ -421,8 +448,8 @@ addLayer("e", {
                 return decimalOne.mul(staticMult**(player.e.upgrades.length-15)).max(decimalOne).mul(20000).min(new Decimal(81920000))
             },
             effect: 2.2,
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 35)
         },
@@ -431,7 +458,7 @@ addLayer("e", {
                 let title = "<h3></b>QOL 4</h3></b>"
                 let description = !hasMilestone("sys", 5) ? `Double all Focused Production buffs, autobuy one more penny upgrade 
                     & 8x more buyables per second, autobuy from row 4` 
-                    : "Triple all Focused Production buffs and autobuy seven more buyables per second"
+                    : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 2.5 seconds"
                 let staticMult = 5
                 if (hasMilestone("a", 6)) staticMult *= 1.6
                 let requirement = "Requires: " + formatWhole(decimalOne.mul(staticMult**(player.e.upgrades.length-15)).max(decimalOne).mul(20000).min(new Decimal(81920000))) + " Penny Expansion"
@@ -448,8 +475,8 @@ addLayer("e", {
             onPurchase() {
                 if (!hasUpgrade("p", 45)) player.p.upgrades.push(45)
             },
-            currencyDisplayName:() => "Penny Expansion",
-            currencyInternalName:() => "points",
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansions,
             unlocked:() => hasUpgrade("e", 35)
         },
@@ -469,8 +496,8 @@ addLayer("e", {
         //     onPurchase() {
         //         if (!hasUpgrade("p", 45)) player.p.upgrades.push(45)
         //     },
-        //     currencyDisplayName:() => "Penny Expansion",
-        //     currencyInternalName:() => "points",
+        //     currencyDisplayName: "Penny Expansion",
+        //     currencyInternalName: "points",
         //     currencyLocation:() => player.e.penny_expansions,
         //     unlocked:() => false && hasUpgrade("e", 45)
         // }
@@ -602,7 +629,7 @@ addLayer("e", {
                         let ret = "You are gaining " + genText + " Penny Expansion per second and losing "
                         ret += format(tmp.e.penny_expansions.lossRate * 100) + "% of your current Penny Expansion per second"
                         ret += "<br>Purchasing all upgrades in a row unlocks the next row of upgrades"
-                        ret += "<br>Purchasing any upgrade multiplies the cost of other upgrades by a static value"
+                        ret += "<br>Purchasing <i>any</i> upgrade multiplies the cost of other upgrades by a static value"
                         ret += "<br><br><h3>The static multiplier is currently " 
                         ret += (!hasUpgrade("e", 35) ? 2 : (!hasMilestone("a", 6) ? 5 : 8)) + "</h3>"
                         return ret
@@ -664,8 +691,10 @@ addLayer("e", {
                             divisor = divisor.sub(limitingValue/scaling)
                         }
                         return `<br>Highest Points Ever: ${format(player.highestPointsEver)}  
-                        <br><br>Expansion base gain: max(0, log10(log10(Highest Points Ever)) - 1)<br>
-                        Penny Expansion base gain: Expansion / ${format(divisor)}<br><br>`}
+                        <br><br>Expansion base gain:<br>max(0, log10(log10(Highest Points Ever)) - 1)<br><br>
+                        Penny Exp. base gain:<br>Expansion / ${format(divisor)}<br><br>
+                        Dollar Exp. base gain:<br>max(0, floor(log10(Expansion))/10 - 1) * 1.1<sup>Best Zone - 30</sup>
+                            * 3<sup>Factory Components<br><br>`}
                 ]
                 ]
             }

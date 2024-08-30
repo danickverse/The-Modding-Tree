@@ -356,15 +356,10 @@ function gameLoop(diff) {
 	// 	if (hasUpgrade("p", 23)) player.highestPointsEver = player.points.max(player.highestPointsEver)
 	// }
 
-	player.resetTime += boostedTime(diff)
+	player.resetTime += diff * timeFlux() //boostedTime(diff)
 	for (let x = 0; x <= maxRow; x++){
 		for (item in TREE_LAYERS[x]) {
 			let layer = TREE_LAYERS[x][item]
-			// if (layer == "p") {
-			// 	let newDiff = boostedTime(diff)
-			// 	player.p.resetTime += newDiff
-			// }
-			// else player[layer].resetTime += diff
 			player[layer].resetTime += diff
 			if (tmp[layer].passiveGeneration) generatePoints(layer, diff*tmp[layer].passiveGeneration);
 			if (layers[layer].update) layers[layer].update(diff);
@@ -425,7 +420,9 @@ var interval = setInterval(function() {
 	let diff = (now - player.time) / 1e3
 	let trueDiff = diff
 	if (player.offTime !== undefined) {
-		if (player.offTime.remain > modInfo.offlineLimit * 3600) player.offTime.remain = modInfo.offlineLimit * 3600
+		let limit = modInfo.offlineLimit()
+		if (player.offTime.remain > limit * 3600) player.offTime.remain = limit * 3600
+		// if (player.offTime.remain > modInfo.offlineLimit * 3600) player.offTime.remain = modInfo.offlineLimit * 3600
 		if (player.offTime.remain > 0) {
 			let offlineDiff = Math.max(player.offTime.remain / 10, diff)
 			player.offTime.remain -= offlineDiff
