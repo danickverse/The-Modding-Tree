@@ -149,9 +149,9 @@ addLayer("s", {
             unlocked() { return hasMilestone("a", 5) || hasMilestone("sys", 5) }
         },
         3: {
-            requirementDescription: "250,000,000 Stored Investment and 300,000 Stored Expansion",
+            requirementDescription: "250,000,000 Stored Investment and 250,000 Stored Expansion",
             effectDescription: "Keep 1 Penny Expansion upgrade when storing expansion per milestone and unlock more achievements",
-            done() { return this.unlocked() && player.s.stored_investment.points.gte(2.5e8) && player.s.stored_expansion.points.gte(3e5) },
+            done() { return this.unlocked() && player.s.stored_investment.points.gte(2.5e8) && player.s.stored_expansion.points.gte(2.5e5) },
             unlocked() { return hasMilestone("a", 5) || hasMilestone("sys", 5) }
         },
         4: {

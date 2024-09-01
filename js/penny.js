@@ -997,7 +997,7 @@ addLayer("p", {
             }
         }
 
-        if (hasMilestone("sys", 6)) {
+        if (hasMilestone("s", 6)) {
             if (inChallenge("s", 11)) {
                 // mainly for when u enter the challenge for the first time due to updates in tmp values
                 // otherwise investment gain is spiked initially
