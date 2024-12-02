@@ -1855,7 +1855,7 @@
       if (a.layer === 0)
       {
         var newmag = Math.pow(10, a.sign*a.mag);
-        if (Number.isFinite(newmag) && Math.abs(newmag) > 0.1) { return FC(1, 0, newmag); }
+        if (Number.isFinite(newmag) && Math.abs(newmag) >= 0.1) { return FC(1, 0, newmag); }
         else
         {
           if (a.sign === 0) { return Decimal.dOne; }

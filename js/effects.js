@@ -27,7 +27,7 @@ addLayer("effects", {
                         <br>Multiplies point gain by ${format(upgradeEffect("p", 21))}`
                     if (hasUpgrade("p", 35)) ret += "<br>Multiplies penny gain by " + format(upgradeEffect("p", 35))
                     if (hasUpgrade("e", 24)) ret += "<br>Multiplies expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
-                    if (hasMilestone("a", 8)) ret += "<br>and multiplies reset time by " + format(boostedTime(1), 4)
+                    if (hasMilestone("a", 8)) ret += "<br>and multiplies reset time by " + format(1 + (player.a.achievements.length ** 1.5)/1000, 4)
 
                     if (hasAchievement("a", 25)) {
                         ret += ".<br><br>Some achievements have specific effects. These effects include...<br>"
@@ -75,12 +75,15 @@ addLayer("effects", {
                     let ret = "Base Time Flux is 1, and it is increased by...<br><br>"
                     ret += format(1 + player.a.achievements.length**1.5/1000, 3) + "x from Achievement Milestone 9"
                     if (tmp.quests.bars.dollarResetBar.reward > 1)
-                        ret += `<br>${format(tmp.quests.bars.dollarResetBar.reward)}x from the Dollar Reset Quest`
-                    ret += "<br><br>for a resulting Time Flux of " + format(timeFlux(), 4)
+                        ret += `,<br>${format(tmp.quests.bars.dollarResetBar.reward)}x from the Dollar Reset Quest`
+                    if (tmp.quests.bars.zoneBar.reward > 1)
+                        ret += `,<br>${format(tmp.quests.bars.zoneBar.reward)}x from the Zone Quest`
+                    if (hasUpgrade("bills", 21)) ret += `,<br>${format(upgradeEffect("bills", 21))}x from the 6th Bills Upgrade`
+                    ret += "<br><br>for a resulting Time Flux of " + format(timeFlux(), 4) + ". "
                     
-                    ret += "<br><br>Time Flux is currently used to...<br><br>"
-                    ret += "Multiply reset time per second<br>"
-                    if (hasUpgrade("bills", 14)) ret += `Multiply DPS, Spell Duration, and Accelerator Power gain<br>`
+                    ret += "This value is currently used to...<br><br>"
+                    ret += "Multiply reset time per second"
+                    if (hasUpgrade("bills", 14)) ret += `,<br>Multiply DPS, WNBP effect exponent, Spell Duration, and Accelerator Power gain<br>`
                     return ret
                 }]
             ],
@@ -122,7 +125,7 @@ addLayer("effects", {
                 }], 
                 "blank",
                 ["display-text", function() {
-                    let ret = "Your current penny expansions is " + format(player.e.penny_expansions.points) + ". It is currently used to...<br>"
+                    let ret = "Your current penny expansions is " + format(player.e.penny_expansion.points) + ". It is currently used to...<br>"
                     if (hasUpgrade("p", 41)) ret += "<br>Increase the WNBP effect exponent by " + format(upgradeEffect("p", 41))
                     if (hasUpgrade("p", 53)) ret += "<br>Multiply investment gain by " + format(upgradeEffect("p", 53)) + "x"
                     if (hasUpgrade("p", 54)) ret += "<br>Multiply penny gain by " + format(upgradeEffect("p", 54))

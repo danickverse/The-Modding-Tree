@@ -222,8 +222,6 @@ function doReset(layer, force=false) {
 		rowReset(r, layer)
 	}
 
-	// console.log(layer + player.resetTime)
-	// if (layer != "p") 
 	player.resetTime = 0 // added this in, should work?
 	player[layer].resetTime = 0
 
@@ -324,14 +322,14 @@ function autobuyUpgrades(layer){
 function gameLoop(diff) {
 	if (isEndgame() || tmp.gameEnded){
 		tmp.gameEnded = true
-		clearParticles()
+		//clearParticles()
 	}
 
 	if (isNaN(diff) || diff < 0) diff = 0
 	if (tmp.gameEnded && !player.keepGoing) {
 		diff = 0
 		//player.tab = "tmp.gameEnded"
-		clearParticles()
+		//clearParticles()
 	}
 
 	if (maxTickLength) {

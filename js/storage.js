@@ -37,7 +37,7 @@ addLayer("s", {
             let keptStoredInv = decimalZero
             let keptExpInv = decimalZero
             if (hasMilestone("sys", 6)) keptExpChall = player.s.challenges[12]
-            if (hasMilestone("sys", 7)) invHighScore = player.s.high_scores[11].points.min(1e25)
+            if (hasMilestone("sys", 7)) invHighScore = player.s.high_scores[11].points
             if (hasMilestone("s", 6)) keptMilestones.push('6')
             if (hasMilestone("s", 7)) {
                 keptMilestones.push('7')
@@ -55,15 +55,26 @@ addLayer("s", {
             player.s.high_scores[11].points = invHighScore
             player.s.stored_investment.points = keptStoredInv
             player.s.stored_expansion.points = keptExpInv
+            updateMilestones("s", showPopups=false)
         }
     },
     stored_investment: {
+        softcapStart() {
+            let ret = new Decimal(1e40)
+
+            return ret
+        },
+        softcapExp() {
+            let ret = .2
+            ret += shopEffect(102)
+            return ret
+        },
         gain() {
             let ret = player.p.investment.points.mul(upgradeEffect("p", 42).pow(.25))
             ret = ret.mul(tmp.sys.effect)
             if (hasUpgrade("sys", 12)) ret = ret.mul(upgradeEffect("sys", 12))
 
-            return ret
+            return softcap(ret, this.softcapStart(), this.softcapExp())
         },
         effects: {
             1: () => player.s.stored_investment.points.add(1).log10().div(10).add(1),
@@ -82,7 +93,7 @@ addLayer("s", {
             ret = ret.mul(tmp.sys.effect)
             if (hasUpgrade("sys", 12)) ret = ret.mul(upgradeEffect("sys", 12))
             
-            return ret
+            return softcap(ret, new Decimal("5e9"), .5)
         },
         effects: {
             1: () => player.s.stored_expansion.points.add(1).log10().div(2.5).max(1),
@@ -118,7 +129,8 @@ addLayer("s", {
             // 1 => player.s.stored_dollars.points.div(5).atan().mul(3).div(4).div(Math.PI)
             2: () => {
                 let ret = player.s.stored_dollars.points
-                if (ret.gte(1000)) ret = ret.log10().add(7).pow(3)
+                //if (ret.gte(1000)) ret = ret.log10().add(7).pow(3)
+                if (ret.gte(10)) ret = ret.pow(.25).mul(10 ** .75)
 
                 return ret.div(100) // as a percentage
                 // return player.s.stored_dollars.points.root(3).mul(3).div(100)
@@ -180,9 +192,9 @@ addLayer("s", {
             unlocked() { return hasMilestone("sys", 6) }
         },
         7: {
-            requirementDescription: "3 Stored Dollars, 3.33e33 Investment Challenge score",
+            requirementDescription: "3 Stored Dollars, 1e40 Investment Challenge score",
             effectDescription:() => `Unlock another Stored Dollars effect and keep 1e6/2e4 Stored Investment/Expansion on reset`,
-            done() { return this.unlocked() && player.s.stored_dollars.points.gte(3) && player.s.high_scores[11].points.gte(3.33e33) },
+            done() { return this.unlocked() && player.s.stored_dollars.points.gte(3) && player.s.high_scores[11].points.gte(1e40) },
             unlocked() { return hasMilestone("sys", 6) }
         }
     },
@@ -306,13 +318,13 @@ addLayer("s", {
                     }
                 }
                 function removeUpgrades(index) {
-                    return keepUpgIndices.includes(index)
+                    return keepUpgIndices.includes(index) || index > 100
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
 
                 player.highestPointsEver = decimalZero
                 player.e.points = decimalZero
-                player.e.penny_expansions.points = decimalZero
+                player.e.penny_expansion.points = decimalZero
                 if (!hasMilestone("sys", 0)) {
                     if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
                     if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
@@ -353,6 +365,7 @@ addLayer("s", {
 
                 player.sys.businesses.apples.points = player.sys.businesses.apples.points.min(keptApples)
                 player.sys.businesses.apples.timer = 0
+                player.sys.bestPenniesInReset = decimalZero
                 doReset("sys", true)
             },
             unlocked:() => hasMilestone("sys", 1)
@@ -434,7 +447,7 @@ addLayer("s", {
                     ],
                     () => hasMilestone("sys", 1) ? ["display-text", `<br>Storing dollars performs a dollar reset. Your total dollars does not increase
                         when prestiging in this manner. Education III and other System features/values do not reset, aside from
-                        Dollars and Business currencies. Stored Dollar gain is equal to the amount of dollars you would have after a dollar reset.`
+                        Dollars and the Apple industry. Stored Dollar gain is equal to the amount of dollars you would have after a dollar reset.`
                     ] : "", "blank"
                 ]
             },
@@ -610,7 +623,7 @@ addLayer("s", {
                     + "<br>Completion count: " + challengeCompletions("s", 12) + "/" + this.completionLimit
             },
             canComplete() {
-                return player.e.penny_expansions.points.gte(this.requirement())
+                return player.e.penny_expansion.points.gte(this.requirement())
             },
             // onComplete() {
             //     return
@@ -639,13 +652,13 @@ addLayer("s", {
                     }
                 }
                 function removeUpgrades(index) {
-                    return keepUpgIndices.includes(index)
+                    return keepUpgIndices.includes(index) || index > 100
                 }
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
 
                 player.highestPointsEver = decimalZero
                 player.e.points = decimalZero
-                player.e.penny_expansions.points = decimalZero
+                player.e.penny_expansion.points = decimalZero
                 if (!hasMilestone("sys", 0)) {
                     if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
                     if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1

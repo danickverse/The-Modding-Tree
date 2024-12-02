@@ -7,9 +7,9 @@ let modInfo = {
 		"functions.js",
 		"tree.js", "achievements.js", "penny.js", 
 		"expansion.js", "storage.js", "system.js",
-		"bills.js", //"factory.js",
+		"bills.js", "banks.js", //"factory.js",
 		// remember to uncomment statement in getPointGen() when uncomment factory.js
-		"quests.js", "effects.js"],
+		"quests.js", "shopSupport.js", "effects.js"],
 	allowSmall: false,
 
 	discordName: "",
@@ -23,11 +23,20 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.2",
+	num: "0.2.3",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.3</h3><br>
+		- Added Banks/Capital, System Expansion, and Specks<br>
+		- Added a new Industry in Businesses<br>
+		- A bunch of upgrades and a few milestones<br>
+		- 4 Achievements (48 -> 52) and 1 Achievement milestone<br>
+		- Actually implemented Education III's effect on Investment gain (i forgor even though its been out for so long :/)<br>
+		- BTS cleanup of Expansion layer code for readability and future content<br>
+		- A bunch of other things I forgot to write down, this update has been in progress for quite some time<br><br>
+
 	<h3>v0.2.2</h3><br>
 		- Added 1 System milestone, 5 upgrades for Businesses, a new Business in the Apple industry (purchasable in next update)<br>
 		- Added Bills layer, connected to the System, with 6 upgrades and 3 related Quests (for now)<br>
@@ -40,12 +49,12 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Various minor bug fixes and rebalancing<br>
 		- Probably a bunch of other stuff<br>
 		- Definitely a bunch of more other stuff<br>
-		- im so lazy this took so long im so dead or something<br>
+		- im so lazy this took so long im so dead or something<br><br>
 
 	<h3>v0.2.1.4/v0.2.1.5</h3><br>
 		- Added toggles to System milestone 1 to avoid locking the player out of Ach 9<br>
 		- QOL 2 autobuyer no longer autobuys the WNBP upgrade, only affects gameplay after the 1st System reset<br>
-		- Bug fixes and attempted to fix upgrade purchasing for mobile<br>
+		- Bug fixes and attempted to fix upgrade purchasing for mobile<br><br>
 	
 	<h3>v0.2.1.3</h3><br>
 		- Added one achievement (45 -> 46)<br>
@@ -228,7 +237,6 @@ function getPointGen() {
 	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
 	if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
 	if (hasUpgrade("p", 61)) gainMult = gainMult.mul(upgradeEffect('p', 61))
-	gainMult = gainMult.mul(gridEffect("quests", 101))
 
 	let gainExp = decimalOne
 	if (hasUpgrade("p", 52)) gainExp = gainExp.add(upgradeEffect("p", 52))
@@ -256,7 +264,9 @@ function getPointGen() {
 function addedPlayerData() { return {
 	highestPointsEver: new Decimal("0"),
 	resetTime: 0,
-	shiftDown: false
+	shiftDown: false,
+	particles: {},
+	particleID: 0
 }}
 
 // Display extra things at the top of the page
@@ -265,7 +275,7 @@ var displayThings = [
 		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
 			: `Time Flux: ${format(timeFlux(), 4)}x`)
 	: "",
-	"Current endgame: Zone 10 Completed, 100k Apples",
+	"Current endgame: 1 Bank, HZC 30, Specks Unlocked",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
 		<br>The game is not balanced here, and is subject to bugs and inflation.
 		<br>Content may be scrapped/rebalanced in the future.
@@ -274,8 +284,7 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	return tmp.bills.highestZoneCompleted >= 10 
-		&& player.sys.businesses.apples.best.gte(100000)
+	return player.banks.points.gte(1) && tmp.bills.highestZoneCompleted >= 30 && tmp.quests.specks.unlocked
 }
 
 
@@ -351,5 +360,11 @@ function fixOldSave(oldVersion){
 		delete player.bills.elo
 
 		player.quests.completions.wnbpBar = Math.min(2, player.quests.completions.wnbpBar)
+	}
+	if (oldVersion < "0.2.3") {
+		player.e.penny_expansion.points = new Decimal(player.e.penny_expansions.points)
+		delete player.e.penny_expansions
+		delete player.sys.buyables[14]
+		player.quests.completions.wnbpBar = Math.min(3, player.quests.completions.wnbpBar)
 	}
 }

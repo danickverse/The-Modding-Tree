@@ -293,7 +293,7 @@ addLayer("a", {
         54: {
             name: "24",
             done() {
-                if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansions.points.gte(13)) return true
+                if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansion.points.gte(13)) return true
             },
             tooltip: "Gain 13 penny expansions with a highest points ever (reset to 0 by storing expansions) that is less than 5e10",
             unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
@@ -551,14 +551,6 @@ addLayer("a", {
                 }
             }
         },
-        103: {
-            name: "48",
-            done() {
-                return this.unlocked() && getBuyableAmount("sys", 14).gte(1)
-            },
-            tooltip: "Buy an Apple Visionary",
-            unlocked:() => hasMilestone("sys", 5)
-        },
         101: {
             name: "46",
             done() {
@@ -575,18 +567,11 @@ addLayer("a", {
         },
         102: {
             name: "47",
-            done() { // handled by player.p.buyables[12].buy()
-                return false
+            done() { 
+                return timeFlux() >= 2
             },
-            tooltip: `Gain over 1337 Expansion Investment at once in the Investment Challenge
-                <br><br>Multiply the Expansion Investment hardcap by 1.1x`,
-            unlocked:() => hasMilestone("sys", 6),
-            style() {
-                return {
-                "border-color": "blue",
-                "border-width": "5px"
-                }
-            }
+            tooltip: `Reach a Time Flux of 2`,
+            unlocked:() => hasMilestone("sys", 6)
         },
         103: {
             name: "48",
@@ -596,6 +581,64 @@ addLayer("a", {
             tooltip: "Buy an Apple Visionary",
             unlocked:() => hasMilestone("sys", 6)
         },
+        104: {
+            name: "49",
+            done() {
+                return this.unlocked() && player.p.points.gte(1e90)
+            },
+            tooltip: `Reach 1e90 Pennies
+                <br><br>Increase the WNBP effect base by +9 (11 -> 20)`,
+            unlocked:() => hasMilestone("sys", 6),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        105: {
+            name: "50",
+            done() {
+                return this.unlocked() && player.bills.upgrades.length >= 10
+            },
+            tooltip: "Purchase 10 Bills Upgrades<br><br>Unlock Bills milestones",
+            unlocked:() => hasMilestone("sys", 6),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        },
+        111: {
+            name: "51",
+            done() {
+                return this.unlocked() && player.banks.capital.points.gte(101) && player.p.points.gte(1e101)
+            },
+            tooltip: "Reach 101 Capital and 1e101 Pennies",
+            unlocked:() => hasMilestone("sys", 6)
+        },
+        112: {
+            name: "52",
+            done() { return false },
+            tooltip: `Perform a System reset with at most 10 Education I ever<br><br>Education III is 1.5x cheaper
+                and remove the exponent from Reverse Expansion!`,
+            unlocked:() => hasMilestone("sys", 6),
+            style() {
+                return {
+                "border-color": "blue",
+                "border-width": "5px"
+                }
+            }
+        }
+        // 111: {
+        //     name: "51",
+        //     done() { 
+        //         return this.unlocked() && player.banks.points.gte(1)
+        //     },
+        //     tooltip: "Open a Bank",
+        //     unlocked:() => hasMilestone("a", 11)
+        // }
         // ID: {
         //     name: "NUMBER",
         //     done() { return this.unlocked && player.quests.specks.points.gte(3) },
@@ -678,9 +721,15 @@ addLayer("a", {
         },
         10: {
             requirementDescription: "46 Achievements Finished",
-            effectDescription:() => `Multiply loot gain by Achievements / 40
+            effectDescription:() => `Multiply loot gain by Achievements / 40 and unlock more achievement milestones
                 <br>Currently: ${player.a.achievements.length/40}x`,
             done() { return this.unlocked && player.a.achievements.length >= 46 },
+            unlocked:() => hasAchievement("a", 81)
+        },
+        11: {
+            requirementDescription: "50 Achievements Finished",
+            effectDescription:() => `Raise System Expansion effect to ^1.1`,
+            done() { return this.unlocked && player.a.achievements.length >= 50 },
             unlocked:() => hasAchievement("a", 81)
         }
         // ID: {

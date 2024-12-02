@@ -12,11 +12,18 @@ addLayer("sys", {
         everWNBP: false,
         lockWNBP: false,
         autoWNBP: false,
+        autoPennyExpUpg: false,
+        bestPenniesInReset: decimalZero,
         businesses: {
             apples: {
                 points: decimalZero,
                 best: decimalZero,
                 timer: 0
+            },
+            land: {
+                points: decimalOne,
+                best: decimalOne,
+                timer: -1,
             },
             acceleratorPower: {
                 points: decimalZero
@@ -33,7 +40,8 @@ addLayer("sys", {
             32: decimalZero,
             33: decimalZero
         },
-        deptInpPercent: 10
+        deptInpPercent: 10,
+        bestEducation1InReset: decimalZero
     }},
     color: "gray",
     requires:() => {
@@ -51,8 +59,8 @@ addLayer("sys", {
         },
     ],
     layerShown:() => player.sys.unlocked,
-    baseResource: "pennies",
-    baseAmount() { return player.p.points },
+    baseResource() { return !hasMilestone("sys", 5) ? "pennies" : "best pennies in this System reset" },
+    baseAmount() { return !hasMilestone("sys", 5) ? player.p.best : player.sys.bestPenniesInReset },
     canReset() { return tmp[this.layer].baseAmount.gte(tmp[this.layer].requires) && hasUpgrade("p", 55) },
     gainMult() { 
         return conversionRate()
@@ -91,16 +99,33 @@ addLayer("sys", {
             doPopup("achievement", tmp.a.achievements[93].name, "Achievement Gotten!", 3, tmp.a.color)
         }
 
+        if (tmp.a.achievements[112].unlocked && player.a.achievements.indexOf("112") == -1 && player.sys.bestEducation1InReset.lte(10)) {
+            player.a.achievements.push("112")
+            doPopup("achievement", tmp.a.achievements[112].name, "Achievement Gotten!", 3, tmp.a.color)
+        }
+
         let keptApples = decimalZero
+        let keptLand = decimalOne
 
         if (hasMilestone("sys", 3)) {
             let gain = tmp.sys.businesses.acceleratorPower.dollarResetGain
             player.sys.businesses.acceleratorPower.points = player.sys.businesses.acceleratorPower.points.add(gain)
             keptApples = (player.sys.milestones.length - 2) ** 2
         }
+        if (hasMilestone("sys", 8)) {
+            keptLand = (player.sys.milestones.length - 7) ** 2
+        }
 
         player.sys.businesses.apples.points = player.sys.businesses.apples.points.min(keptApples)
+        player.sys.businesses.land.points = player.sys.businesses.land.points.min(keptLand)
         player.sys.businesses.apples.timer = 0
+        player.sys.bestPenniesInReset = decimalZero
+        player.sys.bestEducation1InReset = decimalZero
+
+        if (hasUpgrade("sys", 124)) {
+            let usedCharges = getBuyableAmount("sys", 21)
+            if (usedCharges.gt(0)) setBuyableAmount("sys", 21, usedCharges.sub(1))
+        }
     },
     effect() {
         let ret = player.sys.total.mul(2).add(1).pow(.5)
@@ -114,8 +139,8 @@ addLayer("sys", {
         0: {
             requirementDescription: "1 System Reset",
             effectDescription:() => `Unlock Education III, Businesses, and Quests, keep the QOL 1/2 autobuyers (toggles),
-                and multiply Expansion/Penny Expansion gain by 1.25x per milestone<br>Currently: 
-                ${format(1.25**player.sys.milestones.length)}x`,
+                and multiply Expansion/Penny Expansion gain by 1.25x per milestone up to 5<br>Currently: 
+                ${format(1.25**Math.min(5, player.sys.milestones.length))}x`,
             done() { return player.sys.resetCount >= 1 },
             toggles: [
                 ["sys", "autoEduBuyable"],
@@ -158,7 +183,7 @@ addLayer("sys", {
         5: {
             requirementDescription: "7 System Resets",
             effectDescription: `Autobuy penny upgrades up to row 5 instantly, QOL 4 has new (better) effects,
-                and unlock Bills and 2 more achievements`,
+                dollar gain based on best Pennies over System reset, and unlock Bills and 2 more achievements`,
             done() { return player.sys.resetCount >= 7 }
         },
         6: {
@@ -169,12 +194,21 @@ addLayer("sys", {
                 and keep Expansion Challenge completions on reset<sup>*</sup>`,
             done() { return player.sys.resetCount >= 10 && player.a.achievements.length >= 46 }
         },
-        // 7: {
-        //     requirementDescription: "Zone 10 Completed and 1 Apple Visionary",
-        //     effectDescription:() => player.shiftDown ? "Challenge effect applies when challenge is unlocked"
-        //         : `Keep 1e25 Investment Challenge score on reset<sup>*</sup> and autobuy Penny Expansion upgrades`,
-        //     done() { return tmp.bills.highestZoneCompleted >= 10 && getBuyableAmount("sys", 14).gte(1) }
-        // }
+        7: {
+            requirementDescription: "Zone 10 Completed and 1 Apple Visionary",
+            effectDescription:() => player.shiftDown ? "Challenge effect applies when challenge is unlocked"
+                : `Keep Investment Challenge score<sup>*</sup> on reset and autobuy Penny Expansion upgrades (toggle)`,
+            done() { return tmp.bills.highestZoneCompleted >= 10 && getBuyableAmount("sys", 41).gte(1) },
+            toggles: [
+                ["sys", "autoPennyExpUpg"]
+            ]
+        },
+        8: {
+            requirementDescription: "Zone 20 Completed and 36 Land",
+            effectDescription:() => `Keep (milestones - 7)<sup>2</sup> Land on reset
+                <br>Currently: ${formatWhole(Math.max(player.sys.milestones.length - 7, 1) ** 2)}`,
+            done() { return tmp.bills.highestZoneCompleted >= 20 && player.sys.businesses.land.points.gte(36) }
+        }
     },
     getMainUpgCount() {
         return player.sys.upgrades.filter((index) => index < 100).length
@@ -183,11 +217,11 @@ addLayer("sys", {
         11: {
             title: "Where'd All My Money Go?!?",
             description:() => {
-                if (!player.shiftDown) return "Multiply the point gain exponent by 1.01<sup>upgrades<sup>*</sup></sup>"
+                if (!player.shiftDown) return "Multiply the point gain exponent by 1.02<sup>upgrades<sup>*</sup></sup>"
                 return "Maxes at 10 upgrades<br>"
             },
             cost:() => systemUpgradeCost(1),
-            effect:() => 1.01 ** Math.min(tmp.sys.getMainUpgCount, 10),
+            effect:() => 1.02 ** Math.min(tmp.sys.getMainUpgCount, 10),
             effectDisplay:() => `${format(upgradeEffect("sys", 11), 4)}x`
         },
         12: {
@@ -243,14 +277,14 @@ addLayer("sys", {
         22: {
             fullDisplay() {
                 let title = "Witchcraft"
-                let desc = "Multiply the WNBP effect exponent by 1 + .3ln(e + Best Dollars)"
+                let desc = "Multiply the WNBP effect exponent by (1 + .3log10(1 + Best Dollars))<sup>.5</sup>"
                 let eff = `Currently: ${format(this.effect())}x`
                 let cost = `Cost: ${format(this.cost())} dollars`
 
                 return `<h3>${title}</h3><br>${desc}<br>${eff}<br><br>${cost}`
             },
             cost:() => systemUpgradeCost(2),
-            effect:() => player.sys.best.add(Math.E).ln().mul(.3).add(1),
+            effect:() => player.sys.best.add(1).log10().mul(.3).add(1).pow(.5),
         },
         23: {
             fullDisplay() {
@@ -314,26 +348,26 @@ addLayer("sys", {
         },
         112: {
             title: "Succulent Sphericals",
-            description: "Gain 0.25 effective Apple Pickers and Vendors per effective Apple Tree",
+            description: "Gain 0.2 effective Apple Pickers and Vendors per bought Apple Tree",
             cost: 1000,
-            effect:() => tmp.sys.buyables[11].effectiveLevels.div(4),
+            effect:() => player.sys.buyables[11].div(5),
             effectDisplay() { return `+${format(this.effect())}` },
             currencyDisplayName: "Apples",
             currencyInternalName: "points",
             currencyLocation:() => player.sys.businesses.apples
         },
         113: {
-            title: "Something",
-            description:() => player.shiftDown ? "Q is the product of bought Businesses (min. 1)"
+            title: "Efficient Watering",
+            description:() => player.shiftDown ? "Q is the product of bought Businesses (plus 1)"
                 : "Multiply Accelerator Power gain from all sources by (Q<sup>*</sup>)<sup>.1</sup>",
             cost: 10000,
             unlocked:() => hasMilestone("sys", 3),
             effect() {
                 let ret = decimalOne
-                for (const id of [11, 12, 13, 14, 21, 22, 23, 31, 32, 33]) {
+                for (const id of [11, 12, 13, 21, 22, 23, 31, 32, 33]) {
                     let amt = getBuyableAmount("sys", id)
                     if (typeof amt == "undefined") continue
-                    ret = ret.mul(amt.max(1))
+                    ret = ret.mul(amt.add(1))
                 }
                 return ret.pow(.1)
             },
@@ -346,10 +380,10 @@ addLayer("sys", {
         },
         114: {
             title: "Multitasking",
-            description: "Apple Vendor effect multiplies the conversion rate at a reduced rate (^.1)",
+            description: "Accelerator Power effect boosts the conversion rate at a reduced rate",
             cost: 13,
             unlocked:() => hasMilestone("sys", 3),
-            effect:() => Number(buyableEffect("sys", 13).pow(.1)),
+            effect:() => Number(tmp.sys.businesses.acceleratorPower.effect.pow(.5)),
             effectDisplay() { return `${format(this.effect())}x` },
             currencyDisplayName: "Apple Vendors",
             currencyInternalName: "13",
@@ -368,63 +402,106 @@ addLayer("sys", {
         },
         121: {
             title: "Free Donuts",
-            description: "Workplace Morale base effect is increased by .001 per bought Apple Tree",
+            description: "Workplace Morale base effect is increased by .002 per bought Apple Tree up to 10",
             cost: 5,
-            effect:() => getBuyableAmount("sys", 11).mul(.001),
-            effectDisplay() { return `+${format(this.effect(), 2)}` },
-            unlocked:() => getBuyableAmount("sys", 14).gte(1),
+            effect:() => getBuyableAmount("sys", 11).min(10).mul(.002),
+            effectDisplay() { return `+${this.effect().toStringWithDecimalPlaces(3)}` },
+            unlocked:() => getBuyableAmount("sys", 41).gte(1),
             currencyDisplayName: "Apple Pickers",
             currencyInternalName: "12",
             currencyLocation:() => player.sys.buyables
         },
-        // 122: { // if change id, then also change id for tabFormat and microtabs
-        //     title: "The Big One",
-        //     description() { 
-        //         return !hasUpgrade("sys", this.id) ? (
-        //             player.shiftDown ? "See Info for more detail"
-        //             : "Businesses buffed permanently based on Department levels<sup>*</sup>"
-        //         ) : "Unlock Departments" 
-        //     },
-        //     cost: 1000,
-        //     effect() {
-        //         return {
-        //             11: 0,
-        //             12: 0,
-        //             13: 0,
-        //             21: 0,
-        //             22: 0,
-        //             23: 0,
-        //             31: 0,
-        //             32: 0,
-        //             33: 0
-        //         }
-        //     },
-        //     unlocked:() => true,
-        //     currencyDisplayName: "Apples",
-        //     currencyInternalName: "points",
-        //     currencyLocation:() => player.sys.businesses.apples
-        // }
+        122: {
+            fullDisplay() {
+                let title = "Expansion Division"
+                let desc = "Unlock a new Industry"
+                let req = "Requires: 10,000 Apples"
+                return basicUpgradeFormat(title, desc, req)
+            },
+            canAfford:() => player.sys.businesses.apples.points.gte(10000),
+            unlocked:() => hasUpgrade("sys", 121)
+        },
+        123: {
+            title: "Oiled Up",
+            description: "Multiply Land Cultivator Strength by 1 + [% of Charges used]",
+            cost: 10,
+            effect:() => 1 + (tmp.sys.buyables[21].maxCharges - tmp.sys.buyables[21].remainingCharges) / tmp.sys.buyables[21].maxCharges,
+            effectDisplay() { return `${format(this.effect())}x`},
+            unlocked:() => getBuyableAmount("sys", 22).gte(1),
+            currencyDisplayName: "Land",
+            currencyInternalName: "points",
+            currencyLocation:() => player.sys.businesses.land
+        },
+        124: {
+            title: "Battery Pack",
+            description: "Recharge 1 Used Charge every time you perform a System Reset",
+            cost: 30,
+            unlocked:() => hasUpgrade("sys", 123),
+            currencyDisplayName: "Land",
+            currencyInternalName: "points",
+            currencyLocation:() => player.sys.businesses.land
+        },
+        125: {
+            title: "Supercharged",
+            description: "Time Flux<sup>.25</sup> multiplies Eff. Str. and Loot, but divide Charge active time by 1.2",
+            cost: 250,
+            effect:() => timeFlux() ** .25,
+            effectDisplay() { return `${format(this.effect())}x`},
+            unlocked:() => hasUpgrade("sys", 124),
+            currencyDisplayName: "Land",
+            currencyInternalName: "points",
+            currencyLocation:() => player.sys.businesses.land
+        },
+        131: { // if change id, then also change id for tabFormat and microtabs
+            title: "The Big One",
+            description() { 
+                return !hasUpgrade("sys", 131) ? (
+                    player.shiftDown ? "See Info for more detail"
+                    : "Businesses buffed permanently based on Department levels<sup>*</sup>"
+                ) : "Unlock Departments" 
+            },
+            cost: Number.POSITIVE_INFINITY,//1000,
+            effect() {
+                return {
+                    11: 0,
+                    12: 0,
+                    13: 0,
+                    21: 0,
+                    22: 0,
+                    23: 0,
+                    31: 0,
+                    32: 0,
+                    33: 0
+                }
+            },
+            unlocked:() => hasUpgrade("sys", 125) && getBuyableAmount("sys", 23).gt(0),
+            currencyDisplayName: "Land",
+            currencyInternalName: "points",
+            currencyLocation:() => player.sys.businesses.land
+        }
     },
     buyables: {
         11: {
             title: "Apple Tree",
             baseCost() {
                 let ret = new Decimal(".1")
-                ret = ret.mul(getBuyableAmount(this.layer, 14).pow_base(10))
+                ret = ret.mul(getBuyableAmount("sys", 41).pow(2).pow_base(10))
+                ret = ret.div(tmp.sys.businesses.land.effectCost)
                 return ret
             },
             cost(x) { 
-                return this.baseCost().mul(x.add(1))
+                let ret = this.baseCost().mul(x.add(1))
+                return ret
                 //return new Decimal(0.1).mul(amt.pow_base(1.1))
             },
             display() { 
-                let perTree = format(tmp.sys.businesses.apples.gain.div(tmp.sys.buyables[11].effect.clampMin(1)))
+                let perTree = format(tmp.sys.businesses.apples.gain.div(tmp.sys.buyables[11].effectiveLevels.clampMin(1)))
                 if (!player.shiftDown) {
                     let levels = `<h3><b>Levels:</h3></b> ${formatWhole(getBuyableAmount("sys", 11))}/${this.maxLevels()}`
                     let effectiveLevels = `<h3><b>Effective:</h3></b> ${format(tmp.sys.buyables[11].effectiveLevels)}`
                     let effDesc = `<h3><b>Effect:</h3></b> Produce ${perTree} ${coloredApples}
-                        per tree every ${format(tmp.sys.businesses.apples.cooldown)} seconds`
-                    let eff = `Producing ${format(tmp.sys.businesses.apples.gain)} ${coloredApples} in ${format(tmp.sys.businesses.apples.cooldown- player.sys.businesses.apples.timer, 2)} seconds`
+                        per tree every ${format(tmp.sys.businesses.apples.maxTimer)} seconds`
+                    let eff = `Producing ${format(tmp.sys.businesses.apples.gain)} ${coloredApples} in ${format(tmp.sys.businesses.apples.maxTimer- player.sys.businesses.apples.timer, 2)} seconds`
                     let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} dollars`
 
                     return `${levels}\n${effectiveLevels}\n\n${effDesc}\n${eff}\n\n${cost}`
@@ -435,26 +512,35 @@ addLayer("sys", {
                 //return `${effFormula}\n\n${costFormula}`
 
             },
-            effectiveLevels:() => {
+            effectiveLevels() {
                 let ret = getBuyableAmount("sys", 11)
                 if (hasAchievement("a", 92)) ret = ret.add(1)
 
                 if (hasUpgrade("sys", 111)) ret = ret.mul(upgradeEffect("sys", 111)[0])
-                ret = ret.mul(gridEffect("quests", 101))
+                ret = ret.mul(shopEffect(101))
 
                 ret = ret.mul(buyableEffect("sys", 111))
 
                 return ret
             },
-            maxLevels() { return 5 },
+            maxLevels() { 
+                let ret = 5
+                ret += tmp.sys.businesses.land.effectTrees
+                return ret
+            },
             effect() { 
                 let ret = tmp.sys.buyables[11].effectiveLevels
                 ret = ret.mul(tmp.s.stored_dollars.effects[3])
                 
+                if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
+                    ret = ret.mul(getBuyableAmount("sys", 41).pow_base(5))
+                
                 return ret
             },
-            canAfford() { return player.sys.points.gte(this.cost()) 
-                && getBuyableAmount(this.layer, this.id).lt(this.maxLevels()) },
+            canAfford() { 
+                return player.sys.points.gte(this.cost()) 
+                && getBuyableAmount(this.layer, this.id).lt(this.maxLevels()) 
+            },
             buy() {
                 player.sys.points = player.sys.points.sub(this.cost())
                 addBuyables(this.layer, this.id, 1)
@@ -464,7 +550,7 @@ addLayer("sys", {
             title: "Apple Picker",
             baseCost() {
                 let ret = new Decimal(10)
-                ret = ret.mul(getBuyableAmount(this.layer, 14).pow_base(10))
+                ret = ret.mul(getBuyableAmount("sys", 41).pow_base(10))
                 return ret
             },
             cost(x) { 
@@ -475,7 +561,7 @@ addLayer("sys", {
                     let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 12)}/${this.maxLevels()}`
                     let effectiveLevels = `<h3><b>Effective:</h3></b> ${format(tmp.sys.buyables[12].effectiveLevels)}`
                     let effDesc = `<h3><b>Effect:</h3></b> Trees produce +${format(this.baseEffect())} `
-                        + `more ${coloredApples} per picker`
+                        + `more base ${coloredApples} per picker`
                     let eff = `Trees produce +${format(this.effect())} more ${coloredApples}`
                     let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} ${coloredApples}`
 
@@ -484,10 +570,11 @@ addLayer("sys", {
 
                 return `<h3><b>Cost Formula:</h3></b><br>${format(this.baseCost())} * 1.3<sup>x</sup> * 1.01<sup>x<sup>2</sup></sup>`
             },
-            effectiveLevels:() => {
+            effectiveLevels() {
                 let ret = getBuyableAmount("sys", 12)
+                if (ret.eq(0)) return ret
                 if (hasUpgrade("sys", 112)) ret = ret.add(upgradeEffect("sys", 112))
-                ret = ret.add(getBuyableAmount("sys", 14))
+                ret = ret.add(getBuyableAmount("sys", 41))
                 
                 ret = ret.mul(tmp.quests.bars.applesBar.reward)
                 if (hasUpgrade("sys", 111)) ret = ret.mul(upgradeEffect("sys", 111)[1])
@@ -497,20 +584,22 @@ addLayer("sys", {
             },
             maxLevels() {
                 let ret = 20
-                ret += Number(getBuyableAmount(this.layer, 14).mul(16))
+                ret += Number(getBuyableAmount("sys", 41).mul(16))
 
                 return ret
             },
             baseEffect() {
                 let ret = new Decimal(.2)
-                ret = ret.add(getBuyableAmount(this.layer, 14).mul(.05))
+                ret = ret.add(getBuyableAmount("sys", 41).mul(.04))
                 return ret
             },
             effect() {
                 return tmp.sys.buyables[12].effectiveLevels.mul(this.baseEffect())
             },
-            canAfford() { return player.sys.businesses.apples.points.gte(this.cost()) 
-                && getBuyableAmount(this.layer, this.id).lt(this.maxLevels()) },
+            canAfford() { 
+                return player.sys.businesses.apples.points.gte(this.cost()) 
+                    && getBuyableAmount(this.layer, this.id).lt(this.maxLevels()) 
+            },
             buy() { 
                 player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost()) 
                 addBuyables(this.layer, this.id, 1)
@@ -520,7 +609,7 @@ addLayer("sys", {
             title: "Apple Vendor",
             baseCost() { 
                 let ret = new Decimal(100)
-                ret = ret.mul(getBuyableAmount(this.layer, 14).pow_base(10))
+                ret = ret.mul(getBuyableAmount("sys", 41).pow_base(10))
 
                 return ret
             },
@@ -541,39 +630,42 @@ addLayer("sys", {
 
                 return `<h3><b>Cost Formula:</h3></b><br>${format(this.baseCost())} * 1.4<sup>x</sup> * 1.01<sup>x<sup>2</sup></sup>`
             },
-            effectiveLevels:() => {
+            effectiveLevels() {
                 let ret = getBuyableAmount("sys", 13)
+                if (ret.eq(0)) return ret
                 if (hasUpgrade("sys", 112)) ret = ret.add(upgradeEffect("sys", 112))
-                ret = ret.add(getBuyableAmount("sys", 14))
+                ret = ret.add(getBuyableAmount("sys", 41))
 
                 if (hasUpgrade("sys", 111)) ret = ret.mul(upgradeEffect("sys", 111)[2])
 
-                ret = ret.mul(buyableEffect("sys", 113))
+                ret = ret.mul(buyableEffect("sys", 111))
                 
                 return ret
             },
             maxLevels() {
                 let ret = 15
-                ret += Number(getBuyableAmount(this.layer, 14).mul(17))
+                ret += Number(getBuyableAmount("sys", 41).mul(17))
 
                 return ret
             },
             baseEffect() {
                 let ret = new Decimal(1.1)
-                ret = ret.add(getBuyableAmount(this.layer, 14).mul(.04))
+                ret = ret.add(getBuyableAmount("sys", 41).mul(.01))
                 return ret
             },
             effect() { 
                 return tmp.sys.buyables[13].effectiveLevels.pow_base(this.baseEffect()) 
             },
-            canAfford() { return player.sys.businesses.apples.points.gte(this.cost()) 
-                && getBuyableAmount(this.layer, this.id).lt(this.maxLevels()) },
+            canAfford() { 
+                return player.sys.businesses.apples.points.gte(this.cost()) 
+                    && getBuyableAmount(this.layer, this.id).lt(this.maxLevels()) 
+            },
             buy() { 
                 player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost()) 
                 addBuyables(this.layer, this.id, 1)
             }
         },
-        14: {
+        41: {
             title: "Apple Visionaries",
             cost(x) {
                 x = Number(x)
@@ -588,36 +680,38 @@ addLayer("sys", {
                 }
             },
             canAfford() {
-                return false
-                if (getBuyableAmount(this.layer, this.id).eq(5)) return false
-                for (const id of [11, 12, 13]) {
-                    if (!getBuyableAmount(this.layer, id).eq(tmp.sys.buyables[id].maxLevels))
-                        return false
-                }
-                return true
+                return getBuyableAmount(this.layer, this.id).eq(5) && 
+                    getBuyableAmount(this.layer, 11).gte(5) &&
+                    getBuyableAmount(this.layer, 12).eq(tmp.sys.buyables[12].maxLevels) &&
+                    getBuyableAmount(this.layer, 13).eq(tmp.sys.buyables[13].maxLevels)
             },
             display() {
                 if (player.shiftDown) return "See Info tab for more information on what purchasing a visionary does"
                 // Change max levels in this line to 5 when making this buyable purchasable in the next update
-                let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 14)}/0`
+                let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount("sys", 41)}/5`
                 let effDesc = "Reset the entire Apple industry for 1 visionary<sup>*</sup>"
                 let ret = `${levels}\n\n${effDesc}\n\n`
-                ret += `<h3>PURCHASABLE NEXT UPDATE</h3>`
-                return ret
-                if (getBuyableAmount("sys", 14).lt(5)) {
-                    ret += `<h3><b>Requires:</h3></b> ${format(this.cost())} ${coloredApples}, maxed Apple Trees/Pickers/Vendors`
+                // ret += `<h3>PURCHASABLE NEXT UPDATE</h3>`
+                // return ret
+                if (getBuyableAmount("sys", 41).lt(5)) {
+                    ret += `<h3><b>Requires:</h3></b> ${format(this.cost())} ${coloredApples}, 5 Trees, maxed Pickers/Vendors`
                 } else {
                     ret += `<h3><b>MAXED</h3></b>`
                 }
                 return ret
             },
             buy() {
+                let confirmText = "Are you sure you want to buy an Apple Visionary? All previous bought Apple Businesses, "
+                    + "including Apple Trees, will be reset to 0, and you will not be able to produce Apples until you can "
+                    + "afford and purchase an Apple Tree."
+                if (!confirm(confirmText)) return
                 player.sys.businesses.apples.points = decimalZero
                 player.sys.businesses.apples.best = decimalZero
                 //player.sys.businesses.apples.points.sub(this.cost()) 
-                setBuyableAmount(this.layer, 11, 0)
-                setBuyableAmount(this.layer, 12, 0)
-                setBuyableAmount(this.layer, 13, 0)
+                setBuyableAmount(this.layer, 11, decimalZero)
+                setBuyableAmount(this.layer, 12, decimalZero)
+                setBuyableAmount(this.layer, 13, decimalZero)
+                player.sys.businesses.apples.timer = 0
                 addBuyables(this.layer, this.id, 1)
             },
             unlocked:() => hasUpgrade("sys", 115),
@@ -628,9 +722,144 @@ addLayer("sys", {
                 }
             }
         },
-        // 21: currency produced boosts conversion rate
-        // 22: produce 21
-        // 23: boost 22
+        21: {
+            title: "Land Cultivator",
+            baseCost() {
+                let ret = new Decimal(10000)
+                ret = ret.mul(getBuyableAmount("sys", 23).pow_base(250))
+                return ret
+            },
+            cost(x) { 
+                return x.pow_base(1.3).mul(x.pow(2).pow_base(1.001)).mul(this.baseCost())
+            },
+            display() { 
+                if (!player.shiftDown) {
+                    let levels = `<h3><b>Used Charges:</h3></b> ${formatWhole(getBuyableAmount("sys", this.id))}/${this.maxCharges()}`
+                    let effectiveLevels = `<h3><b>Effective Strength:</h3></b> ${format(tmp.sys.buyables[this.id].effectiveStr)}`
+                    let effDesc = `<h3><b>Effect:</h3></b> Prepare ${format(tmp.sys.businesses.land.gain)} Land for every second activated`
+                    let eff = "<h3>Currently:</h3> " + (this.active() ? `Deactivated in ${timeDisplay(this.remainingSeconds())}` : "inactive")
+                    let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} apples`
+
+                    return `${levels}\n${effectiveLevels}\n\n${effDesc}\n${eff}\n\n${cost}`
+                }
+
+                let effFormula = `<h3><b>Effect Formula:</h3></b><br>0.1 * [Effective Strength] * [Accelerator Power Effect]`
+                let costFormula = `<h3><b>Cost Formula:</h3></b><br>${format(this.baseCost())} * 1.3<sup>x</sup> * 1.001^x<sup>2</sup>`
+                return `${effFormula}<br><br>${costFormula}`
+
+            },
+            active() {
+                return player.sys.businesses.land.timer >= 0
+            },
+            remainingSeconds() {
+                return tmp.sys.businesses.land.maxTimer - player.sys.businesses.land.timer
+            },
+            remainingCharges() {
+                return this.maxCharges() - getBuyableAmount("sys", this.id).toNumber()
+            },
+            effectiveStr() {
+                let ret = decimalOne
+                if (hasUpgrade(this.layer, 123)) ret = ret.mul(upgradeEffect(this.layer, 123))
+                ret = ret.mul(buyableEffect("sys", 22)[0])
+
+                //ret = ret.mul(buyableEffect("sys", 121))
+
+                return ret
+            },
+            maxCharges() { 
+                let ret = 25
+                ret += buyableEffect("sys", 23)[0]
+                return ret
+            },
+            canAfford() { 
+                return player.sys.businesses.apples.points.gte(this.cost()) 
+                    && this.remainingCharges() > 0 && !this.active()
+            },
+            buy() {
+                player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost())
+                player.sys.businesses.land.timer = 0
+            },
+            unlocked:() => hasUpgrade("sys", 122)
+        },
+        22: {
+            title: "Land Surveyor",
+            baseCost() {
+                let ret = new Decimal(10)
+                return ret
+            },
+            cost(x) { 
+                return x.pow_base(4).mul(x.pow(2).pow_base(1.02)).mul(this.baseCost())
+            },
+            display() { 
+                if (!player.shiftDown) {
+                    let levels = `<h3><b>Levels:</h3></b> ${formatWhole(getBuyableAmount("sys", this.id))}/${this.maxLevels()}`
+                    let effectiveLevels = `<h3><b>Effective Levels:</h3></b> ${format(tmp.sys.buyables[this.id].effectiveLevels)}`
+                    let effDesc = `<h3><b>Effect:</h3></b> Raise Land to ^.25, but double Effective Strength and Charges last 1.25x longer`
+                    let eff = `<h3>Currently:</h3> ${formatWhole(this.effect()[0])}x Effective Strength, ${format(this.effect()[1])}x Charge duration`
+                    let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} Land`
+
+                    return `${levels}\n${effectiveLevels}\n\n${effDesc}\n${eff}\n\n${cost}`
+                }
+
+                return `<h3><b>Cost Formula:</h3></b><br>${format(this.baseCost())} * 4<sup>x</sup> * 1.02^x<sup>2</sup>`
+
+            },
+            effectiveLevels() {
+                let ret = getBuyableAmount(this.layer, this.id)
+                //ret = ret.mul(buyableEffect(this.layer, 122))
+                return ret
+            },
+            effect() {
+                let effLvl = this.effectiveLevels()
+                return [effLvl.pow_base(2), effLvl.pow_base(1.25).toNumber()]
+            },
+            maxLevels() { return 10 },
+            canAfford() { 
+                return player.sys.businesses.land.points.gte(this.cost())
+            },
+            buy() {
+                player.sys.businesses.land.points = player.sys.businesses.land.points.pow(.25)
+                addBuyables(this.layer, this.id, 1)
+            },
+            unlocked:() => hasUpgrade("sys", 122)
+        },
+        23: {
+            title: "Land Revitalizer",
+            cost() { 
+                return tmp.sys.buyables[21].maxCharges
+            },
+            display() { 
+                if (!player.shiftDown) {
+                    let levels = `<h3><b>Levels:</h3></b> ${formatWhole(getBuyableAmount("sys", this.id))}/${this.maxLevels()}`
+                    let effectiveLevels = `<h3><b>Effective Levels:</h3></b> ${format(tmp.sys.buyables[this.id].effectiveLevels)}`
+                    let effDesc = `<h3><b>Effect:</h3></b> Reset Used Charges, increase max Charges by 5, multiply cost base by 250x, and Charges last 1.5x longer`
+                    let eff = `<h3>Currently:</h3> +${this.effect()[0]} max Charges, ${format(this.effect()[1])}x Charge duration`
+                    let cost = `<h3><b>Requires:</h3></b> ${format(this.cost())} Used Charges`
+
+                    return `${levels}\n${effectiveLevels}\n\n${effDesc}\n${eff}\n\n${cost}`
+                }
+
+                return `<h3><b>Cost Formula:</h3></b><br>Max Charges Available`
+            },
+            effectiveLevels() {
+                let ret = getBuyableAmount(this.layer, this.id)
+                //ret = ret.mul(buyableEffect(this.layer, 123))
+                return ret
+            },
+            effect() {
+                let effLvl = this.effectiveLevels()
+                return [effLvl.mul(5).toNumber(), effLvl.pow_base(1.5).toNumber()]
+            },
+            maxLevels() { return 5 },
+            canAfford() { 
+                return getBuyableAmount(this.layer, 21).eq(this.cost())
+            },
+            buy() {
+                setBuyableAmount(this.layer, 21, decimalZero)
+                addBuyables(this.layer, this.id, 1)
+            },
+            unlocked:() => hasUpgrade("sys", 122)
+        },
 
         // when add all businesses, remove continue statement from upg 113
         111: {
@@ -722,7 +951,7 @@ addLayer("sys", {
             display() {
                 if (player.shiftDown) return "You can hold this button to click 20 times/s!"
                 if (player.sys.businesses.acceleratorPower.points.eq(69)) return "nice."
-                return `Accelerating business production speeds by
+                return `Accelerating business production by
                     ${format(tmp.sys.businesses.acceleratorPower.effect)}x`
             },
             onClick() { 
@@ -758,25 +987,55 @@ addLayer("sys", {
     },
     businesses: {
         apples: {
-            gain:() => {
+            gain() {
                 let ret = decimalOne
                 ret = ret.add(tmp.sys.buyables[12].effect)
                 ret = ret.mul(tmp.sys.buyables[13].effect)
-                if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
-                ret = ret.mul(getBuyableAmount("sys", 14).pow_base(5))
 
                 ret = ret.mul(tmp.sys.buyables[11].effect).clampMin(1)
+
+                ret = ret.mul(tmp.sys.businesses.land.effectGain)
                 return ret
             },
-            effect:() => {
+            effect() {
                 let base = player.sys.businesses.apples.points.add(1)
-                let exp = getBuyableAmount("sys", 14).mul(.01).add(.2)
+                let exp = getBuyableAmount("sys", 41).mul(.01).add(.15)
 
                 return base.pow(exp)
             },
-            cooldown:() => {
+            maxTimer() {
                 let ret = 60
                 ret = ret / tmp.sys.businesses.acceleratorPower.effect
+                return ret
+            }
+        },
+        land: {
+            unlocked:() => hasUpgrade("sys", 122),
+            gain() {
+                let ret = new Decimal(0.1)
+                ret = ret.mul(tmp.sys.buyables[21].effectiveStr)
+                ret = ret.mul(tmp.sys.businesses.acceleratorPower.effect)
+                if (hasUpgrade("sys", 125)) ret = ret.mul(upgradeEffect("sys", 125))
+                
+                return ret
+            },
+            effectGain() {
+                let ret = player.sys.businesses.land.points.add(Math.E - 1).ln()
+                return ret
+            },
+            effectTrees() {
+                let ret = player.sys.businesses.land.best.add(1).log2().div(2).ceil().sub(1)
+                return ret.floor().toNumber()
+            },
+            effectCost() {
+                let ret = this.effectTrees() / 5 + 1
+                return ret
+            },
+            maxTimer() {
+                let ret = 10
+                ret *= buyableEffect("sys", 22)[1]
+                ret *= buyableEffect("sys", 23)[1]
+                if (hasUpgrade("sys", 125)) ret /= 1.5
                 return ret
             }
         },
@@ -800,7 +1059,7 @@ addLayer("sys", {
                 let ret = decimalOne 
                 ret = ret.mul(tmp.quests.bars.acceleratorBar.reward)
                 if (hasUpgrade("sys", 113)) ret = ret.mul(upgradeEffect("sys", 113))
-                ret = ret.mul(getBuyableAmount("sys", 14).pow_base(2))
+                ret = ret.mul(getBuyableAmount("sys", 41).pow_base(2))
                 if (hasUpgrade("bills", 15)) ret = ret.mul(upgradeEffect("bills", 15))
                 return ret
             },
@@ -813,14 +1072,29 @@ addLayer("sys", {
         //throw Error("Justify the existence of denominations by locking buyables(?)")
         if (getBuyableAmount("sys", 11).gt(0)) {
             player.sys.businesses.apples.timer += diff
-            let cooldown = tmp.sys.businesses.apples.cooldown
-            if (player.sys.businesses.apples.timer > cooldown) {
+            let maxTimer = tmp.sys.businesses.apples.maxTimer
+            if (player.sys.businesses.apples.timer > maxTimer) {
                 let gain = tmp.sys.businesses.apples.gain
-                let timeMultiplier = Math.floor(player.sys.businesses.apples.timer / cooldown)
+                let timeMultiplier = Math.floor(player.sys.businesses.apples.timer / maxTimer)
                 gain = gain.mul(timeMultiplier)
-                player.sys.businesses.apples.timer -= cooldown * timeMultiplier
+                player.sys.businesses.apples.timer -= maxTimer * timeMultiplier
                 player.sys.businesses.apples.points = player.sys.businesses.apples.points.add(gain)
                 player.sys.businesses.apples.best = player.sys.businesses.apples.points.max(player.sys.businesses.apples.best)
+            }
+        }
+
+        if (player.sys.businesses.land.timer >= 0) {
+            player.sys.businesses.land.timer += diff
+            let maxTimer = tmp.sys.businesses.land.maxTimer
+
+            let secondsPassed = Math.min(diff, maxTimer) // cannot produce more than time available
+            let gain = tmp.sys.businesses.land.gain.mul(secondsPassed)
+            player.sys.businesses.land.points = player.sys.businesses.land.points.add(gain)
+            player.sys.businesses.land.best = player.sys.businesses.land.best.max(player.sys.businesses.land.points)
+
+            if (player.sys.businesses.land.timer >= maxTimer) {
+                player.sys.businesses.land.timer = -1
+                addBuyables(this.layer, 21, 1)
             }
         }
     },
@@ -848,12 +1122,18 @@ addLayer("sys", {
         "Businesses": {
             content: [
                 //["main-display", 2],
-                ["display-text", () => `You have <h2 style="color: maroon; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
+                ["display-text", () => {
+                    let ret = `You have <h2 style="color: maroon; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
                     ${format(player.sys.businesses.apples.points)}</h2> apples, 
-                    which currently multiplies post-nerf penny gain by ${format(tmp.sys.businesses.apples.effect)}x<br>`
-                ], "blank",
+                    which currently multiplies post-nerf penny gain by ${format(tmp.sys.businesses.apples.effect)}x`
+                    if (tmp.sys.businesses.land.unlocked) ret += `, <h2 style="color: #784212; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
+                    ${format(player.sys.businesses.land.points)}</h2> land, which currently multiplies Apple gain by ${format(tmp.sys.businesses.land.effectGain)}x,
+                    increases maximum Apple Trees by +${tmp.sys.businesses.land.effectTrees} and divides
+                    base Apple Tree cost by ${format(tmp.sys.businesses.land.effectCost)}`
+                    return ret + "<br>"
+                }], "blank",
                 ["display-text", "Press shift to see cost formulas and other available information for each buyable"], 
-                ["buyables", [1, 2, 3]],
+                ["buyables", [1, 2, 3, 4]], "blank",
                 ["upgrades", [11, 12, 13, 14, 15]], 
                 ["display-text", "Produced currencies (such as Apples) <b>will reset</b> when performing a system reset"],
                 "blank",
@@ -879,7 +1159,7 @@ addLayer("sys", {
                 }], "blank",
                 ["buyables", [11, 12, 13]]
             ],
-            unlocked:() => hasUpgrade("sys", 123)
+            unlocked:() => hasUpgrade("sys", 131)
         },
         "Info": {
             content: [
@@ -941,7 +1221,7 @@ addLayer("sys", {
             "Visionaries": {
                 content: [
                     "blank",
-                    ["display-text", function() { let amt = Number(getBuyableAmount("sys", 14))
+                    ["display-text", function() { let amt = Number(getBuyableAmount("sys", 41))
                         return `Visionaries are the prestige/ascension mechanic of Businesses that open the door to
                         massive Business numbers. There is one Visionary dedicated to each industry, and they have unique buffs/nerfs.
                         However, they share the same mechanic when bought: reset their industry's currency and
@@ -952,15 +1232,16 @@ addLayer("sys", {
                             <li style="margin-left:20%">+${16*amt} max Apple Pickers, +${17*amt} max Apple Vendors</li>
                             <li style="margin-left:20%">+${amt} effective Apple Pickers/Vendors</li>
                             <li style="margin-left:20%">Apple Picker effect +${amt * .04}</li>
-                            <li style="margin-left:20%">Apple Vendor effect +${amt * .02}</li>
-                            <li style="margin-left:20%">Apple effect exponent +${amt * .01} (^0.2 -> ^${format(.2 + amt * .01)})</li>
+                            <li style="margin-left:20%">Apple Vendor effect +${amt * .01}</li>
+                            <li style="margin-left:20%">Apple effect exponent +${amt * .01} (^0.15 -> ^${format(.15 + amt * .01)})</li>
                             <li style="margin-left:20%">${5 ** amt}x apples from trees</li>
-                            <li style="margin-left:20%">${10 ** amt}x base Apple Business costs</li>
-                            <li style="margin-left:20%">${2 ** amt}x to Accelerator Power from all sources, ELO gain, and loot gain</li>
+                            <li style="margin-left:20%">${10 ** amt}x base Apple Picker/Vendor costs</li>
+                            <li style="margin-left:20%">${10 ** (amt ** 2)}x base Apple Tree cost</li>
+                            <li style="margin-left:20%">${2 ** amt}x to Accelerator Power from all sources</li>
                         </ul>`
                         // <br>For each Apple Visionary, Apple Picker/Vendor have 16/17 more max levels, gain 1 effective Apple Picker/Vendor, Apple Picker's
                         // effect is increased by .04, Apple Vendor's effect is increased by .02, quintuple apples from trees, multiply base costs by 10,
-                        // and double accelerator power gain from all sources, ELO gain, and loot gain.`
+                        // and double accelerator power gain from all sources.`
                     }], "blank"
                 ],
                 unlocked:() => hasUpgrade("sys", 115)
@@ -971,7 +1252,7 @@ addLayer("sys", {
                     ["display-text", ``
                     ], "blank", "blank"
                 ],
-                unlocked:() => hasUpgrade("sys", 123)
+                unlocked:() => hasUpgrade("sys", 131)
             }
         }
     },

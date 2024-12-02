@@ -1,5 +1,6 @@
 var particles = {};
-var particleID = 0;
+var particlesSet = false;
+//var particleID = 0;
 var mouseX = 0;
 var mouseY = 0;
 
@@ -13,6 +14,7 @@ function makeParticles(data, amount=1, type = "normal") {
                 case 'onMouseOver': // changed from onMouseEnter typo
                 case 'onMouseLeave':
                 case 'update':
+                case 'death': // custom
                     particle[thing] = data[thing]
                     break;
                 default:
@@ -45,13 +47,29 @@ function makeShinies(data, amount=1) {
 
 
 function updateParticles(diff) {
+    if (!particlesSet) {
+        for (id in player.particles) {
+            let particle = player.particles[id]
+            Vue.set(particles, id, particle)
+            if (particle.speck) {
+                particles[id]["onMouseOver"] = speckParticle.onMouseOver
+                particles[id]["onClick"] = speckParticle.onClick
+                particles[id]["death"] = speckParticle.death
+            }
+        }
+        particlesSet = true
+    }
+
 	for (p in particles) {
         let particle = particles[p]
 		particle.time -= diff;
         particle.fadeInTimer -= diff;
 		if (particle["time"] < 0) {
-			Vue.delete(particles, p); 
-            
+            if (typeof particle.death == "function") {
+                particle.death()
+            } else {
+                Vue.delete(particles, p)
+            }
 		}
         else {
             if (particle.update) run(particle.update, particle)
@@ -60,10 +78,11 @@ function updateParticles(diff) {
             particle.x += particle.xVel
             particle.y += particle.yVel
             particle.speed = Math.sqrt(Math.pow(particle.xVel, 2) + Math.pow(particle.yVel, 2))
-            particle.dir = atan(-particle.xVel/particle.yVel)
+            if (particle.yVel != 0) particle.dir = atan(-particle.xVel/particle.yVel)
             particle.yVel += particle.gravity
         }
 	}
+    player.particles = particles
 }
 
 function setDir(particle, dir) {
@@ -80,10 +99,10 @@ function setSpeed(particle, speed) {
 
 const newParticles = {
     normal() {
-        particleID++
+        player.particleID++
         return {
             time: 3,
-            id: particleID,
+            id: player.particleID,
             x: mouseX,
             y: mouseY,
             width: 35,
@@ -103,10 +122,10 @@ const newParticles = {
         }
     },
     shiny() {
-        particleID++
+        player.particleID++
         return {
             time: 10,
-            id: particleID,
+            id: player.particleID,
             x: Math.random() * (tmp.other.screenWidth - 100) + 50,
             y: Math.random() * (tmp.other.screenHeight - 100) + 50,
             width: 50,
