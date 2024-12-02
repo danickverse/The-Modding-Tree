@@ -680,7 +680,7 @@ addLayer("sys", {
                 }
             },
             canAfford() {
-                return getBuyableAmount(this.layer, this.id).eq(5) && 
+                return getBuyableAmount(this.layer, this.id).neq(5) && 
                     getBuyableAmount(this.layer, 11).gte(5) &&
                     getBuyableAmount(this.layer, 12).eq(tmp.sys.buyables[12].maxLevels) &&
                     getBuyableAmount(this.layer, 13).eq(tmp.sys.buyables[13].maxLevels)

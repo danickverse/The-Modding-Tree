@@ -576,7 +576,7 @@ addLayer("a", {
         103: {
             name: "48",
             done() {
-                return this.unlocked() && getBuyableAmount("sys", 14).gte(1)
+                return this.unlocked() && getBuyableAmount("sys", 41).gte(1)
             },
             tooltip: "Buy an Apple Visionary",
             unlocked:() => hasMilestone("sys", 6)
