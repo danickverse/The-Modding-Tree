@@ -354,7 +354,7 @@ function gameLoop(diff) {
 	// 	if (hasUpgrade("p", 23)) player.highestPointsEver = player.points.max(player.highestPointsEver)
 	// }
 
-	player.resetTime += diff * timeFlux() //boostedTime(diff)
+	player.resetTime += diff * timeFlux()
 	for (let x = 0; x <= maxRow; x++){
 		for (item in TREE_LAYERS[x]) {
 			let layer = TREE_LAYERS[x][item]

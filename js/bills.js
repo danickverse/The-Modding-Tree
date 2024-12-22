@@ -7,6 +7,9 @@ function lootGain(lvl, forSpellCost = false) {
     if (hasAchievement("a", 95)) ret = ret.mul(1.05)
 
     //if (player.bills.zone == 0) ret = new Decimal(.01)
+    if (hasMilestone("bills", 0)) ret = ret.mul(milestoneEffect("bills", 0)[0])
+    if (hasMilestone("bills", 1)) ret = ret.mul(1.1)
+
     if (((forSpellCost && player.bills.zone == player.bills.highestZone) || !forSpellCost) && hasUpgrade("bills", 13))
         ret = ret.mul(upgradeEffect("bills", 13))
     ret = ret.mul(tmp.quests.bars.enemyKillsBar.reward)
@@ -18,7 +21,7 @@ function lootGain(lvl, forSpellCost = false) {
 
     if (!forSpellCost && player.bills.skillTimers[1] >= 0) ret = ret.mul(tmp.bills.clickables[22].effect)
     if (hasUpgrade("e", 114)) ret = ret.mul(upgradeEffect("e", 114))
-    if (hasMilestone("bills", 0)) ret = ret.mul(2.5)
+    if (hasMilestone("bills", 2)) ret = ret.mul(2.5)
     ret = ret.mul(tmp.banks.bars.tierBar.effect[0])
     if (hasUpgrade("banks", 12)) ret = ret.mul(upgradeEffect("banks", 12)[1])
     if (hasUpgrade("banks", 13)) ret = ret.mul(upgradeEffect("banks", 13)[1])
@@ -61,7 +64,8 @@ addLayer("bills", {
             automation: {
                 autosmackTimer: 0
             },
-            autosmackOn: false
+            autosmackOn: false,
+            zoneDoneNodeGlow: true
         }
     },
     tooltip() { return `${format(player.bills.points)} spent dollars`},
@@ -75,9 +79,28 @@ addLayer("bills", {
         }
         return visible
     },
-    shouldNotify() { return player.bills.highestZone != tmp.bills.highestZoneAvailable },
+    shouldNotify() { return player.bills.zoneDoneNodeGlow && player.bills.highestZone != tmp.bills.highestZoneAvailable },
     milestones: {
         0: {
+            requirementDescription: "Complete Zone 3",
+            effectDescription() { 
+                if (player.shiftDown) return "Rates increase very slightly every 3 zones completed (increases max at HZC 150)"
+                
+                return `Time Flux multiplies Loot/Global ELO at heavily scaled rates<sup>*</sup>
+                    <br>Currently: ${format(this.effect()[0])}x, ${format(this.effect()[1])}x` 
+            },
+            effect() {
+                let x = Math.min(tmp.bills.highestZoneCompleted, 150)
+                return [timeFlux() ** (.1 + .002 * Math.floor(x / 3)), timeFlux() ** (.3 + .006 * Math.floor(150 / 3))]
+            },
+            done() { return tmp.bills.highestZoneCompleted >= 3 }
+        },
+        1: {
+            requirementDescription: "Reach 100 consecutive kills in Zone 9",
+            effectDescription() { return "Spells are 10% cheaper, gain 10% more Loot, and unlock Zones 10+" },
+            done() { return player.bills.zone == 9 && player.bills.currentEnemyKills >= 100 }
+        },
+        2: {
             requirementDescription: "Reach Zone 25",
             effectDescription:() => player.shiftDown ? "Scaling not impacted by Effective Level"
                 : `Unlock Banks and multiply loot gain by 2.5x, but enemies at and after Zone 25 are much tougher<sup>*</sup>`,
@@ -144,15 +167,15 @@ addLayer("bills", {
                 its effect is permanently buffed by ${format(this.effect() * 100)}%`},
             effect:() => 0.001,
             cost: 500,
-            unlocked:() => player.bills.highestZone >= 10
+            unlocked:() => player.bills.highestZone >= 7
         },
         15: {
             title: "Hyperbolic Time Chamber",
-            description: "Time Flux<sup>.5</sup> multiplies Spell duration, WNBP effect exponent, and ELO/Acc. Power gain",
+            description: "Time Flux<sup>.5</sup> multiplies Spell duration, WNBP effect exponent, and Global ELO/Acc. Power gain",
             cost: 1000,
             effect:() => timeFlux() ** .5,
             effectDisplay() { return `${format(this.effect(), 3)}x` },
-            unlocked:() => player.bills.highestZone >= 10
+            unlocked:() => hasMilestone("bills", 1)
         },
         21: {
             title: "Impatience",
@@ -192,7 +215,7 @@ addLayer("bills", {
         },
         25: {
             title: "Magic Touch",
-            description: "Time Flux<sup>.25</sup> divides From Nothing, Monies interval, and Spells are 25% cheaper",
+            description: "Time Flux<sup>.25</sup> divides [From Nothing, Monies] interval, and Spells are 25% cheaper",
             cost: 1e6,
             effect:() => [1 + timeFlux() / 3, 1 + (timeFlux() ** .5) / 2, timeFlux()],
             effectDisplay() { return `${format(this.effect()[0])}x, ${format(this.effect()[1])}x, ${format(this.effect()[2])}x`},
@@ -703,7 +726,8 @@ addLayer("bills", {
         return ret
     },
     spellCost() { 
-        let ret = lootGain(player.bills.highestZone, true).mul(10)
+        let ret = lootGain(player.bills.highestZone, true).mul(5)
+        if (hasMilestone("bills", 1)) ret = ret.mul(.9)
         if (hasUpgrade("bills", 25)) ret = ret.mul(3/4)
         //if (hasAchievement("a", )) ret = ret.mul(2/3)
         return ret
@@ -739,7 +763,7 @@ addLayer("bills", {
                 let expScaling = 1
                 let bossScaling = tmp.bills.isEnemyBoss ? 2 : 1
 
-                if (hasMilestone("bills", 0) && player.bills.zone >= 25) {
+                if (hasMilestone("bills", 2) && player.bills.zone >= 25) {
                     multScaling *= 1.3 ** (player.bills.zone - 24)
                     expScaling *= 1.01
                 }
@@ -761,6 +785,7 @@ addLayer("bills", {
     },
     globalEloMult() {
         let ret = decimalOne
+        if (hasMilestone("bills", 0)) ret = ret.mul(milestoneEffect("bills", 0)[1])
         if (hasUpgrade("bills", 15)) ret = ret.mul(upgradeEffect("bills", 15))
         if (tmp.e.system_expansion.unlocked) ret = ret.mul(tmp.e.system_expansion.effect)
         if (hasMilestone("banks", 0)) ret = ret.mul(1.5)
@@ -918,11 +943,7 @@ addLayer("bills", {
                 () => hasUpgrade("bills", 11) ? ["column", [
                     ["clickables", [1]], "blank",
                     ["display-text", `You are in <h3 style="color: #C0C0C0"><b>Zone ${player.bills.zone}</b></h3>`],
-                    ["display-text", (tmp.bills.highestZoneAvailable == player.bills.highestZone) ?
-                        `Zone ${tmp.bills.highestZoneAvailable+1} will be unlocked at 10 kills in zone ${tmp.bills.highestZoneAvailable} 
-                            (${Math.min(player.bills.highestZoneKills, tmp.bills.totalKillsNeeded)}/${tmp.bills.totalKillsNeeded})` 
-                        : `Zone ${tmp.bills.highestZoneAvailable} is unlocked`
-                    ],
+                    ["display-text", nextZoneUnlockDisplay()],
                     "blank",
                     ["bar", "enemyBar"],
                     "blank",
@@ -967,12 +988,16 @@ addLayer("bills", {
                     Zone ${player.bills.highestZone}</h3>`],
                 "milestones"
             ],
-            unlocked:() => hasAchievement("a", 105)
+            unlocked:() => tmp.bills.highestZoneCompleted >= 3
         },
         "Info": {
             content: [
                 ["main-display", 2],
-                ["microtabs", "info"]
+                ["microtabs", "info"], "blank",
+                ["row", [
+                    ["display-text", "Toggle node glow for zone completions:&ensp;"], 
+                    ["toggle", ["bills", "zoneDoneNodeGlow"]]
+                ]], "blank",
             ],
             unlocked:() => hasUpgrade("bills", 11)
         }

@@ -24,6 +24,7 @@ addLayer("sys", {
                 points: decimalOne,
                 best: decimalOne,
                 timer: -1,
+                recharge: decimalZero
             },
             acceleratorPower: {
                 points: decimalZero
@@ -123,8 +124,9 @@ addLayer("sys", {
         player.sys.bestEducation1InReset = decimalZero
 
         if (hasUpgrade("sys", 124)) {
-            let usedCharges = getBuyableAmount("sys", 21)
-            if (usedCharges.gt(0)) setBuyableAmount("sys", 21, usedCharges.sub(1))
+            let recharge = tmp.sys.businesses.land.recharge.gain
+            player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.add(recharge)
+            setBuyableAmount("sys", 21, decimalZero)
         }
     },
     effect() {
@@ -434,8 +436,11 @@ addLayer("sys", {
         },
         124: {
             title: "Battery Pack",
-            description: "Recharge 1 Used Charge every time you perform a System Reset",
+            description:() => player.shiftDown ? "Requires 5 Used Charges for conversion"
+                : "When performing a System Reset, Used Charges convert to Recharge<sup>*</sup>",
             cost: 30,
+            effect:() => 1.1,
+            effectDisplay() { return `${format(this.effect())}<sup>x - 5</sup>`},
             unlocked:() => hasUpgrade("sys", 123),
             currencyDisplayName: "Land",
             currencyInternalName: "points",
@@ -794,7 +799,7 @@ addLayer("sys", {
                 if (!player.shiftDown) {
                     let levels = `<h3><b>Levels:</h3></b> ${formatWhole(getBuyableAmount("sys", this.id))}/${this.maxLevels()}`
                     let effectiveLevels = `<h3><b>Effective Levels:</h3></b> ${format(tmp.sys.buyables[this.id].effectiveLevels)}`
-                    let effDesc = `<h3><b>Effect:</h3></b> Raise Land to ^.25, but double Effective Strength and Charges last 1.25x longer`
+                    let effDesc = `<h3><b>Effect:</h3></b> Raise current Land to ^.25, but double Effective Strength and Charges last 1.25x longer`
                     let eff = `<h3>Currently:</h3> ${formatWhole(this.effect()[0])}x Effective Strength, ${format(this.effect()[1])}x Charge duration`
                     let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} Land`
 
@@ -944,6 +949,105 @@ addLayer("sys", {
             },
             unlocked() { return tmp.sys.buyables[this.id - 100].unlocked }
         },
+        // recharge buyable
+        201: {
+            title: "Recharger I",
+            cost(x) {
+                return x.pow_base(2)
+            },
+            display() { 
+                if (!player.shiftDown) {
+                    let levels = `<h3>Levels:</h3> ${formatWhole(getBuyableAmount("sys", this.id))}`
+                    let effDesc = `<h3>Effect:</h3> Multiply Recharge gain by ${format(this.effect())}x`
+                    let cost = `<h3>Cost:</h3> ${format(this.cost())} Recharge`
+
+                    return `${levels}\n\n${effDesc}\n\n${cost}`
+                }
+
+                return `<h3>Effect Formula:</h3><br>ln(E + x)<sup>.5</sup>
+                    <br><h3>Cost Formula:</h3><br>2<sup>x</sup>`
+            },
+            effect(x) {
+                return x.add(Math.E).ln().pow(.5)
+                // let exp = x.pow_base(1.1).mul(.5)
+                // return player.sys.businesses.land.recharge.add(Math.E).ln().pow(exp)
+            },
+            canAfford() { return player.sys.businesses.land.recharge.gte(this.cost()) },
+            buy() {
+                player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.sub(this.cost())
+                addBuyables(this.layer, this.id, 1)
+            },
+            style() { 
+                return {
+                    "width":"200px",
+                    "height":"150px",
+                }
+            }
+        },
+        202: {
+            title: "Recharger II",
+            cost(x) {
+                return x.pow_base(2)
+            },
+            display() { 
+                if (!player.shiftDown) {
+                    let levels = `<h3>Levels:</h3> ${formatWhole(getBuyableAmount("sys", this.id))}`
+                    let effDesc = `<h3>Effect:</h3> Multiply Acc. Power gain by ${format(this.effect())}x`
+                    let cost = `<h3>Cost:</h3> ${format(this.cost())} Recharge`
+
+                    return `${levels}\n\n${effDesc}\n\n${cost}`
+                }
+
+                return `<h3>Effect Formula:</h3><br>(1 + x)<sup>.25</sup>
+                    <br><h3>Cost Formula:</h3><br>2<sup>x</sup>`
+            },
+            effect(x) {
+                return x.add(1).pow(.25)
+            },
+            canAfford() { return player.sys.businesses.land.recharge.gte(this.cost()) },
+            buy() {
+                player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.sub(this.cost())
+                addBuyables(this.layer, this.id, 1)
+            },
+            style() { 
+                return {
+                    "width":"200px",
+                    "height":"150px",
+                }
+            }
+        },
+        203: {
+            title: "Recharger II",
+            cost(x) {
+                return x.pow_base(2)
+            },
+            display() { 
+                if (!player.shiftDown) {
+                    let levels = `<h3>Levels:</h3> ${formatWhole(getBuyableAmount("sys", this.id))}`
+                    let effDesc = `<h3>Effect:</h3> Multiply Time Flux by ${format(this.effect())}x`
+                    let cost = `<h3>Cost:</h3> ${format(this.cost())} Recharge`
+
+                    return `${levels}\n\n${effDesc}\n\n${cost}`
+                }
+
+                return `<h3>Effect Formula:</h3><br>1.01<sup>x</sup>
+                    <br><h3>Cost Formula:</h3><br>2<sup>x</sup>`
+            },
+            effect(x) {
+                return x.pow_base(1.01)
+            },
+            canAfford() { return player.sys.businesses.land.recharge.gte(this.cost()) },
+            buy() {
+                player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.sub(this.cost())
+                addBuyables(this.layer, this.id, 1)
+            },
+            style() { 
+                return {
+                    "width":"200px",
+                    "height":"150px",
+                }
+            }
+        }
     },
     clickables: {
         11: {
@@ -1028,7 +1132,7 @@ addLayer("sys", {
                 return ret.floor().toNumber()
             },
             effectCost() {
-                let ret = this.effectTrees() / 5 + 1
+                let ret = this.effectTrees() / 20 + 1
                 return ret
             },
             maxTimer() {
@@ -1037,6 +1141,15 @@ addLayer("sys", {
                 ret *= buyableEffect("sys", 23)[1]
                 if (hasUpgrade("sys", 125)) ret /= 1.5
                 return ret
+            },
+            recharge: {
+                gain() {
+                    let usedCharges = getBuyableAmount("sys", 21).sub(5).max(0)
+                    return usedCharges.pow_base(upgradeEffect("sys", 124)).mul(buyableEffect("sys", 201))
+                },
+                accPowGainEff() {
+                    return player.sys.businesses.land.recharge.add(1).log10()
+                }
             }
         },
         acceleratorPower: {
@@ -1061,6 +1174,7 @@ addLayer("sys", {
                 if (hasUpgrade("sys", 113)) ret = ret.mul(upgradeEffect("sys", 113))
                 ret = ret.mul(getBuyableAmount("sys", 41).pow_base(2))
                 if (hasUpgrade("bills", 15)) ret = ret.mul(upgradeEffect("bills", 15))
+                ret = ret.mul(buyableEffect("sys", 202))
                 return ret
             },
             effect() {
@@ -1137,12 +1251,7 @@ addLayer("sys", {
                 ["upgrades", [11, 12, 13, 14, 15]], 
                 ["display-text", "Produced currencies (such as Apples) <b>will reset</b> when performing a system reset"],
                 "blank",
-                ["clickables", [1]], "blank",
-                () => hasMilestone("sys", 3) ? ["display-text", `You have ${formatWhole(player.sys.businesses.acceleratorPower.points)} Accelerator Power
-                    <br>You gain ${format(tmp.sys.businesses.acceleratorPower.clickGain)} Accelerator Power from clicking<sup>*</sup> on the Accelerator,
-                    ${format(tmp.sys.businesses.acceleratorPower.investmentResetGain)} from investment resets,
-                    and ${format(tmp.sys.businesses.acceleratorPower.dollarResetGain)} from system resets`
-                ] : "", "blank"
+                () => hasMilestone("sys", 3) ? ["microtabs", "businesses"] : "", "blank"
             ],
             unlocked:() => hasMilestone("sys", 0)
         },
@@ -1153,10 +1262,10 @@ addLayer("sys", {
                     ["display-text", () => `Spending <b>${player.sys.deptInpPercent}%</b> of resources` ], "blank",
                     ["slider", ["deptInpPercent", 1, 100]]
                 ]], "blank",
-                ["display-text", function() { return `You have <span style="color: maroon; font-family: Lucida Console, Courier New, monospace">
+                ["display-text", () => `You have <span style="color: maroon; font-family: Lucida Console, Courier New, monospace">
                     ${format(player.sys.businesses.apples.points)}</span> apples, 
                     which multiply post-nerf penny gain by ${format(tmp.sys.businesses.apples.effect)}x<br>`
-                }], "blank",
+                ], "blank",
                 ["buyables", [11, 12, 13]]
             ],
             unlocked:() => hasUpgrade("sys", 131)
@@ -1169,6 +1278,33 @@ addLayer("sys", {
         }
     },
     microtabs: {
+        businesses: {
+            "Accelerator": {
+                content: [
+                    "blank",
+                    () => ["display-text", `You have ${formatWhole(player.sys.businesses.acceleratorPower.points)} 
+                        Accelerator Power`],
+                    "blank",
+                    ["clickables", [1]],
+                    "blank",
+                    () => ["display-text", `You gain ${format(tmp.sys.businesses.acceleratorPower.clickGain)} Accelerator Power from clicking<sup>*</sup> on the Accelerator,
+                        ${format(tmp.sys.businesses.acceleratorPower.investmentResetGain)} from investment resets,
+                        and ${format(tmp.sys.businesses.acceleratorPower.dollarResetGain)} from system resets`],
+                    "blank"
+                ]
+            },
+            "Recharge": {
+                content: [
+                    "blank",
+                    ["display-text", () => `You have ${format(player.sys.businesses.land.recharge)} Recharge<br>
+                        You will gain ${format(tmp.sys.businesses.land.recharge.gain)} Recharge if you perform a system reset`],
+                    "blank",
+                    ["buyables", [20]],
+                    "blank"
+                ],
+                unlocked:() => true || hasUpgrade("sys", 124)
+            }
+        },
         info: {
             "Conversion Rate": {
                 content: [

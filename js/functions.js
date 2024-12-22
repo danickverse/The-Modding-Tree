@@ -244,6 +244,7 @@ function timeFlux() {
     ret *= tmp.quests.bars.zoneBar.reward
     if (hasUpgrade("bills", 21)) ret *= upgradeEffect("bills", 21)
     ret *= shopEffect(101)
+    ret *= buyableEffect("sys", 203).toNumber()
     return ret
 }
 
@@ -330,7 +331,6 @@ function attackEnemy(damage) {
 }
 
 function updateZone(zone) {
-    //if (dx == 0) throw Error("updateZone() took in a dx of 0")
     player.bills.zone = zone
     tmp.bills.effLvl = layers.bills.effLvl()
     tmp.bills.isEnemyBoss = layers.bills.isEnemyBoss()
@@ -343,11 +343,26 @@ function updateZone(zone) {
 }
 
 function isZoneAvailable(zone) {
+    if (zone == 10 && !hasMilestone("bills", 1)) return false
     if (zone < 0) return false
     if (zone <= player.bills.highestZone) return true
-    // edge cases taken care of: go backwards at zone 0, go within inclusive range of 0 and highest zone
+    // most cases taken care of: go backwards at zone 0, go within inclusive range of 0 and highest zone
 
     // last case: currently at highest zone; player.bills.highestZone + 1 == zone
     // want to have enough zone kills in highestZone to move on to new zone
     return player.bills.highestZoneKills >= (tmp.bills.isEnemyBoss ? 3 : 10)
+}
+
+function nextZoneUnlockDisplay() {
+    if (player.bills.highestZone == 9 && !hasMilestone("bills", 1)) {
+        return "Zone 10 requires the second Bills milestone"
+    }
+
+    if (tmp.bills.highestZoneAvailable == player.bills.highestZone) {
+        return `Zone ${tmp.bills.highestZoneAvailable+1} will be unlocked at ${tmp.bills.totalKillsNeeded} kills in zone ${tmp.bills.highestZoneAvailable} 
+                    (${Math.min(player.bills.highestZoneKills, tmp.bills.totalKillsNeeded)}/${tmp.bills.totalKillsNeeded})`
+    }
+    
+    return `Zone ${tmp.bills.highestZoneAvailable} is unlocked`
+                    
 }

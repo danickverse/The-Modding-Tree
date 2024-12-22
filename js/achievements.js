@@ -601,7 +601,7 @@ addLayer("a", {
             done() {
                 return this.unlocked() && player.bills.upgrades.length >= 10
             },
-            tooltip: "Purchase 10 Bills Upgrades<br><br>Unlock Bills milestones",
+            tooltip: "Purchase 10 Bills Upgrades<br><br>Unlock a third Bills milestone",
             unlocked:() => hasMilestone("sys", 6),
             style() {
                 return {

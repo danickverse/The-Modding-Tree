@@ -26,7 +26,7 @@ addLayer("banks", {
     type: "static",
     layerShown() {
         let visible = false
-        if (player.banks.unlocked || hasMilestone("bills", 0)) {
+        if (player.banks.unlocked || hasMilestone("bills", 2)) {
             player.banks.unlocked = true
             visible = true
         }

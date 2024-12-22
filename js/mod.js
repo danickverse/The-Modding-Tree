@@ -23,11 +23,16 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.3",
+	num: "0.2.3.1",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.3.1</h3><br>
+		- Rebalancing for early Bills content (that should also help later Bills content run smoother)<br>
+		- Completely changed Battery Pack upgrade (Businesses), introducing a new currency and 3 buyables<br>
+		- Land effect on Tree Cost is reduced (scales 4x slower)<br><br>
+
 	<h3>v0.2.3</h3><br>
 		- Added Banks/Capital, System Expansion, and Specks<br>
 		- Added a new Industry in Businesses<br>
@@ -366,5 +371,11 @@ function fixOldSave(oldVersion){
 		delete player.e.penny_expansions
 		delete player.sys.buyables[14]
 		player.quests.completions.wnbpBar = Math.min(3, player.quests.completions.wnbpBar)
+	}
+	if (oldVersion < "0.2.3.1") {
+		if (hasMilestone("bills", 0)) {
+			player.bills.milestones.pop()
+			player.bills.milestones.push('2')
+		}
 	}
 }
