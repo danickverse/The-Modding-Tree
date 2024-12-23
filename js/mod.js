@@ -23,11 +23,14 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.3.1",
+	num: "0.2.3.2",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.3.2</h3><br>
+		- Emergency patch for endgame bug<br><br>
+
 	<h3>v0.2.3.1</h3><br>
 		- Rebalancing for early Bills content (that should also help later Bills content run smoother)<br>
 		- Completely changed Battery Pack upgrade (Businesses), introducing a new currency and 3 buyables<br>
@@ -375,7 +378,13 @@ function fixOldSave(oldVersion){
 	if (oldVersion < "0.2.3.1") {
 		if (hasMilestone("bills", 0)) {
 			player.bills.milestones.pop()
-			player.bills.milestones.push('2')
+		}
+	}
+	if (oldVersion < "0.2.3.2") {
+		if (!player.bills.milestones.includes('1')) {
+			player.bills.milestones = []
+		} else {
+			player.bills.milestones = ['1']
 		}
 	}
 }

@@ -50,6 +50,7 @@ addLayer("banks", {
     //     return decimalOne
     // },
     onPrestige() {
+        console.log(player.banks.milestones.length)
         let skillTime = [...player.bills.skillActiveTime]
         let autoSmacker = player.bills.autosmackOn
         layerDataReset("bills")
@@ -58,6 +59,7 @@ addLayer("banks", {
         player.bills.upgrades.push(11)
         updateBills(2)
         player.bills.upgrades.push(22)
+        if (hasMilestone("banks", 1)) player.bills.milestones.push('2')
         player.quests.points = player.quests.points.sub(player.quests.completions.enemyKillsBar)
         player.quests.completions.enemyKillsBar = 0
         doReset("sys")
@@ -71,8 +73,8 @@ addLayer("banks", {
         },
         1: {
             requirementDescription: "Open 2 Banks",
-            effectDescription: "Unlock ELO Milestones (Bills) and more Capital Upgrades",
-            done() { return player.banks.capital.points.gte(100) },
+            effectDescription: "Unlock ELO Milestones (Bills) and more Capital Upgrades, and keep the 3rd Bills milestone",
+            done() { return player.banks.points.gte(2) },
             unlocked: () => hasMilestone("banks", 0)
         }
     },

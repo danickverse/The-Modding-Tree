@@ -1146,9 +1146,6 @@ addLayer("sys", {
                 gain() {
                     let usedCharges = getBuyableAmount("sys", 21).sub(5).max(0)
                     return usedCharges.pow_base(upgradeEffect("sys", 124)).mul(buyableEffect("sys", 201))
-                },
-                accPowGainEff() {
-                    return player.sys.businesses.land.recharge.add(1).log10()
                 }
             }
         },

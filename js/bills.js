@@ -925,7 +925,7 @@ addLayer("bills", {
         }
 
         // if (player.highestZoneKills >= 10 && player.zone == player.highestZone && player.autoStage)
-        //     updateZone(1) 
+        //     updateZone(player.zone + 1) 
     },
     tabFormat: {
         "Bills": {
