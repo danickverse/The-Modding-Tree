@@ -25,7 +25,7 @@ addLayer("s", {
     type: "none",
     row: 0,
     branches: ["p", "e"],
-    layerShown:() => hasUpgrade("e", 33) || player.sys.unlocked,
+    layerShown:() => hasUpg("e", 33) || player.sys.unlocked,
     doReset(layer) {
         if (layer == "sys") {
             updateMilestones("s")
@@ -70,9 +70,9 @@ addLayer("s", {
             return ret
         },
         gain() {
-            let ret = player.p.investment.points.mul(upgradeEffect("p", 42).pow(.25))
+            let ret = player.p.investment.points.mul(upgEff("p", 42).pow(.25))
             ret = ret.mul(tmp.sys.effect)
-            if (hasUpgrade("sys", 12)) ret = ret.mul(upgradeEffect("sys", 12))
+            if (hasUpg("sys", 12)) ret = ret.mul(upgEff("sys", 12))
 
             return softcap(ret, this.softcapStart(), this.softcapExp())
         },
@@ -88,24 +88,41 @@ addLayer("s", {
         }
     },
     stored_expansion: {
+        softcapStart() {
+            let ret = new Decimal(5e9)
+
+            return ret
+        },
+        softcapExp() {
+            let ret = .5
+            ret += shopEffect(102)
+            return ret
+        },
         gain() {
-            let ret = player.e.points.mul(upgradeEffect("p", 42).pow(.25))
+            let ret = player.e.points.mul(upgEff("p", 42).pow(.25))
             ret = ret.mul(tmp.sys.effect)
-            if (hasUpgrade("sys", 12)) ret = ret.mul(upgradeEffect("sys", 12))
+            if (hasUpg("sys", 12)) ret = ret.mul(upgEff("sys", 12))
             
-            return softcap(ret, new Decimal("5e9"), .5)
+            return softcap(ret, this.softcapStart(), this.softcapExp())
         },
         effects: {
             1: () => player.s.stored_expansion.points.add(1).log10().div(2.5).max(1),
             2: () => {
+                if (player.s.stored_expansion.points.eq(decimalZero)) return decimalZero
                 let ret = player.s.stored_expansion.points.add(1).log10().add(10).div(10)
-                if (player.s.stored_expansion.points.eq(decimalZero)) ret = 0
+                if (hasUpg("e", 51)) ret = ret.mul(10)
                 return ret // as a percentage
             },
             3: () => { 
                 let investmentMul = player.s.stored_expansion.points.add(1).log2().pow_base(1.03)
                 let keptExpansionInvestment = investmentMul.pow(5)
-                if (hasUpgrade("s", 12)) keptExpansionInvestment = keptExpansionInvestment.pow(1.5)
+                if (hasUpg("s", 12)) keptExpansionInvestment = keptExpansionInvestment.pow(1.5)
+
+                let finalExp = 1
+                if (hasMilestone("sys", 8)) finalExp *= 1.25
+
+                investmentMul = investmentMul.pow(finalExp)
+                keptExpansionInvestment = keptExpansionInvestment.pow(finalExp)
 
                 return [investmentMul, keptExpansionInvestment]
             },
@@ -156,7 +173,7 @@ addLayer("s", {
         },
         2: {
             requirementDescription: "500,000 Stored Investment and 12,000 Stored Expansion",
-            effectDescription: "Increase Unuselessifier exponent from 3 to 3.5 and reduce investment cooldown by 5 seconds",
+            effectDescription: "Increase Unuselessifier exponent from 3 to 3.5 and reduce investment cooldown by 2 seconds",
             done() { return this.unlocked() && player.s.stored_investment.points.gte(5e5) && player.s.stored_expansion.points.gte(12000) },
             unlocked() { return hasMilestone("a", 5) || hasMilestone("sys", 5) }
         },
@@ -283,13 +300,13 @@ addLayer("s", {
             display() {
                 if (!this.canClick()) {
                     if (inAnyChallenge()) return "Cannot store inside of a challenge"
-                    let ret = "Requires 1000 Expansion"
+                    let ret = "Requires 700 Expansion"
                     if (player.s.stored_investment.points.lt(5000)) ret = ret + " and 5000 Stored Investment"
                     return ret
                 }
                 return `Gain ${format(tmp.s.stored_expansion.gain)} stored expansion`
             },
-            canClick() { return player.e.points.gte(1000) && player.s.stored_investment.points.gte(5000) && !inAnyChallenge() },
+            canClick() { return player.e.points.gte(700) && player.s.stored_investment.points.gte(5000) && !inAnyChallenge() },
             onClick() {
                 let resetInvestment2Amt = decimalOne
                 if (hasMilestone("s", 1)) resetInvestment2Amt = tmp.s.stored_expansion.effects[3][1]
@@ -310,7 +327,7 @@ addLayer("s", {
                         let row = Math.floor(i/5) + 1
                         let col = (i % 5) + 1
                         let upgIndex = row * 10 + col
-                        if (hasUpgrade("e", upgIndex)) {
+                        if (hasUpg("e", upgIndex)) {
                             kept += 1
                             keepUpgIndices.push(upgIndex)
                         }
@@ -326,8 +343,8 @@ addLayer("s", {
                 player.e.points = decimalZero
                 player.e.penny_expansion.points = decimalZero
                 if (!hasMilestone("sys", 0)) {
-                    if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
-                    if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
+                    if (!hasUpg("e", 25)) player.p.autoUpgCooldown = -1
+                    if (!hasUpg("e", 15)) player.p.autoBuyableCooldown = -1
                 }
                 updateTempData(layers["e"], tmp["e"], funcs["e"])
             }
@@ -431,7 +448,7 @@ addLayer("s", {
                 "blank",
                 "challenges"
             ],
-            unlocked:() => hasUpgrade("e", 43) || hasMilestone("s", 4)
+            unlocked:() => hasUpg("e", 43) || hasMilestone("s", 4)
         }
     },
     microtabs: {
@@ -496,21 +513,22 @@ addLayer("s", {
                         ret += `<br>1. Gain ${format(tmp.s.stored_expansion.effects[1])}x more expansion`
                         if (hasMilestone("s", 0)) {
                             let factorPercent = tmp.s.stored_expansion.effects[2]
-                            ret += `,<br>2. Apply It's Only Reasonable to base expansion gain at a rate of ${format(factorPercent)}%`
+                            ret += `,<br>2. Apply It's Only Reasonable to increase base expansion gain at a rate of ${format(factorPercent)}%`
                             if (tmp.e.baseAmount.eq(decimalZero)) {
                                 ret += ", which only applies when your highest points ever exceeds 1e10"
                             } else {
-                                let effect = upgradeEffect("e", 11).mul(factorPercent).div(100)
-                                if (hasUpgrade("e", 11) || inChallenge("s", 12)) 
+                                let effect = upgEff("e", 11).mul(factorPercent).div(100)
+                                if (hasUpg("e", 11) || inChallenge("s", 12)) 
                                     ret += `, which makes up ${format(effect.div(tmp.e.baseAmount).mul(100))}% of base expansion gain`
+                                else ret += ", which makes up 0% of base expansion gain"
                             }
                         }
                         if (hasMilestone("s", 1)) {
                             ret += ",<br>3. Multiply "
-                            if (hasUpgrade("s", 14)) ret = ret + "apple, investment, and "
+                            if (hasUpg("s", 14)) ret = ret + "apple, investment, and "
                             ret += `expansion investment gain by ${format(tmp.s.stored_expansion.effects[3][0])}x` 
                             ret += ` and maximum kept expansion investment is ${format(tmp.s.stored_expansion.effects[3][1])}`
-                            // if (!hasUpgrade("s", 12)) ret = ret + format((1.03**player.s.stored_expansion.points.add(1).log2())**5)
+                            // if (!hasUpg("s", 12)) ret = ret + format((1.03**player.s.stored_expansion.points.add(1).log2())**5)
                             // else ret = ret + format((1.03**player.s.stored_expansion.points.add(1).log2())**7.5)
                         }
                         if (hasMilestone("s", 2)) {
@@ -588,7 +606,7 @@ addLayer("s", {
             // },
             onEnter() {
                 tmp.s.clickables[11].onClick()
-                // let gain = player.p.investment.points.mul(upgradeEffect("p", 42).pow(.25))
+                // let gain = player.p.investment.points.mul(upgEff("p", 42).pow(.25))
                 // player.s.stored_investment.points = player.s.stored_investment.points.add(gain)
                 // investmentReset(true, false)
 
@@ -603,12 +621,12 @@ addLayer("s", {
                 if (player.points.gt(player.s.high_scores[11].points)) player.s.high_scores[11].points = player.points
             },
             marked() { return this.rewardEffect() == .35 },
-            unlocked:() => hasUpgrade("e", 43)
+            unlocked:() => hasUpg("e", 43)
         },
         12: {
             name: "Expansion Challenge",
             challengeDescription:() => `Point/penny gain ^.25 (after tax), investment gain is 0.1,
-                Why Do These Matter??? base is 1.02, cap It's Only Reasonable at +5, 
+                Why Do These Matter??? base is 1.02, cap It's Only Reasonable at 5, 
                 but 2nd stored expansion effect always applies`,
             goalDescription() { return format(this.requirement()) + " penny expansion" },
             rewardDescription:() => "Multiply penny expansion gain by (1 + challenge completions)<sup>1.5</sup>",
@@ -638,13 +656,13 @@ addLayer("s", {
                 player.p.investment2.points = player.p.investment2.points.min(resetInvestment2Amt)
 
                 let keepUpgIndices = [33, 43]
-                if (hasUpgrade("s", 15)) {
+                if (hasUpg("s", 15)) {
                     let kept = 0
                     for (i = 0; i <= 20; i++) {
                         let row = Math.floor(i/5) + 1
                         let col = (i % 5) + 1
                         let upgIndex = row * 10 + col
-                        if (hasUpgrade("e", upgIndex)) {
+                        if (hasUpg("e", upgIndex)) {
                             kept += 1
                             keepUpgIndices.push(upgIndex)
                         }
@@ -660,8 +678,8 @@ addLayer("s", {
                 player.e.points = decimalZero
                 player.e.penny_expansion.points = decimalZero
                 if (!hasMilestone("sys", 0)) {
-                    if (!hasUpgrade("e", 25)) player.p.autoUpgCooldown = -1
-                    if (!hasUpgrade("e", 15)) player.p.autoBuyableCooldown = -1
+                    if (!hasUpg("e", 25)) player.p.autoUpgCooldown = -1
+                    if (!hasUpg("e", 15)) player.p.autoBuyableCooldown = -1
                 }
                 updateTempData(layers["e"], tmp["e"], funcs["e"])
             },

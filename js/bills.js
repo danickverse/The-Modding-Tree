@@ -3,6 +3,7 @@ function lootGain(lvl, forSpellCost = false) {
     let lvlScaling = (lvl + 1) * (1.5 ** lvl)
 
     let ret = base.mul(lvlScaling)
+    if (hasUpg("banks", 105)) ret = ret.mul(player.banks.points.div(10).add(1).pow(lvl / 10))
 
     if (hasAchievement("a", 95)) ret = ret.mul(1.05)
 
@@ -10,8 +11,8 @@ function lootGain(lvl, forSpellCost = false) {
     if (hasMilestone("bills", 0)) ret = ret.mul(milestoneEffect("bills", 0)[0])
     if (hasMilestone("bills", 1)) ret = ret.mul(1.1)
 
-    if (((forSpellCost && player.bills.zone == player.bills.highestZone) || !forSpellCost) && hasUpgrade("bills", 13))
-        ret = ret.mul(upgradeEffect("bills", 13))
+    if (((forSpellCost && player.bills.zone == player.bills.highestZone) || !forSpellCost) && hasUpg("bills", 13))
+        ret = ret.mul(upgEff("bills", 13))
     ret = ret.mul(tmp.quests.bars.enemyKillsBar.reward)
     if (hasMilestone("a", 10)) ret = ret.mul(player.a.achievements.length/40)
     if (hasMilestone("s", 7)) ret = ret.mul(tmp.s.stored_dollars.effects[6])
@@ -20,12 +21,12 @@ function lootGain(lvl, forSpellCost = false) {
     ret = ret.mul(bossScaling)
 
     if (!forSpellCost && player.bills.skillTimers[1] >= 0) ret = ret.mul(tmp.bills.clickables[22].effect)
-    if (hasUpgrade("e", 114)) ret = ret.mul(upgradeEffect("e", 114))
+    if (hasUpg("e", 114)) ret = ret.mul(upgEff("e", 114))
     if (hasMilestone("bills", 2)) ret = ret.mul(2.5)
     ret = ret.mul(tmp.banks.bars.tierBar.effect[0])
-    if (hasUpgrade("banks", 12)) ret = ret.mul(upgradeEffect("banks", 12)[1])
-    if (hasUpgrade("banks", 13)) ret = ret.mul(upgradeEffect("banks", 13)[1])
-    if (hasUpgrade("sys", 125)) ret = ret.mul(upgradeEffect("sys", 125))
+    if (hasUpg("banks", 12)) ret = ret.mul(upgEff("banks", 12)[1])
+    if (hasUpg("banks", 13)) ret = ret.mul(upgEff("banks", 13)[1])
+    if (hasUpg("sys", 125)) ret = ret.mul(upgEff("sys", 125))
 
     let exp = 1
     ret = ret.pow(exp)
@@ -91,7 +92,7 @@ addLayer("bills", {
             },
             effect() {
                 let x = Math.min(tmp.bills.highestZoneCompleted, 150)
-                return [timeFlux() ** (.1 + .002 * Math.floor(x / 3)), timeFlux() ** (.3 + .006 * Math.floor(150 / 3))]
+                return [timeFlux() ** (.1 + .002 * Math.floor(x / 3)), timeFlux() ** (.3 + .006 * Math.floor(x / 3))]
             },
             done() { return tmp.bills.highestZoneCompleted >= 3 }
         },
@@ -155,7 +156,7 @@ addLayer("bills", {
             },
             max() { 
                 let ret = 1.25
-                if (hasUpgrade(this.layer, 24)) ret *= upgradeEffect(this.layer, 24)
+                if (hasUpg(this.layer, 24)) ret *= upgEff(this.layer, 24)
                 return ret  
             },
             effectDisplay() { return `${format(this.effect(), 3)}x` },
@@ -204,22 +205,22 @@ addLayer("bills", {
             cost: 50000,
             effect:() => Math.sqrt(1 + tmp.bills.highestZoneCompleted),
             effectDisplay() { return `${format(this.effect())}x`},
-            unlocked:() => hasUpgrade("bills", 22)
+            unlocked:() => hasUpg("bills", 22)
         },
         24: {
             title: "A Real Knack",
             description: "Keen Eye maxes out 1.25x later",
             effect: 1.25,
             cost: 300000,
-            unlocked:() => hasUpgrade("bills", 23)
+            unlocked:() => hasUpg("bills", 23)
         },
         25: {
             title: "Magic Touch",
-            description: "Time Flux<sup>.25</sup> divides [From Nothing, Monies] interval, and Spells are 25% cheaper",
+            description: "Time Flux<sup>.2</sup> multiplies Spell effects, and Spells are 25% cheaper",
             cost: 1e6,
-            effect:() => [1 + timeFlux() / 3, 1 + (timeFlux() ** .5) / 2, timeFlux()],
-            effectDisplay() { return `${format(this.effect()[0])}x, ${format(this.effect()[1])}x, ${format(this.effect()[2])}x`},
-            unlocked:() => hasUpgrade("bills", 24) && player.bills.highestZone >= 20
+            effect:() => timeFlux() ** .2,
+            effectDisplay() { return `${format(this.effect())}x`},
+            unlocked:() => hasUpg("bills", 24) && player.bills.highestZone >= 20
         }
     },
     buyables: {
@@ -227,20 +228,28 @@ addLayer("bills", {
             title: "1 Dollar Bill",
             denomination: 1,
             display() {
-                let levels = `<h3><b>Levels:</h3></b> ${getBuyableAmount(this.layer, this.id)}`
+                let x = getBuyableAmount(this.layer, this.id)
+                let levels = `<h3><b>Levels:</h3></b> ${x}`
+                if (this.exp().gt(1)) levels += ` (${format(x.pow(this.exp()))})`
                 let effect = `Increasing ELO by ${format(this.effect())}`
                 //let effect = `Deal ${this.effect()} damage in ${format(this.cooldown() - player.bills.timers[0])} seconds`
                 let cost = `<h3><b>Cost:</h3></b> ${format(this.cost())} spent dollars`
 
                 return `${levels}\n${effect}\n${cost}`
             },
-            effect(x) { return x.mul(this.eloMult()) },
+            effect(x) { return x.pow(this.exp()).mul(this.eloMult()) },
             cost(x) { return x.pow(1.5).pow_base(1.1).mul(denominationValues[1]) },
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[0])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[0])
                 ret = ret.mul(tmp.bills.globalEloMult)
+
+                return ret
+            },
+            exp() {
+                let ret = decimalOne
+                if (hasUpg("banks", 101)) ret = ret.mul(upgEff("banks", 101))
                 return ret
             },
             buy() {
@@ -266,7 +275,7 @@ addLayer("bills", {
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[0])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[0])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -291,7 +300,7 @@ addLayer("bills", {
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[0])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[0])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -316,7 +325,7 @@ addLayer("bills", {
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[1])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[1])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -341,7 +350,7 @@ addLayer("bills", {
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[1])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[1])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -366,7 +375,7 @@ addLayer("bills", {
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[1])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[1])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -391,7 +400,7 @@ addLayer("bills", {
             canAfford() {return player.bills.points.gte(this.cost())},
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[2])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[2])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -416,7 +425,7 @@ addLayer("bills", {
             canAfford() {  return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[2])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[2])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -441,7 +450,7 @@ addLayer("bills", {
             canAfford() { return player.bills.points.gte(this.cost()) },
             eloMult() {
                 let ret = decimalOne
-                if (hasUpgrade("bills", 12)) ret = ret.mul(upgradeEffect("bills", 12)[2])
+                if (hasUpg("bills", 12)) ret = ret.mul(upgEff("bills", 12)[2])
                 ret = ret.mul(tmp.bills.globalEloMult)
                 return ret
             },
@@ -573,10 +582,10 @@ addLayer("bills", {
             },
             effect() { 
                 let ret = 1.5
-                if (hasUpgrade("bills", 25)) ret *= upgradeEffect("bills", 25)[0]
+                if (hasUpg("bills", 25)) ret *= upgEff("bills", 25)
 
                 let activeSeconds = Math.floor(player.bills.skillActiveTime[0] / 10)
-                ret *= 1 + activeSeconds * upgradeEffect("bills", 14)
+                ret *= 1 + activeSeconds * upgEff("bills", 14)
                 return ret
             },
             cost:() => tmp.bills.spellCost,
@@ -603,7 +612,7 @@ addLayer("bills", {
                 )
                 return ret
             },
-            unlocked:() => hasUpgrade("bills", 14)
+            unlocked:() => hasUpg("bills", 14)
         },
         22: {
             display() {
@@ -615,10 +624,10 @@ addLayer("bills", {
             },
             effect() { 
                 let ret = 1.25
-                if (hasUpgrade("bills", 25)) ret *= upgradeEffect("bills", 25)[1]
+                if (hasUpg("bills", 25)) ret *= upgEff("bills", 25)
 
                 let activeSeconds = Math.floor(player.bills.skillActiveTime[1] / 10)
-                ret *= 1 + activeSeconds * upgradeEffect("bills", 14)
+                ret *= 1 + activeSeconds * upgEff("bills", 14)
                 return ret
             },
             cost:() => tmp.bills.spellCost,
@@ -645,7 +654,7 @@ addLayer("bills", {
                 )
                 return ret
             },
-            unlocked:() => hasUpgrade("bills", 14)
+            unlocked:() => hasUpg("bills", 14)
         },
         23: {
             display() {
@@ -658,10 +667,10 @@ addLayer("bills", {
             },
             effect() { 
                 let ret = 1
-                if (hasUpgrade("bills", 25)) ret *= upgradeEffect("bills", 25)[2]
+                if (hasUpg("bills", 25)) ret *= upgEff("bills", 25)
 
                 let activeSeconds = Math.floor(player.bills.skillActiveTime[2] / 10)
-                ret *= 1 + activeSeconds * upgradeEffect("bills", 14)
+                ret *= 1 + activeSeconds * upgEff("bills", 14)
                 return ret
             },
             cost:() => tmp.bills.spellCost,
@@ -688,7 +697,7 @@ addLayer("bills", {
                 )
                 return ret
             },
-            unlocked:() => hasUpgrade("bills", 14)
+            unlocked:() => hasUpg("bills", 14)
         },
         24: {
             title: "Smack Attack",
@@ -722,13 +731,13 @@ addLayer("bills", {
     },
     maxSkillTimer() {
         let ret = 60
-        if (hasUpgrade("bills", 15)) ret = ret * upgradeEffect("bills", 15)
+        if (hasUpg("bills", 15)) ret = ret * upgEff("bills", 15)
         return ret
     },
     spellCost() { 
         let ret = lootGain(player.bills.highestZone, true).mul(5)
         if (hasMilestone("bills", 1)) ret = ret.mul(.9)
-        if (hasUpgrade("bills", 25)) ret = ret.mul(3/4)
+        if (hasUpg("bills", 25)) ret = ret.mul(3/4)
         //if (hasAchievement("a", )) ret = ret.mul(2/3)
         return ret
     },
@@ -745,7 +754,7 @@ addLayer("bills", {
             },
             name() {
                 let names = ["Orphan", "Homeless Man", "Hobo", "Weary Traveler", "Bandit"]
-                let index = Math.floor(player.bills.zone / 10)
+                let index = Math.floor(player.bills.zone / 20)
                 return (tmp.bills.isEnemyBoss ? "Beefy " : "") + names[index]
             },
             maxHealth() {
@@ -763,8 +772,8 @@ addLayer("bills", {
                 let expScaling = 1
                 let bossScaling = tmp.bills.isEnemyBoss ? 2 : 1
 
-                if (hasMilestone("bills", 2) && player.bills.zone >= 25) {
-                    multScaling *= 1.3 ** (player.bills.zone - 24)
+                if (hasMilestone("bills", 2) && level >= 25) {
+                    multScaling *= 1.3 ** (level - 24)
                     expScaling *= 1.01
                 }
 
@@ -786,10 +795,10 @@ addLayer("bills", {
     globalEloMult() {
         let ret = decimalOne
         if (hasMilestone("bills", 0)) ret = ret.mul(milestoneEffect("bills", 0)[1])
-        if (hasUpgrade("bills", 15)) ret = ret.mul(upgradeEffect("bills", 15))
+        if (hasUpg("bills", 15)) ret = ret.mul(upgEff("bills", 15))
         if (tmp.e.system_expansion.unlocked) ret = ret.mul(tmp.e.system_expansion.effect)
         if (hasMilestone("banks", 0)) ret = ret.mul(1.5)
-        if (hasUpgrade("banks", 12)) ret = ret.mul(upgradeEffect("banks", 12)[1])
+        if (hasUpg("banks", 12)) ret = ret.mul(upgEff("banks", 12)[1])
         
         ret = ret.mul(shopEffect(101))
 
@@ -883,7 +892,7 @@ addLayer("bills", {
         }
     },
     update(diff) {
-        if (!hasUpgrade("bills", 11)) return
+        if (!hasUpg("bills", 11)) return
 
         // let ELO = decimalZero
         // for (const id of [11, 12, 13, 21, 22, 23, 31, 32, 33]) {
@@ -940,7 +949,7 @@ addLayer("bills", {
                         <h3><span style="color: #C0C0C0; text-shadow: 0px 0px 10px #C0C0C0; font-family: Lucida Console, Courier New, monospace">
                             ${formatWhole(tmp.bills.nextDenominationUnlock)}</span></h3> total spent dollars<br><br>`
                     ],
-                () => hasUpgrade("bills", 11) ? ["column", [
+                () => hasUpg("bills", 11) ? ["column", [
                     ["clickables", [1]], "blank",
                     ["display-text", `You are in <h3 style="color: #C0C0C0"><b>Zone ${player.bills.zone}</b></h3>`],
                     ["display-text", nextZoneUnlockDisplay()],
@@ -999,7 +1008,7 @@ addLayer("bills", {
                     ["toggle", ["bills", "zoneDoneNodeGlow"]]
                 ]], "blank",
             ],
-            unlocked:() => hasUpgrade("bills", 11)
+            unlocked:() => hasUpg("bills", 11)
         }
     },
     microtabs: {

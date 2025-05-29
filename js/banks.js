@@ -2,6 +2,21 @@ function resetBanksMini() {
 
 }
 
+function banksRowUpgCount(row) {
+    let maxCol
+    switch (row) {
+        case 1: maxCol = 3; break
+        case 2: maxCol = 3; break
+        case 3: maxCol = 5;
+    }
+
+    let ret = 0
+    for (i = row * 10 + 1; i <= row * 10 + maxCol; i++) {
+        ret += hasUpg("banks", i)
+    }
+    return ret
+}
+
 addLayer("banks", {
     startData() {
         return {
@@ -36,9 +51,9 @@ addLayer("banks", {
     requires: 25,
     roundUpCost: true,
     canBuyMax: false,
-    canReset() { return player.banks.points.lt(1) && this.baseAmount().gte(getNextAt("banks")) && tmp.sys.canReset },
-    baseResource: "highest zone reached",
-    baseAmount() { return new Decimal(player.bills.highestZone) },
+    canReset() { return player.banks.points.lt(2) && this.baseAmount().gte(getNextAt("banks")) && tmp.sys.canReset },
+    baseResource: "HZC",
+    baseAmount() { return new Decimal(tmp.bills.highestZoneCompleted) },
     exponent: 1.05,
     base: 1.2,
     // gainMult() {
@@ -53,12 +68,15 @@ addLayer("banks", {
         console.log(player.banks.milestones.length)
         let skillTime = [...player.bills.skillActiveTime]
         let autoSmacker = player.bills.autosmackOn
+        let keptUpgrades = [11]
+        if (hasUpg("bills", 22)) keptUpgrades.push(22)
         layerDataReset("bills")
         player.bills.autosmackOn = autoSmacker
         player.bills.skillActiveTime = skillTime
-        player.bills.upgrades.push(11)
+        for (const id of keptUpgrades) {
+            player.bills.upgrades.push(id)
+        }
         updateBills(2)
-        player.bills.upgrades.push(22)
         if (hasMilestone("banks", 1)) player.bills.milestones.push('2')
         player.quests.points = player.quests.points.sub(player.quests.completions.enemyKillsBar)
         player.quests.completions.enemyKillsBar = 0
@@ -73,7 +91,7 @@ addLayer("banks", {
         },
         1: {
             requirementDescription: "Open 2 Banks",
-            effectDescription: "Unlock ELO Milestones (Bills) and more Capital Upgrades, and keep the 3rd Bills milestone",
+            effectDescription: "Unlock Bank Upgrades and more Capital Upgrades, and keep the 3rd Bills milestone",
             done() { return player.banks.points.gte(2) },
             unlocked: () => hasMilestone("banks", 0)
         }
@@ -119,7 +137,7 @@ addLayer("banks", {
                 return [amt.clampMin(Math.E).ln().pow(.2), amt.add(10).log10().pow(.25)]
             },
             effectDisplay() { return `${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
-            unlocked: () => getBuyableAmount("banks", 11).gte(8) || hasUpgrade("banks", 11),
+            unlocked: () => getBuyableAmount("banks", 11).gte(8) || hasUpg("banks", 11),
             currencyDisplayName: "Capital",
             currencyInternalName: "points",
             currencyLocation: () => player.banks.capital,
@@ -131,7 +149,8 @@ addLayer("banks", {
             cost: 5,
             effect: () => [1.01 ** player.banks.upgrades.length, 1.2 ** Math.log2(Math.max(2, player.banks.upgrades.length))],
             effectDisplay() { return `${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
-            unlocked: () => hasUpgrade("banks", 11),
+            unlocked: () => hasMilestone("banks", 1) || hasUpg("banks", 11),
+            canAfford: () => hasUpg("banks", 11),
             currencyDisplayName: "Capital",
             currencyInternalName: "points",
             currencyLocation: () => player.banks.capital,
@@ -143,67 +162,291 @@ addLayer("banks", {
             cost: 5000,
             effect: () => [player.bills.best.div(5000).add(10).log10().pow(.25), player.banks.capital.best.add(10).log10().pow(.5)],
             effectDisplay() { return `${format(this.effect()[0])}x Capital, ${format(this.effect()[1])}x Loot` },
-            unlocked: () => hasUpgrade("banks", 12),
+            unlocked: () => hasMilestone("banks", 1) || hasUpg("banks", 12),
+            canAfford: () => hasUpg("banks", 12),
             currencyDisplayName: "Loot",
             currencyInternalName: "points",
             currencyLocation: () => player.bills,
+            branches: [14]
+        },
+        14: {
+            title() { return this.id },
+            description: "Best Capital boosts the WNBP effect exponent at a heavily reduced rate",
+            cost: 50,
+            effect: () => player.banks.capital.best.max(Math.E).ln().ln(),
+            effectDisplay() { return `${format(this.effect()[0])}x Capital, ${format(this.effect()[1])}x Loot` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 13),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital,
+            branches: [15, 24]
+        },
+        15: {
+            title() { return this.id },
+            description: "Sector A/B now only raise Capital ^.9 when bought",
+            cost: 50,
+            effect: () => player.banks.capital.best.max(Math.E).ln().ln(),
+            effectDisplay() { return `${format(this.effect()[0])}x Capital, ${format(this.effect()[1])}x Loot` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 14),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital,
+            branches: [25]
         },
         21: {
             title() { return this.id },
-            description: "Multiply Tier Point gain by 1.05<sup>HZC</sup>, but raise the cost of the adjacent 2 upgrades",
+            description: "Multiply Tier Point gain by 1.05<sup>HZC</sup>, but raise the cost of row 2 upgrades",
             cost() {
                 let ret = 10
-                let upgs = hasUpgrade("banks", 22) + hasUpgrade("banks", 23)
+                let upgs = banksRowUpgCount(2)
                 return ret * 25 ** upgs
             },
             effect: () => 1.05 ** tmp.bills.highestZoneCompleted,
             effectDisplay() { return `${format(this.effect())}x` },
             unlocked: () => getBuyableAmount("banks", 11).gte(12),
+            unlocked: () => hasMilestone("banks", 1) || getBuyableAmount("banks", 11).gte(12),
+            canAfford: () => hasUpg("banks", 11),
             currencyDisplayName: "Capital",
             currencyInternalName: "points",
             currencyLocation: () => player.banks.capital,
-            tooltip: "Purchasing this upgrade will unlock Sector C"
+            tooltip: "Purchasing this upgrade will unlock Sector C",
+            branches: [31, 32, 33]
         },
         22: {
             title() { return this.id },
-            description: "Multiply Capital by 1.6 and Tier Points by 2.2, but raise the cost of the adjacent 2 upgrades",
+            description: "Multiply Capital by 1.4 and Tier Points by 2.2, but raise the cost of row 2 upgrades",
             cost() {
                 let ret = 25
-                let upgs = hasUpgrade("banks", 21) + hasUpgrade("banks", 23)
+                let upgs = banksRowUpgCount(2)
                 return ret * 25 ** upgs
             },
-            effect: () => [1.6, 2.2],
+            effect: () => [1.4, 2.2],
             effectDisplay() { return `${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
-            unlocked: () => getBuyableAmount("banks", 11).gte(12),
+            unlocked: () => hasMilestone("banks", 1) || getBuyableAmount("banks", 11).gte(12),
+            canAfford: () => hasUpg("banks", 11),
             currencyDisplayName: "Capital",
             currencyInternalName: "points",
-            currencyLocation: () => player.banks.capital
+            currencyLocation: () => player.banks.capital,
+            branches: [32, 33, 34]
         },
         23: {
             title() { return this.id },
-            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of the previous 2 upgrades",
+            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of row 2 upgrades",
             cost() {
                 let ret = 10
-                let upgs = hasUpgrade("banks", 21) + hasUpgrade("banks", 22)
+                let upgs = banksRowUpgCount(2)
                 return ret * 25 ** upgs
             },
             effect: () => 1.02 ** tmp.bills.highestZoneCompleted,
             effectDisplay() { return `${format(this.effect())}x` },
-            unlocked: () => getBuyableAmount("banks", 11).gte(12),
+            unlocked: () => hasMilestone("banks", 1) || getBuyableAmount("banks", 11).gte(12),
+            canAfford: () => hasUpg("banks", 11),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital,
+            tooltip: "Purchasing this upgrade will unlock Sector D",
+            branches: [33, 34, 35]
+        },
+        24: {
+            title() { return this.id },
+            description: "Multiply Tier Points by log10(Q)<sup>.8</sup>, where Q is the product of Sector A-D bought amounts",
+            cost() {
+                let ret = 50
+                let upgs = banksRowUpgCount(2)
+                return ret * 10 ** upgs
+            },
+            effect: () => getBuyableAmount("banks", 11).max(1).mul(getBuyableAmount("banks", 12).max(1))
+            .mul(getBuyableAmount("banks", 13).max(1)).mul(getBuyableAmount("banks", 14).max(1)).max(10).log10().pow(.8),
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 14),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital
+        },
+        25: {
+            title() { return this.id },
+            description: "Multiply Capital by log10(Q)<sup>.4</sup>, where Q is the product of Sector A-D bought amounts",
+            cost() {
+                let ret = 50
+                let upgs = banksRowUpgCount(2)
+                return ret * 5 ** upgs
+            },
+            effect: () => getBuyableAmount("banks", 11).max(1).mul(getBuyableAmount("banks", 12).max(1))
+                .mul(getBuyableAmount("banks", 13).max(1)).mul(getBuyableAmount("banks", 14).max(1)).max(10).log10().pow(.4),
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 14),
             currencyDisplayName: "Capital",
             currencyInternalName: "points",
             currencyLocation: () => player.banks.capital,
             tooltip: "Purchasing this upgrade will unlock Sector D"
         },
+        31: {
+            title() { return this.id },
+            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of the previous 2 upgrades",
+            cost() {
+                let ret = 500
+                let upgs = banksRowUpgCount(3)
+                return ret * 25 ** upgs
+            },
+            effect: () => 1.02 ** tmp.bills.highestZoneCompleted,
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 21),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital
+        },
+        32: {
+            title() { return this.id },
+            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of the previous 2 upgrades",
+            cost() {
+                let ret = 500
+                let upgs = banksRowUpgCount(3)
+                return ret * 25 ** upgs
+            },
+            effect: () => 1.02 ** tmp.bills.highestZoneCompleted,
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 21) && hasUpg("banks", 22),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital
+        },
+        33: {
+            title() { return this.id },
+            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of the previous 2 upgrades",
+            cost() {
+                let ret = 500
+                let upgs = banksRowUpgCount(3)
+                return ret * 25 ** upgs
+            },
+            effect: () => 1.02 ** tmp.bills.highestZoneCompleted,
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 21) && hasUpg("banks", 22) && hasUpg("banks", 23),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital
+        },
+        34: {
+            title() { return this.id },
+            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of the previous 2 upgrades",
+            cost() {
+                let ret = 500
+                let upgs = banksRowUpgCount(3)
+                return ret * 25 ** upgs
+            },
+            effect: () => 1.02 ** tmp.bills.highestZoneCompleted,
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 22) && hasUpg("banks", 23),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital
+        },
+        35: {
+            title() { return this.id },
+            description: "Multiply Capital by 1.02<sup>HZC</sup>, but raise the cost of the previous 2 upgrades",
+            cost() {
+                let ret = 500
+                let upgs = banksRowUpgCount(3)
+                return ret * 25 ** upgs
+            },
+            effect: () => 1.02 ** tmp.bills.highestZoneCompleted,
+            effectDisplay() { return `${format(this.effect())}x` },
+            unlocked: () => hasMilestone("banks", 1),
+            canAfford: () => hasUpg("banks", 23),
+            currencyDisplayName: "Capital",
+            currencyInternalName: "points",
+            currencyLocation: () => player.banks.capital
+        },
+
+        // main Banks upgrades
+        101: {
+            fullDisplay() {
+                let title = "Inflation"
+                let des = "Raise effective 1 Dollar Bill level by 1 + .25log2(1 + Banks)"
+                //"1 + .25log2(Banks) / 4 raises effective 1 Dollar Bill level"
+                let req = `Requires: ${this.req} Banks`
+
+                return `<h3>${title}</h3><br>${des}<br><br>${req}`
+            },
+            req: 2,
+            canAfford() { return player.banks.points.gte(this.req) },
+            buy() { tmp.banks.onPrestige(); player.banks.points = player.banks.points.sub(1) },
+            unlocked:() => true || hasMilestone("banks", 1),
+            effect: () => player.banks.points.add(1).log2().div(4).add(1),
+            effectDisplay() { return `^${format(this.effect())}` }
+        },
+        102: {
+            fullDisplay() {
+                let title = "Gotta Kill 'Em All"
+                let des = "Increase max completions for enemy kills Quest by 1 per upgrade in this row"
+                let req = `Requires: ${this.req} Banks`
+
+                return `<h3>${title}</h3><br>${des}<br><br>${req}`
+            },
+            req: 2,
+            canAfford() { return player.banks.points.gte(this.req) },
+            buy() { tmp.banks.onPrestige(); player.banks.points = player.banks.points.sub(1) },
+            unlocked:() => true || hasMilestone("banks", 1),
+            effect:() => 1 + hasUpg("banks", 101) + hasUpg("banks", 103) + hasUpg("banks", 104) + hasUpg("banks", 105)
+        },
+        103: {
+            fullDisplay() {
+                let title = "Plus Interest"
+                let des = !player.shiftDown ? "Increase loot scaling based on Banks (press shift for formula)"
+                    : `(1 + Banks / 100)<sup>x</sup> applied to formula => ${format(player.banks.points.div(100).add(1))}x more loot per effective level`
+                let req = `Requires: ${this.req} Banks`
+
+                return `<h3>${title}</h3><br>${des}<br><br>${req}`
+            },
+            req: 2,
+            canAfford() { return player.banks.points.gte(this.req) },
+            buy() { tmp.banks.onPrestige(); player.banks.points = player.banks.points.sub(1) },
+            unlocked:() => true || hasMilestone("banks", 1)
+        },
+        104: {
+            fullDisplay() {
+                let title = "Moar Monie!"
+                let des = "Unlock the System challenge (Storage)"
+                let req = `Requires: ${this.req} Banks`
+
+                return `<h3>${title}</h3><br>${des}<br><br>${req}`
+            },
+            req: 3,
+            canAfford() { return player.banks.points.gte(this.req) },
+            buy() { tmp.banks.onPrestige(); player.banks.points = player.banks.points.sub(1) },
+            unlocked:() => true || hasMilestone("banks", 1)
+        },
+        105: {
+            fullDisplay() {
+                let title = ""
+                let des = "Multiply Capital gain by 1.01<sup>Achievements - 50</sup>"
+                let req = `Requires: ${this.req} Banks`
+
+                return `<h3>${title}</h3><br>${des}<br><br>${req}`
+            },
+            req: 3,
+            canAfford() { return player.banks.points.gte(this.req) },
+            buy() { tmp.banks.onPrestige(); player.banks.points = player.banks.points.sub(1) },
+            unlocked:() => true || hasMilestone("banks", 1),
+            effect:() => 0
+        }
     },
     buyables: {
         showRespec:() => tmp.banks.upgrades[12].unlocked,
         respecText: "Reset Capital upgrades and Sector buyables",
-        respecMessage: "Are you sure you want to respec? This will reset ALL Capital upgrades after the first, reset Capital, and reset ALL Sector amounts to 0.",
+        respecMessage: "Are you sure you want to respec? This will reset ALL Capital upgrades after the first, reset Capital, and reset ALL Sector amounts (Sector A is set to at maximum a value of 12).",
         respec() {
             player.banks.upgrades = player.banks.upgrades.filter(index => index == 11)
             for (id in player.banks.buyables) {
-                setBuyableAmount("banks", id, decimalZero)
+                if (id == "11") setBuyableAmount("banks", id, getBuyableAmount("banks", id).min(12))
+                else setBuyableAmount("banks", id, decimalZero)
             }
             player.banks.capital.points=decimalZero
         },
@@ -311,7 +554,7 @@ addLayer("banks", {
                 player.banks.capital.points = player.banks.capital.points.sub(this.cost())
                 addBuyables(this.layer, this.id, 1)
             },
-            unlocked() { return hasUpgrade(this.layer, 21) }
+            unlocked() { return hasUpg(this.layer, 21) }
         },
         14: {
             title: "Sector D",
@@ -337,7 +580,7 @@ addLayer("banks", {
                 player.banks.capital.points = player.banks.capital.points.sub(this.cost())
                 addBuyables(this.layer, this.id, 1)
             },
-            unlocked() { return hasUpgrade(this.layer, 23) }
+            unlocked() { return hasUpg(this.layer, 23) }
         }
     },
     mini: {
@@ -347,23 +590,27 @@ addLayer("banks", {
             ret = ret.mul(buyableEffect("banks", 12))
             //ret = ret.mul(buyableEffect("banks", 13))
             ret = ret.mul(tmp.banks.bars.tierBar.effect[0])
-            if (hasUpgrade("banks", 11)) ret = ret.mul(upgradeEffect("banks", 11)[0])
-            if (hasUpgrade("banks", 12)) ret = ret.mul(upgradeEffect("banks", 12)[0])
-            if (hasUpgrade("banks", 13)) ret = ret.mul(upgradeEffect("banks", 13)[0])
-            if (hasUpgrade("banks", 22)) ret = ret.mul(upgradeEffect("banks", 22)[0])
-            if (hasUpgrade("banks", 23)) ret = ret.mul(upgradeEffect("banks", 23))
+            if (hasUpg("banks", 11)) ret = ret.mul(upgEff("banks", 11)[0])
+            if (hasUpg("banks", 12)) ret = ret.mul(upgEff("banks", 12)[0])
+            if (hasUpg("banks", 13)) ret = ret.mul(upgEff("banks", 13)[0])
+            if (hasUpg("banks", 22)) ret = ret.mul(upgEff("banks", 22)[0])
+            if (hasUpg("banks", 23)) ret = ret.mul(upgEff("banks", 23))
+            if (hasUpg("banks", 25)) ret = ret.mul(upgEff("banks", 25))
             ret = ret.mul(tmp.quests.bars.capitalBar.reward)
             return ret
         },
         lossRate() {
-            return .03
+            let ret = .03
+            ret += player.banks.points.sub(1).min(48).toNumber() * 2
+            return ret
         },
         tierPointGain() {
             let ret = new Decimal(0.005)
-            if (hasUpgrade("banks", 11)) ret = ret.mul(upgradeEffect("banks", 11)[1])
-            if (hasUpgrade("banks", 12)) ret = ret.mul(upgradeEffect("banks", 12)[0])
-            if (hasUpgrade("banks", 21)) ret = ret.mul(upgradeEffect("banks", 21))
-            if (hasUpgrade("banks", 22)) ret = ret.mul(upgradeEffect("banks", 22)[1])
+            if (hasUpg("banks", 11)) ret = ret.mul(upgEff("banks", 11)[1])
+            if (hasUpg("banks", 12)) ret = ret.mul(upgEff("banks", 12)[0])
+            if (hasUpg("banks", 21)) ret = ret.mul(upgEff("banks", 21))
+            if (hasUpg("banks", 22)) ret = ret.mul(upgEff("banks", 22)[1])
+            if (hasUpg("banks", 24)) ret = ret.mul(upgEff("banks", 24))
             ret = ret.mul(tmp.quests.bars.capitalBar.reward)
             return ret
         }
@@ -397,7 +644,8 @@ addLayer("banks", {
         "Main": {
             content: [
                 "main-display",
-                "prestige-button"
+                "prestige-button",
+                ["upgrades", [10, 11]]
             ]
         },
         "Capital": {
@@ -410,7 +658,7 @@ addLayer("banks", {
                 ], "blank",
                 "buyables",
                 "blank",
-                ["upgrade-tree", [[11, 12, 13], [21, 22, 23]]]
+                ["upgrade-tree", [[11, 12, 13], [21, 22, 23], [31, 32, 33, 34, 35]]]
             ],
             unlocked:() => player.banks.points.gte(1)
         },

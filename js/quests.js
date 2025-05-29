@@ -99,7 +99,7 @@ function questTabFormat() {
 addLayer("quests", {
     symbol: "Q",
     row: "side",
-    position: 1,
+    position: 2,
     type: "none",
     color: "blue",
     startData() { 
@@ -129,7 +129,8 @@ addLayer("quests", {
                 tsls: 0, // increases every tick, measure of time since last spawn, tsls/maxTsls = base spawn chance
                 timer: 0, // maxes at 30, which is when it resets down to 0. used to try to spawn particles every 5 seconds
                 shopDisplay: "",
-                showPopup: true
+                showPopup: true,
+                totalPurchases: 0
             }
         }
     },
@@ -138,7 +139,7 @@ addLayer("quests", {
     milestones: {
         0: {
             requirementDescription: "40 Quest Completions and 52 Achievements",
-            effectDescription: "Unlock Specks, a new Quest, and more achievements/achievement milestones",
+            effectDescription: "Unlock Specks and a new Quest",
             done() { return player.quests.points.gte(40) && player.a.achievements.length >= 52 }
         }
     },
@@ -344,7 +345,7 @@ addLayer("quests", {
             progress() { return this.completed() || player.sys.businesses.acceleratorPower.points.div(this.goal()) },
             goal() {
                 let base = 1000
-                let scaling = 5 ** Math.min(4, player.quests.completions.acceleratorBar)
+                let scaling = 10 ** Math.min(4, player.quests.completions.acceleratorBar)
 
                 return base * scaling
             },
@@ -371,8 +372,8 @@ addLayer("quests", {
             },
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.smackBar >= 10,
-            unlocked() { return hasUpgrade("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
-            reward:() => 1 + (player.quests.completions.smackBar ** 2) / 10
+            unlocked() { return hasUpg("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
+            reward:() => 1 + (player.quests.completions.smackBar ** 3) / 10
         },
         zoneBar: {
             direction: RIGHT,
@@ -390,7 +391,7 @@ addLayer("quests", {
             },
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.zoneBar >= 10,
-            unlocked() { return hasUpgrade("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
+            unlocked() { return hasUpg("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
             reward:() => 1 + .1 * player.quests.completions.zoneBar
         },
         enemyKillsBar: {
@@ -425,13 +426,13 @@ addLayer("quests", {
             },
             maxCompletions() {
                 let ret = 5 
-                
+                if (hasUpg("banks", 102)) ret += upgEff("banks", 102)
                 // increases to max of 10
                 return ret
             },
             textStyle: {'color' : 'blue'},
             completed() { return player.quests.completions.enemyKillsBar >= this.maxCompletions() },
-            unlocked() { return hasUpgrade("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
+            unlocked() { return hasUpg("bills", 11) && (!this.completed() || !player.quests.hideCompleted) },
             reward:() => 1.25 ** player.quests.completions.enemyKillsBar
         },
         fastSpecksBar: {
@@ -461,7 +462,7 @@ addLayer("quests", {
             textStyle: {'color' : 'blue'},
             completed:() => player.quests.completions.fastSpecksBar >= 5,
             unlocked() { return tmp.quests.specks.unlocked && (!this.completed() || !player.quests.hideCompleted) },
-            reward:() => 30 * player.quests.completions.fastSpecksBar // 30 secs per completion
+            reward:() => 24 * player.quests.completions.fastSpecksBar // 24 secs per completion
         },
         capitalBar: {
             direction: RIGHT,
@@ -488,7 +489,9 @@ addLayer("quests", {
     specks: {
         unlocked:() => hasMilestone("quests", 0),
         gain:() => {
-            return 1
+            let ret = decimalOne
+            ret = ret.mul(shopEffect(105))
+            return ret
         },
         maxSpecks:() => {
             return 3
@@ -496,12 +499,12 @@ addLayer("quests", {
         maxTsls:() => {
             let ret = 1800
 
-            ret -= player.quests.grid[101] * 50
+            ret -= player.quests.grid[101] * 20
             ret -= tmp.quests.bars.fastSpecksBar.reward
             return ret
         },
         maxTimer:() => {
-            return 15
+            return 20
         },
         spawnChance:() => {
             let ret = Math.min(player.quests.specks.tsls / tmp.quests.specks.maxTsls, 1) 
@@ -509,7 +512,7 @@ addLayer("quests", {
             return ret
         },
         spawnChanceMultiplier:() => {
-            return 0.05
+            return 0.03
         },
         speckDimensions:() => {
             return 15
@@ -517,7 +520,7 @@ addLayer("quests", {
     },
     grid: {
         rows: 1, // If these are dynamic make sure to have a max value as well!
-        cols: 4,
+        cols: 6,
         getStartData(id) {
             if (id === undefined) return 
             // return getStartShopItem(id)
@@ -533,6 +536,7 @@ addLayer("quests", {
         },
         onClick(data, id) {
             player.quests.specks.points = player.quests.specks.points.sub(this.getCost(data, id))
+            player.quests.specks.totalPurchases++
             player.quests.grid[id]++
             updateShopDisplay(this.layer, id)
         },
@@ -542,6 +546,7 @@ addLayer("quests", {
                 case "compounding": 
                 case "compoundingExp": return getShopData(id).effect ** data
                 case "additive": return getShopData(id).effect * data
+                case "unlock": return 0
                 case "other":
                     //if (id == ...) return thing
                 default: throw Error("Invalid shop effect type: " + getShopData(id).type)
@@ -562,6 +567,13 @@ addLayer("quests", {
                 default: return getShopData(id).cost
             }
         }
+        // getUnlocked(data, id) {
+        //     switch (id) {
+        //         case 101: case 102: case 103: case 104: return true
+        //         case 105: return 
+        //         default: throw Error("Invalid shop ")
+        //     }
+        // }
     },
     clickables: {
         11: {
@@ -609,6 +621,8 @@ addLayer("quests", {
                     }
                     speckData.timer -= tmpSpeckData.maxTimer
                 }
+            } else {
+                speckData.timer = 0
             }
         }
 
@@ -715,10 +729,10 @@ addLayer("quests", {
                         <br><br>Essentially, the larger the value of TSLS is, the more likely it is that a speck will spawn. maxTSLS is a
                         variable that determines how much time can pass before your spawn chance is capped. It is initially set to 1800,
                         which means that 30 minutes can pass before your spawn chance is capped. spawnChanceMultiplier is used to scale your
-                        spawn chance. It is initially set to 0.05, which means that your spawn chance is initially capped at 5%.
-                        <br><br>The check displayed above is <h3 style="color: red">not</h3> called every tick. It is called once every 15 
-                        seconds, which means that, no matter what your spawn chance is, only one speck can spawn per 15 seconds (at first).
-                        <br><br>If a Speck is not collected within 5 minutes of spawning, it will be automatically collected for 5% the value.`],
+                        spawn chance. It is initially set to 0.03, which means that your spawn chance is initially capped at 3%.
+                        <br><br>The check displayed above is <h3 style="color: red">not</h3> called every tick. It is called once every 20 
+                        seconds, which means that, no matter what your spawn chance is, only one speck can spawn per 20 seconds (at first).
+                        <br><br>If a Speck is not collected within 10 minutes of spawning, it will be automatically collected for 25% the value.`],
                     "blank"
                 ]
             }
@@ -732,7 +746,7 @@ addLayer("quests", {
 
 const speckParticle = {
     speck: true,
-    time: 300,
+    time: 600,
     width:() => tmp.quests.specks.speckDimensions,
     height:() => tmp.quests.specks.speckDimensions,
     lifespan: 0,
@@ -748,7 +762,7 @@ const speckParticle = {
         return this.onMouseOver()
     },
     death() {
-        player.quests.specks.points =  player.quests.specks.points.add(tmp.quests.specks.gain / 20)
+        player.quests.specks.points =  player.quests.specks.points.add(tmp.quests.specks.gain.div(4))
         player.quests.specks.speckCount--
         player.quests.specks.collected++
         Vue.delete(particles, this.id)

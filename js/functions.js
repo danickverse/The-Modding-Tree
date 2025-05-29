@@ -25,8 +25,7 @@ function logarithmicSoftcap(value, initSoftcap, softcapMult, maxIter, basePow, p
 }
 
 function timeDisplay(time, showDecimal=true) {
-    if (showDecimal) funct = format
-    else funct = formatWhole
+    let funct = showDecimal ? format : formatWhole
     if (time < 60) return `${funct(time)} second` + (time != 1 ? "s" : "")
     else if (time < 3600) return `${funct(time/60, 2)} minute` + (time/60 > 1 ? "s" : "")
     else if (time < 86400) return `${funct(time/3600, 2)} hour` + (time/3600 > 1 ? "s" : "")
@@ -83,23 +82,24 @@ function getLogisticAmount(current, gain, loss, diff){
     }
 }
 
+function upgrade23LimitBase() {
+    return player.p.points.mul(100).pow(upgrade23LimitExp()).add(100)
+}
+
 function upgrade23Limit() {
-    let base = player.p.points.mul(100).pow(upgrade23LimitExp()).add(100)
-    if (hasMilestone("a", 0) && base.lt(new Decimal("9.99e9"))) {
-        let limit = new Decimal("1e10")
-        let newValFactor = limit.sub(base).log10().div(20).add(1) // 1 + log10(L-B)/20
-        base = base.mul(newValFactor) // max(limit, base * (1 + log10(limit-base)/20))
-    }
-    if (getClickableState("e", 21) || getClickableState("e", 22)) base = base.div(5)
+    let base = upgrade23LimitBase()
+    if (hasMilestone("a", 0)) base = base.mul(milestoneEffect("a", 0))
+    if (getClickableState("e", 21) || getClickableState("e", 22)) base = base.div(tmp.e.clickables[21].negEffect)
     if (getClickableState("e", 31)) base = base.mul(clickableEffect("e", 31))
-    if (getClickableState("e", 32)) base = base.div(10)
+    if (getClickableState("e", 32)) base = base.div(tmp.e.clickables[32].negEffect)
     return base.max(100)
 }
 
 function upgrade23LimitExp() {
     let exp = decimalOne
-    if (hasUpgrade("p", 34)) exp = exp.add(upgradeEffect("p", 34))
-    if (hasUpgrade("e", 12)) exp = exp.add(upgradeEffect("e", 12))
+    if (hasUpg("p", 34)) exp = exp.add(upgEff("p", 34))
+    if (hasUpg("e", 12)) exp = exp.add(upgEff("e", 12))
+    if (hasAchievement('a', 31)) exp = exp.add(.01)
     if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) exp = exp.add(.01)
     if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][0])
     return exp
@@ -111,27 +111,23 @@ function upgrade23EffBase() {
     if (hasAchievement("a", 104)) base = base.add(9)
 
     return base
-    // let exp = decimalOne
-    // if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
-    // if (hasMilestone("s", 1)) exp = exp.add(player.s.stored_investment.points.add(1).log2().div(30))
-    // if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
-
-    // return base.pow(exp)
 }
 
 function upgrade23EffExp() {
     let exp = decimalOne
-    if (hasUpgrade("p", 41)) exp = exp.add(upgradeEffect("p", 41))
+    if (hasUpg("p", 41)) exp = exp.add(upgEff("p", 41))
     if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][1])
-    if (hasUpgrade("e", 42)) exp = exp.add(upgradeEffect("e", 12).mul(6))
-    if (hasUpgrade("sys", 22)) exp = exp.mul(upgradeEffect("sys", 22))
-    if (hasUpgrade("bills", 15)) exp = exp.mul(upgradeEffect("bills", 15))
+    if (hasUpg("e", 42)) exp = exp.add(upgEff("e", 12).mul(6))
+    if (hasUpg("sys", 22)) exp = exp.mul(upgEff("sys", 22))
+    if (hasUpg("bills", 15)) exp = exp.mul(upgEff("bills", 15))
+    if (hasUpg("banks", 14)) exp = exp.mul(upgEff("banks", 14))
     return exp
 }
 
 function upgrade14Limit() {
     let limit = new Decimal("1e6")
-    if (hasUpgrade("p", 33)) limit = limit.mul(upgradeEffect("p", 33))
+    if (hasUpg("p", 33)) limit = limit.mul(upgEff("p", 33))
+    if (hasUpg("p", 43)) limit = limit.mul(upgEff("p", 43))
     return limit
 }
 
@@ -152,7 +148,7 @@ function pennyTaxStart() {
         ret = ret.div(scaling)
     }
 
-    if (hasUpgrade("p", 45)) ret = ret.mul(upgradeEffect("p", 42))
+    if (hasUpg("p", 45)) ret = ret.mul(upgEff("p", 42))
     if (hasMilestone("s", 2)) ret = ret.mul(tmp.s.stored_expansion.effects[4])
     if (inChallenge("s", 11)) ret = ret.div(1e4)
     return ret.max(1)
@@ -166,7 +162,7 @@ function pennyTaxExp() {
     }
     if (inChallenge("s", 11)) exp = exp.sub(1)
     if (hasMilestone("s", 5)) exp = exp.sub(tmp.s.stored_investment.effects[7])
-    if (hasUpgrade("p", 62)) exp = exp.sub(upgradeEffect("p", 62))
+    if (hasUpg("p", 62)) exp = exp.sub(upgEff("p", 62))
     return exp.max(1)
 }
 
@@ -176,10 +172,10 @@ function investmentReset(resetInvestment, resetInvestment2) {
     player.p.total = decimalZero
     player.resetTime = 0
     
-    let keepUpgrades = [21, 25, 35, 41, 42, 51, 52, 53, 54, 55, 61, 62, 63, 64, 65]
+    let keepUpgrades = [21, 25, 35, 42, 51, 52, 53, 54, 55, 61, 62, 63, 64, 65]
     if (player.e.everUpg23) keepUpgrades.push(23)
     keepUpgrades = keepUpgrades.filter(
-        (index) => hasUpgrade("p", index)
+        (index) => hasUpg("p", index)
     )
     player.p.upgrades = keepUpgrades
 
@@ -195,20 +191,24 @@ function investmentReset(resetInvestment, resetInvestment2) {
 function expansionUpgradeCost(id) {
     let row = Math.floor(id / 10)
     if (row < 10) {
+        let staticMultPE = tmp.e.penny_expansion.staticMult
         let boughtAfterInclRowPE = player.e.upgrades.filter(
             (index) => index < 100 && Math.floor(index / 10) >= row
         ).length
-        let staticMultPE = tmp.e.penny_expansion.staticMult
+        let upgBoughtScaling = Math.pow(staticMultPE, boughtAfterInclRowPE)
 
         switch (row) {
             case 1:
-                return Math.min(Math.pow(staticMultPE, boughtAfterInclRowPE), 16)
+                return Math.min(upgBoughtScaling, 16)
             case 2:
-                return Math.min(Math.pow(staticMultPE, boughtAfterInclRowPE - 1) * 16, 256)
+                return Math.min(upgBoughtScaling * 16, 256)
             case 3:
-                return Math.min(Math.pow(staticMultPE, boughtAfterInclRowPE - 2) * 256, 4096)
+                return Math.min(upgBoughtScaling * 256, 4096)
             case 4:
-                return Math.min(Math.pow(staticMultPE, boughtAfterInclRowPE) * 20000, 81920000)
+                return Math.min(upgBoughtScaling * 20000, 81920000)
+            case 5:
+                let base = new Decimal(1e16)
+                return base.mul(upgBoughtScaling).min(1e24)
             default: throw Error(`Invalid row supplied to expansionUpgradeCost ${row}`)
         }
     } else if (row < 20) {
@@ -226,6 +226,8 @@ function expansionUpgradeCost(id) {
 
         // Math Nonsense (stems from product of algebraic progression)
         // Prod of algebraic progression = d^n * Gamma(a/d + n) / Gamma(a/d)
+        // = d^n * (a/d + 1) * (a/d + 2) * ... * (a/d + n)
+        // d = 1.7 = initial multiplier - 0.1
         let base = .1 ** boughtSE
         for (let i = 1; i <= boughtSE; i++) {
             base *= 17 + i
@@ -242,37 +244,11 @@ function timeFlux() {
     if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**1.5)/1000)
     ret *= tmp.quests.bars.dollarResetBar.reward
     ret *= tmp.quests.bars.zoneBar.reward
-    if (hasUpgrade("bills", 21)) ret *= upgradeEffect("bills", 21)
+    if (hasUpg("bills", 21)) ret *= upgEff("bills", 21)
     ret *= shopEffect(101)
     ret *= buyableEffect("sys", 203).toNumber()
+    ret *= buyableEffect("tm", 13).toNumber()
     return ret
-}
-
-function conversionRate() {
-    let base = baseConversionRate()
-
-    let mul = 1
-    if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
-    if (hasUpgrade("sys", 14)) mul *= upgradeEffect("sys", 14)
-    if (hasUpgrade("sys", 114)) mul *= upgradeEffect("sys", 114)
-    mul *= tmp.quests.bars.penniesBar.reward
-    mul *= shopEffect(104)
-
-    return (base * mul) / 100
-}
-
-function baseConversionRate() {
-    let ret = 1
-    let baseAdd = 0
-    if (hasAchievement("a", 82)) baseAdd += .01
-    if (hasAchievement("a", 83)) baseAdd += .01
-    if (hasAchievement("a", 84)) baseAdd += .01
-    if (hasAchievement("a", 85)) baseAdd += .02
-    baseAdd += Number(tmp.s.stored_dollars.effects[2])
-    if (tmp.s.challenges[12].unlocked && hasMilestone("s", 6)) baseAdd += challengeEffect("s", 12)[1]
-    if (hasUpgrade("e", 113)) baseAdd += upgradeEffect("e", 113)
-
-    return ret + baseAdd
 }
 
 function systemUpgradeCost(row) {
@@ -283,6 +259,7 @@ function systemUpgradeCost(row) {
     switch (row) {
         case 1: return new Decimal(.15 + .15 * boughtInRow)
         case 2: return new Decimal(1 + .5 * boughtInRow)
+        case 3: return new Decimal(500 + 750 * boughtInRow)
         default: throw Error(`Invalid row supplied to systemUpgradeCost ${row}`)
     }
 }

@@ -29,36 +29,36 @@ addLayer("p", {
     exponent: .5, // Prestige currency exponent
     gainMult() { // Calculate the multiplier for main currency from bonuses
         let mult = new Decimal(1)
-        if (hasUpgrade("p", 13)) mult = mult.times(upgradeEffect("p", 13))
-        if (hasUpgrade("p", 14)) mult = mult.times(upgradeEffect("p", 14))
-        if (hasUpgrade("p", 15)) mult = mult.times(upgradeEffect("p", 15))
-        if (hasUpgrade("p", 24)) mult = mult.times(upgradeEffect("p", 24))
-        if (hasUpgrade("p", 35)) mult = mult.times(upgradeEffect("p", 35))
-        if (hasUpgrade("p", 42)) mult = mult.times(upgradeEffect("p", 42))
-        if (hasUpgrade("p", 44)) mult = mult.times(upgradeEffect("p", 44))
-        if (hasUpgrade("p", 54)) mult = mult.times(upgradeEffect("p", 54))
-        if (hasAchievement("a", 34)) mult = mult.times(1.2)
+        if (hasUpg("p", 13)) mult = mult.times(upgEff("p", 13))
+        if (hasUpg("p", 14)) mult = mult.times(upgEff("p", 14))
+        if (hasUpg("p", 15)) mult = mult.times(upgEff("p", 15))
+        if (hasUpg("p", 24)) mult = mult.times(upgEff("p", 24))
+        if (hasUpg("p", 35)) mult = mult.times(upgEff("p", 35))
+        if (hasUpg("p", 42)) mult = mult.times(upgEff("p", 42))
+        if (hasUpg("p", 44)) mult = mult.times(upgEff("p", 44))
+        if (hasUpg("p", 54)) mult = mult.times(upgEff("p", 54))
+        if (hasAchievement("a", 34)) mult = mult.times(1.337)
         mult = mult.times(buyableEffect("p", 21))
         mult = mult.times(tmp.sys.effect)
-        if (hasUpgrade("p", 61)) mult = mult.mul(upgradeEffect('p', 61))
+        if (hasUpg("p", 61)) mult = mult.mul(upgEff('p', 61))
         return mult
     },
     gainExp() { // Calculate the exponent on main currency from bonuses
         let exp = new Decimal(1)
-        //if (hasUpgrade("p", 52)) exp = exp.add(upgradeEffect("p", 52))
+        //if (hasUpg("p", 52)) exp = exp.add(upgEff("p", 52))
         return exp
     },
     directMult() {
         let ret = decimalOne
-        if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
-        if (getClickableState("e", 31)) ret = ret.div(10)
+        if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(tmp.e.clickables[21].negEffect)
+        if (getClickableState("e", 31)) ret = ret.div(tmp.e.clickables[31].negEffect)
         if (getClickableState("e", 32)) ret = ret.mul(clickableEffect("e", 32))
-        if (inChallenge("s", 11) && hasUpgrade("s", 11)) ret = ret.mul(5)
+        if (inChallenge("s", 11) && hasUpg("s", 11)) ret = ret.mul(5)
         if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
         ret = ret.mul(buyableEffect("p", 23))
         ret = ret.mul(tmp.sys.businesses.apples.effect)
         ret = ret.mul(tmp.quests.bars.pointsBar.reward)
-        if (hasUpgrade("p", 63)) ret = ret.mul(upgradeEffect("p", 63))
+        if (hasUpg("p", 63)) ret = ret.mul(upgEff("p", 63))
         ret = ret.mul(shopEffect(101))
         return ret
     },
@@ -93,8 +93,9 @@ addLayer("p", {
     },
     passiveGeneration() {
         let ret = 0
-        if (hasMilestone("s", 0)) ret = Number(tmp.s.stored_investment.effects[2])
-        if (hasUpgrade("s", 13)) ret += upgradeEffect("s", 13)
+        if (hasAchievement("a", 32)) ret += achievementEffect("a", 32)
+        if (hasMilestone("s", 0)) ret += Number(tmp.s.stored_investment.effects[2])
+        if (hasUpg("s", 13)) ret += upgEff("s", 13)
         return ret
     },
     row: 0, // Row the layer is in on the tree (0 is the first row)
@@ -108,7 +109,7 @@ addLayer("p", {
             key: "i", 
             description: "I: Reset for investment", 
             onPress() { if (tmp[this.layer].buyables[11].canAfford) tmp[this.layer].buyables[11].buy() }, 
-            unlocked() { return hasUpgrade("p", 25)}
+            unlocked() { return hasUpg("p", 25)}
         },
         {
             key: "e",
@@ -124,8 +125,12 @@ addLayer("p", {
             let keptUpgrades = [25, 42, 51, 53, 54, 55, 61, 62, 63, 64, 65].filter(
                 (index) => player.p.upgrades.includes(index)
             )
-            let keptExpansionInvestment = !hasMilestone("sys", 3) ? decimalZero
-                : player.p.investment2.points.min((player.sys.milestones.length - 2) ** 2)
+            let keptExpansionInvestment = decimalZero
+            if (hasMilestone("sys", 8))
+                keptExpansionInvestment = player.p.investment2.points.min((player.sys.milestones.length - 2) ** 3)
+            else if (hasMilestone("sys", 3))
+                keptExpansionInvestment = player.p.investment2.points.min((player.sys.milestones.length - 2) ** 2)
+            
 
             layerDataReset("p")
 
@@ -151,7 +156,7 @@ addLayer("p", {
                 if (!hasAchievement("a", 55)) return player.p.best.add(1).ln().add(1)
                 return player.p.best.add(1).log2().add(1)
             },
-            effectDisplay:() => format(upgradeEffect("p", 11)) + "x"
+            effectDisplay:() => format(upgEff("p", 11)) + "x"
         },
         12: {
             title: "Wait A Second...",
@@ -161,8 +166,8 @@ addLayer("p", {
             },
             cost: new Decimal("5"),
             effect:() => !hasAchievement("a", 81) ? Math.pow(2 + player.p.upgrades.length, .8) : player.p.upgrades.length - 6,
-            effectDisplay:() => "+" + format(upgradeEffect("p", 12)),
-            unlocked:() => hasUpgrade("p", 11) || hasUpgrade("p", 25)
+            effectDisplay:() => "+" + format(upgEff("p", 12)),
+            unlocked:() => hasUpg("p", 11) || hasUpg("p", 25)
         },
         13: {
             title: "Wait A Second...?",
@@ -172,19 +177,19 @@ addLayer("p", {
             currencyInternalName:() => "points",
             currencyLocation:() => player,
             effect:() => player.points.div(100).add(1).pow(.4).ln().add(1),
-            effectDisplay:() => format(upgradeEffect("p", 13)) + "x",
-            unlocked:() => hasUpgrade("p", 12) || hasUpgrade("p", 25)
+            effectDisplay:() => format(upgEff("p", 13)) + "x",
+            unlocked:() => hasUpg("p", 12) || hasUpg("p", 25)
         },
         14: {
             title: "Useless",
             description:() => {
-                if (!hasUpgrade("p", 14) && !hasUpgrade("p", 25) && !player.sys.unlocked) return ""
+                if (!hasUpg("p", 14) && !hasUpg("p", 25) && !player.sys.unlocked) return ""
                 
                 let base = new Decimal("1.25"); let limit = upgrade14Limit()
 
                 let ret = "Multiply penny gain "
                 if (inChallenge("s", 12) && hasMilestone("s", 5)) ret += "and penny expansion gain "
-                if (!hasUpgrade("p", 32)) return ret + `by ${format(base)} if Points < ${format(limit)}`
+                if (!hasUpg("p", 32)) return ret + `by ${format(base)} if Points < ${format(limit)}`
                 return ret + `by ${format(base)}<sup>log2(Investment)</sup> if Points < ${format(limit)}`
             },
             cost: new Decimal("10"),
@@ -192,52 +197,52 @@ addLayer("p", {
                 let base = new Decimal("1.25")
 
                 let exp = 1
-                if (hasUpgrade("p", 32)) exp = upgradeEffect("p", 32)
+                if (hasUpg("p", 32)) exp = upgEff("p", 32)
 
                 if (player.points.lt(upgrade14Limit())) return base.pow(exp)
                 return 1
             },
             effectDisplay:() => {
-                if (!hasUpgrade("p", 14) && !player.sys.unlocked) return "Does nothing"
-                return format(upgradeEffect("p", 14)) + "x"
+                if (!hasUpg("p", 14) && !player.sys.unlocked) return "Does nothing"
+                return format(upgEff("p", 14)) + "x"
             },
-            unlocked:() => hasUpgrade("p", 13) || hasUpgrade("p", 25)
+            unlocked:() => hasUpg("p", 13) || hasUpg("p", 25)
         },
         15: {
             fullDisplay:() => {
                 let title = "<b><h3>Biggest Bestest Coin</b></h3>"
-                let description = hasUpgrade("p", 51) ? (
+                let description = hasUpg("p", 51) ? (
                     player.shiftDown ? "Originally, this multiplied point/penny gain by 1.25"
                         : "Multiply point/penny gain by log10(10 + Best Pennies)<sup>1.25</sup>"
                 ) : "Multiply point/penny gain by 1.25"
-                let effect = hasUpgrade("p", 51) ? `Currently: ${format(upgradeEffect("p", 15))}x<br>` : ""
+                let effect = hasUpg("p", 51) ? `Currently: ${format(upgEff("p", 15))}x<br>` : ""
                 let cost = "Cost: 25 pennies"
                 return title + "<br>" + description + "<br>" + effect + "<br>" + cost
             },
             cost: new Decimal("25"),
-            effect:() => hasUpgrade("p", 51) ? player.p.best.add(10).log10().pow(1.25) : 1.25,
-            unlocked:() => hasUpgrade("p", 14) || hasUpgrade("p", 25)
+            effect:() => hasUpg("p", 51) ? player.p.best.add(10).log10().pow(1.25) : 1.25,
+            unlocked:() => hasUpg("p", 14) || hasUpg("p", 25)
         },
         21: {
             cost: new Decimal("50"),
             fullDisplay:() => {
                 let title = "<b><h3>There's A Coin For This?</b></h3>"
                 let description = () => {
-                    if (!hasUpgrade("e", 44)) {
+                    if (!hasUpg("e", 44)) {
                         if (!hasMilestone("a", 5)) return "Increase point gain by 50% per achievement"
-                        let exp = format(!hasUpgrade("e", 14) ? .2 : (!hasUpgrade("e", 34) ? upgradeEffect("e", 14) : upgradeEffect("e", 34)), 1)
+                        let exp = format(!hasUpg("e", 14) ? .2 : (!hasUpg("e", 34) ? upgEff("e", 14) : upgEff("e", 34)), 1)
                         return "Multiply point gain by (1 + .5x)<sup>" + exp + "</sup>, where x is the # of achievements."
                     }
                     return "Multiply point gain by [Number of Achievements]<sup>2.2</sup>"
                 }
-                let effect = "Currently: " + format(upgradeEffect("p", 21)) + "x<br>"
+                let effect = "Currently: " + format(upgEff("p", 21)) + "x<br>"
                 return title + "<br>" + description() + "<br>" + effect + "<br>Cost: 50 pennies"
             },
             effect:() => {
-                if (hasMilestone("a", 5)) return upgradeEffect("p", 35)
+                if (hasMilestone("a", 5)) return upgEff("p", 35)
                 return new Decimal(1 + .5 * player.a.achievements.length)
             },
-            unlocked:() => hasUpgrade("p", 15) || hasUpgrade("p", 25)
+            unlocked:() => hasUpg("p", 15) || hasUpg("p", 25)
         },
         22: {
             title: "Still Can't Buy Water",
@@ -253,8 +258,8 @@ addLayer("p", {
                 if (hasAchievement("a", 64)) ret = ret.mul(100)
                 return softcap(ret.add(1).pow(.9), new Decimal(1e60), .25)
             },
-            effectDisplay:() => format(upgradeEffect("p", 22)) + "x",
-            unlocked:() => hasUpgrade("p", 21) || hasUpgrade("p", 25)
+            effectDisplay:() => format(upgEff("p", 22)) + "x",
+            unlocked:() => hasUpg("p", 21) || hasUpg("p", 25)
         },
         23: {
             description() {
@@ -294,7 +299,7 @@ addLayer("p", {
                 return upgrade23EffBase().pow(upgrade23EffExp())
             }, // upgrade23Limit() handles limit for this upgrade!!! this is for point multiplier
             onPurchase() { player.sys.everWNBP = true },
-            unlocked:() => hasUpgrade("p", 22) || hasUpgrade("p", 25)
+            unlocked:() => hasUpg("p", 22) || hasUpg("p", 25)
         },
         24: {
             title: "Where Did These Come From???",
@@ -310,50 +315,49 @@ addLayer("p", {
                 //if (hasAchievement("a", 62)) exp = exp + .02
                 return player.points.add(1).pow(exp)
             },
-            effectDisplay:() => format(upgradeEffect("p", 24)) + "x",
-            unlocked:() => hasUpgrade("p", 22) || hasUpgrade("p", 25)
+            effectDisplay:() => format(upgEff("p", 24)) + "x",
+            unlocked:() => hasUpg("p", 22) || hasUpg("p", 25)
         },
         25: {
-            cost: new Decimal("1e5"),
             effect() {
                 return softcap(player.p.investment.points.add(1).pow(.8), new Decimal(1e35), .5)
             },
             fullDisplay() {
                 let title = "<b><h3>Now We're Getting Somewhere...</b></h3>"
-                let description = (!hasUpgrade("p", 25)) ? "Unlock a way to put those pennies to good use and unlock more achievements. "
+                let description = (!hasUpg("p", 25)) ? "Unlock a way to put those pennies to good use and unlock more achievements. "
                     + "Also unlock an effect for this upgrade." : "Multiply point gain by (1 + Investment)<sup>.8</sup>"
-                let effect = (!hasUpgrade("p", 25)) ? "" : "Currently: " + format(upgradeEffect("p", 25)) + "x<br>"
+                let effect = (!hasUpg("p", 25)) ? "" : "Currently: " + format(upgEff("p", 25)) + "x<br>"
                 if (this.effect().gte(1e35)) description += " (softcapped)"
                 let ret = title + "<br>" + description + "<br>" + effect
-                if (!hasUpgrade("p", 25)) return ret + "<br>Requires: 100,000 pennies (no cost)"
+                if (!hasUpg("p", 25)) return ret + "<br>Requires: 100,000 pennies (no cost)"
                 return ret
             },
-            pay:() => 0,
+            canAfford:() => player.p.points.gte(1e5),
             // keeps unlocked after doing an investment
-            unlocked:() => (hasUpgrade("p", 25) || hasUpgrade("p", 24) || player.p.investment.points.gt(decimalZero)) 
+            unlocked:() => (hasUpg("p", 25) || hasUpg("p", 24) || player.p.investment.points.gt(decimalZero)) 
         },
         31: {
             fullDisplay:() => {
                 let title = "<b><h3>One Man's Trash</b></h3>"
                 let description = () => {
-                    if (!hasUpgrade("p", 31)) return "Unlock the ability to take classes in finding pennies!"
+                    if (!hasUpg("p", 31)) return "Unlock the ability to take classes in finding pennies!"
                     return "Unlocks the Education I buyable"
                 }
                 let requirement = "Requires: " + format(new Decimal("2e5")) + " pennies"
                 if (!player.p.investment.points.gte(2)) {
-                    if (!hasUpgrade("e", 15)) requirement = requirement + " and 2 Investment"
+                    if (!hasUpg("e", 15)) requirement = requirement + " and 2 Investment"
                     else requirement = requirement + " and 1 Investment"
                 }
                 return title + "<br>" + description() + "<br><br>" + requirement
             },
-            canAfford:() => player.p.points.gte(new Decimal("2e5")) && (player.p.investment.points.gte(2) || (hasUpgrade("e", 15) && player.p.investment.points.gte(1))),
-            unlocked:() => hasUpgrade("p", 25)
+            canAfford:() => player.p.points.gte(new Decimal("2e5")) && (player.p.investment.points.gte(2) || (hasUpg("e", 15) && player.p.investment.points.gte(1))),
+            unlocked:() => hasUpg("p", 25)
         },
         32: {
             fullDisplay:() => {
                 let title = "<b><h3>Slightly Less Useless</b></h3>"
                 let description = "Raises Useless Effect to log2(Investment)"
-                let effect = "Currently: ^" + format(upgradeEffect("p", 32)) + "<br>"
+                let effect = "Currently: ^" + format(upgEff("p", 32)) + "<br>"
                 if (!player.p.investment.points.gte(5)) effect = ""
                 let requirement = "Cost: " + format(new Decimal("4e6")) + " pennies"
                 if (!player.p.investment.points.gte(5)) requirement = "Requires: 5 Investment"
@@ -362,34 +366,27 @@ addLayer("p", {
             cost: new Decimal("4e6"),
             effect:() => player.p.investment.points.log2(),
             canAfford:() => player.p.investment.points.gte(5),
-            unlocked:() => hasUpgrade("p", 31) || hasUpgrade("p", 35) || hasUpgrade("e", 33)  || player.sys.unlocked
+            unlocked:() => hasUpg("p", 31) || hasUpg("p", 35) || hasUpg("e", 33)  || player.sys.unlocked
         },
         33: {
-            fullDisplay:() => {
+            fullDisplay() {
                 let title = "<b><h3>Unuselessifier</b></h3>"
-                let description = () => {
-                    let ret = "Multiply Useless Limit by Investment<sup>3</sup>"
-                    if (hasMilestone("s", 2)) ret = "Multiply Useless Limit by Investment<sup>3.5</sup>"
-                    if (hasMilestone("s", 3)) {
-                        let exp = 3.5
-                        exp = player.s.stored_expansion.points.add(1).log10().div(5).add(exp)
-                        ret = "Multiply Useless limit by Investment<sup>" + format(exp) + "</sup>"
-                    }
-                    if (!hasUpgrade("p", 33) && !hasUpgrade("p", 34)) ret = ret + "<br>Increases cost of next upgrade"
-                    return ret
-                }
-                let effectDis = "Currently: " + format(upgradeEffect("p", 33))
-                let requirement = () => {
-                    if (!player.p.investment.points.gte(5)) return "Requires: 5 Investment"
-                    let ret = new Decimal("4e6")
-                    if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
-                    return "Cost: " + format(ret) + " pennies"
-                }
-                return title + "<br>" + description() + "<br>" + effectDis + "<br><br>" + requirement()
+                let desc 
+                if (hasMilestone("s", 3))
+                    desc = `Multiply Useless limit by Investment<sup>${format(tmp.s.stored_expansion.effects[5].add(3.5))}</sup>`
+                else if (hasMilestone("s", 2)) 
+                    desc = "Multiply Useless Limit by Investment<sup>3.5</sup>"
+                else
+                    desc = "Multiply Useless Limit by Investment<sup>3</sup>"
+                if (!hasUpg("p", 33) && !hasUpg("p", 34)) desc += "<br>Increases cost of next upgrade"
+                let effectDis = "Currently: " + format(upgEff("p", 33))
+                let requirement = !this.canAfford() ? "Requires: 5 Investment"
+                    : "Cost: " + format(this.cost()) + " pennies"
+                return title + "<br>" + desc + "<br>" + effectDis + "<br><br>" + requirement
             },
             cost:() => {
-                let ret = new Decimal("4e6")
-                if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
+                let ret = new Decimal("5e6")
+                if (hasUpg("p", 34)) ret = ret.mul(3)
                 return ret
             },
             effect() {
@@ -400,29 +397,22 @@ addLayer("p", {
                 return ret.pow(exp)
             },
             canAfford:() => player.p.investment.points.gte(5),
-            unlocked:() => hasUpgrade("p", 31) || hasUpgrade("p", 35) || hasUpgrade("e", 33) || player.sys.unlocked
+            unlocked:() => hasUpg("p", 31) || hasUpg("p", 35) || hasUpg("e", 33) || player.sys.unlocked
         }, 
         34: {
-            fullDisplay:() => {
+            fullDisplay() {
                 let title = "<b><h3>Slightly Bigger Pockets</b></h3>"
-                let description = () => {
-                    let ret = "Increase WNBP limit exponent by log10(1 + Investment)/"
-                    ret = ret + (hasMilestone("a", 3) ? "33.33" : "50")
-                    if (!hasUpgrade("p", 33) && !hasUpgrade("p", 34)) ret = ret + "<br>Increases cost of previous upgrade"
-                    return ret
-                }
-                let effectDis = "Currently: +" + format(upgradeEffect("p", 34))
-                let requirement = () => {
-                    if (!player.p.investment.points.gte(5)) return "Requires: 5 Investment"
-                    let ret = new Decimal("4e6")
-                    if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
-                    return "Cost: " + format(ret) + " pennies"
-                }
-                return title + "<br>" + description() + "<br>" + effectDis + "<br><br>" + requirement()
+                let desc = "Increase WNBP limit exponent by log10(1 + Investment)/" 
+                    + (hasMilestone("a", 3) ? "33.33" : "50")
+                if (!hasUpg("p", 33) && !hasUpg("p", 34)) desc += "<br>Increases cost of previous upgrade"
+                let effectDis = "Currently: +" + format(upgEff("p", 34))
+                let requirement = !this.canAfford() ? "Requires: 5 Investment"
+                    : "Cost: " + format(this.cost()) + " pennies"
+                return title + "<br>" + desc + "<br>" + effectDis + "<br><br>" + requirement
             },
             cost:() => {
-                let ret = new Decimal("4e6")
-                if (hasUpgrade("p", 33) || hasUpgrade("p", 34)) ret = ret.mul(1.5)
+                let ret = new Decimal("5e6")
+                if (hasUpg("p", 33)) ret = ret.mul(3)
                 return ret
             },
             effect() {
@@ -431,53 +421,50 @@ addLayer("p", {
                 return ret.min(1.5)
             },
             canAfford:() => player.p.investment.points.gte(5),
-            unlocked:() => hasUpgrade("p", 31) || hasUpgrade("p", 35) || hasUpgrade("e", 33) || player.sys.unlocked
+            unlocked:() => hasUpg("p", 31) || hasUpg("p", 35) || hasUpg("e", 33) || player.sys.unlocked
         },
         35: {
-            fullDisplay:() => {
+            fullDisplay() {
                 let title = "<b><h3>Seriously?</b></h3>"
-                let description = () => {
-                    if (hasAchievement("a", 21)) {
-                        let ret = "Achievements boost pennies "
-                        if (!hasMilestone("a", 5)) {
-                            ret = ret + "based on the effect of There's A Coin For This? (^" 
-                                + format(!hasUpgrade("e", 14) ? .2 : (!hasUpgrade("e", 34) ? upgradeEffect("e", 14) : upgradeEffect("e", 34))) + ")"
-                        }
-                        else ret = ret + "at the same rate as There's A Coin For This?"
-                        if (!hasUpgrade("e", 33)) ret = ret + ". Unlocks a buyable respec"
-                        ret = ret + "<br>Currently: " + format(upgradeEffect("p", 35)) + "x"
-                        return ret
+                let desc = "Requires Achievement 6"
+                if (hasAchievement("a", 21)) {
+                    desc = "Achievements boost pennies "
+                    if (!hasMilestone("a", 5)) {
+                        desc += "based on the effect of There's A Coin For This? (^" 
+                            + format(!hasUpg("e", 14) ? .2 : (!hasUpg("e", 34) ? upgEff("e", 14) : upgEff("e", 34))) + ")"
                     }
-                    return "Requires Achievement 6"
+                    else desc += "at the same rate as There's A Coin For This?"
+                    if (!hasUpg("e", 33)) desc += ". Unlocks a buyable respec"
+                    desc += "<br>Currently: " + format(upgEff("p", 35)) + "x"
                 }
                 let cost = "Cost: " + format(tmp.p.upgrades[35].cost) + " pennies"
-                return title + "<br>" + description() + "<br><br>" + cost
+                return title + "<br>" + desc + "<br><br>" + cost
             },
-            cost: new Decimal("2e7"),
+            cost: 2e7,
             effect:() => {
-                if (!hasUpgrade("e", 44)) {
+                if (!hasUpg("e", 44)) {
                     let ret = new Decimal(1 + .5 * player.a.achievements.length)
-                    ret = ret.pow(!hasUpgrade("e", 14) ? .2 : (!hasUpgrade("e", 34) ? upgradeEffect("e", 14) : upgradeEffect("e", 34)))
+                    ret = ret.pow(!hasUpg("e", 14) ? .2 : (!hasUpg("e", 34) ? upgEff("e", 14) : upgEff("e", 34)))
                     return ret
                 } // else
                 let ret = new Decimal(player.a.achievements.length)
-                ret = ret.pow(upgradeEffect("e", 44))
+                ret = ret.pow(upgEff("e", 44))
                 return ret
             },
-            effectDisplay:() => format(upgradeEffect("p", 35)) + "x",
+            effectDisplay:() => format(upgEff("p", 35)) + "x",
             canAfford:() => hasAchievement("a", 21),
-            unlocked:() => (player.p.investment.points.gte(5) && hasUpgrade("p", 31)) || hasUpgrade("p", 35) || hasAchievement("a", 51)
+            unlocked:() => (player.p.investment.points.gte(5) && hasUpg("p", 31)) || hasUpg("p", 35) || hasAchievement("a", 51)
         },
         41: {
             title: "Finally...",
             description: "Increase WNBP <b>effect</b> exponent by log2(1 + Penny Expansions)/10",
             cost:() => new Decimal("3e10"),
             effect:() => player.e.penny_expansion.points.add(1).log2().div(10),
-            effectDisplay:() => "+" + format(upgradeEffect("p", 41)),
-            unlocked:() => hasUpgrade("e", 23) || hasUpgrade("p", 41)
+            effectDisplay:() => "+" + format(upgEff("p", 41)),
+            unlocked:() => hasUpg("e", 23) || hasUpg("p", 41)
         },
         42: {
-            cost:() => new Decimal("1e11"),
+            canAfford:() => player.p.points.gte(1e11),
             effect() {
                 let exp = .4
                 if (tmp.s.challenges[11].unlocked) exp = Decimal.add(exp, challengeEffect("s", 11))
@@ -490,52 +477,52 @@ addLayer("p", {
             },
             fullDisplay() {
                 let title = "<b><h3>Invest In The Universe!</b></h3>"
-                let description = (!hasUpgrade("p", 42)) ? "Unlock Expansion Investment and unlock an effect for this upgrade"
+                let description = (!hasUpg("p", 42)) ? "Unlock Expansion Investment and unlock an effect for this upgrade"
                     : `Multiply expansion, penny, and point gain by (1 + Expansion Investment)<sup>${format(this.effExponent(), 3)}</sup>`
-                let effect = (!hasUpgrade("p", 42)) ? "" : "Currently: " + format(upgradeEffect("p", 42)) + "x<br>"
-                let cost = "Cost: 1e11 pennies"
+                let effect = (!hasUpg("p", 42)) ? "" : "Currently: " + format(upgEff("p", 42)) + "x<br>"
+                let cost = "Requires: 1e11 pennies"
                 return title + "<br>" + description + "<br>" + effect + "<br>" + cost
             },
-            unlocked:() => hasUpgrade("e", 23) || hasUpgrade("p", 42)
+            unlocked:() => hasUpg("e", 23) || hasUpg("p", 42)
         },
         43: {
             title: "...And Yourself, Too!",
-            description:() => { 
-                let ret = "Multiply investment gain by previous upgrade effect"
-                if (!hasUpgrade("p", 43) && !hasUpgrade("p", 44)) ret = ret + "<br>Increases cost of next upgrade"
+            description() { 
+                let ret = "Multiply investment gain and Useless limit by previous upgrade effect"
+                if (!hasUpg("p", 43) && !hasUpg("p", 44)) ret = ret + "<br>Increases cost of next upgrade"
                 return ret
             },
-            cost:() => {
+            cost() {
                 let ret = new Decimal("5e10")
-                if (hasUpgrade("p", 44)) ret = ret.mul(10)
+                if (hasUpg("p", 44)) ret = ret.mul(12)
                 if (inAnyChallenge()) ret = ret.mul(1.1)
                 return ret
             },
-            effect:() => upgradeEffect("p", 42),
-            unlocked:() => hasUpgrade("e", 23)
+            effect:() => upgEff("p", 42),
+            unlocked:() => hasUpg("e", 23)
         },
         44: {
             title: "Recycling",
-            description:() => { 
+            description() { 
                 let ret = "Multiply penny gain by 1 + log10(1 + Investment)"
-                if (!hasUpgrade("p", 43) && !hasUpgrade("p", 44)) ret = ret + "<br>Increases cost of previous upgrade"
+                if (!hasUpg("p", 43) && !hasUpg("p", 44)) ret = ret + "<br>Increases cost of previous upgrade"
                 return ret
             },
-            cost:() => {
+            cost() {
                 let ret = new Decimal("5e10")
-                if (hasUpgrade("p", 43)) ret = ret.mul(10)
+                if (hasUpg("p", 43)) ret = ret.mul(12)
                 return ret
             },
             effect:() => player.p.investment.points.add(1).log10().add(1),
-            effectDisplay:() => format(upgradeEffect("p", 44)) + "x",
-            unlocked:() => hasUpgrade("e", 23)
+            effectDisplay:() => format(upgEff("p", 44)) + "x",
+            unlocked:() => hasUpg("e", 23)
         },
         45: {
             title: "I Want To Break Free!",
             cost: new Decimal("1e13"),
             description: "Multiply PTS (base penny value used for Tax) by IITU effect",
-            effectDisplay:() => format(upgradeEffect("p", 42)) + "x",
-            unlocked:() => hasUpgrade("e", 23)
+            effectDisplay:() => format(upgEff("p", 42)) + "x",
+            unlocked:() => hasUpg("e", 23)
         },
         51: {
             title: "8 Quintillion Waters",
@@ -550,7 +537,7 @@ addLayer("p", {
                 if (!this.canAfford()) desc = "Requires the 31st Achievement"
                 else if (player.shiftDown) desc = "Resets include storing resources and investment resets; maxes at +.25"
                 else desc = "Increase point gain exponent by (Reset Time<sup>*</sup>)<sup>.25</sup> / 30"
-                let eff = "<br>Currently: +" + format(upgradeEffect("p", 52))
+                let eff = "<br>Currently: +" + format(upgEff("p", 52))
                 if (!this.canAfford()) eff = ""
                 let cost = `Cost: ${format(this.cost())} pennies`
 
@@ -560,7 +547,7 @@ addLayer("p", {
             canAfford:() => hasAchievement("a", 71),
             max() { return .25 },
             effect() { return Math.min(this.max(), (player.resetTime ** .25) / 30) },
-            effectDisplay:() => "+" + format(upgradeEffect("p", 52)),
+            effectDisplay:() => "+" + format(upgEff("p", 52)),
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },
         53: {
@@ -580,7 +567,7 @@ addLayer("p", {
                 if (inAnyChallenge()) ret = ret.mul(2)
                 return ret.add(1)
             },
-            effectDisplay:() => format(upgradeEffect("p", 53)) + "x",
+            effectDisplay:() => format(upgEff("p", 53)) + "x",
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },
         54: {
@@ -588,7 +575,7 @@ addLayer("p", {
             description: "Multiply penny gain by (1 + Penny Expansions)<sup>.25</sup>",
             cost: new Decimal("1e33"),
             effect:() => player.e.penny_expansion.points.add(1).pow(.1),
-            effectDisplay:() => format(upgradeEffect("p", 54)) + "x",
+            effectDisplay:() => format(upgEff("p", 54)) + "x",
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },
         55: {
@@ -627,28 +614,28 @@ addLayer("p", {
                 
                 return ret
             },
-            effectDisplay:() => `${format(upgradeEffect("p", 61))}x`,
+            effectDisplay:() => `${format(upgEff("p", 61))}x`,
             unlocked:() => player.quests.completions.wnbpBar >= 1 
         },
         62: {
             title: "Running Around at the Speed of Sound",
             description: "Decrease the Penny Tax Exponent (PTE) by Zoomies / 10",
             cost: new Decimal("1e50"),
-            effect:() => upgradeEffect("p", 52) / 10,
-            effectDisplay:() => `-${format(upgradeEffect("p", 62), 4)}`,
+            effect:() => upgEff("p", 52) / 10,
+            effectDisplay:() => `-${format(upgEff("p", 62), 4)}`,
             unlocked:() => player.quests.completions.wnbpBar >= 2
         },
         63: {
             title: "Apples and Oranges",
             description:() => player.shiftDown ? "x2 when WNBP is not purchased, x1.5 otherwise" 
-                : `Multiply post-nerf penny gain by ${!hasUpgrade("p", 23) ? 2 : 1.5}<sup>*</sup> 
+                : `Multiply post-nerf penny gain by ${!hasUpg("p", 23) ? 2 : 1.5}<sup>*</sup> 
                     for every 3 completed zones`,
             cost: new Decimal("6.66e60"),
             effect() {
-                let base = !hasUpgrade("p", 23) ? 2 : 1.5
+                let base = !hasUpg("p", 23) ? 2 : 1.5
                 return Decimal.pow(base, Math.floor(tmp.bills.highestZoneCompleted / 3))
             },
-            effectDisplay:() => `${format(upgradeEffect("p", 63))}x`,
+            effectDisplay:() => `${format(upgEff("p", 63))}x`,
             unlocked:() => player.quests.completions.wnbpBar >= 3
         },
         64: {
@@ -656,7 +643,7 @@ addLayer("p", {
             description: "Divide Education II cost exponent base by 1 + Education III/50",
             cost: new Decimal("1e105"),
             effect:() => getBuyableAmount("p", 23).div(50).add(1),
-            effectDisplay:() => `${format(upgradeEffect("p", 64))}`,
+            effectDisplay:() => `${format(upgEff("p", 64))}`,
             unlocked:() => player.quests.completions.wnbpBar >= 4
         },
         65: {
@@ -664,12 +651,12 @@ addLayer("p", {
             description: "Placeholder",
             cost: new Decimal("1e100"),
             effect:() => 0,
-            effectDisplay:() => `${format(upgradeEffect("p", 65))}`,
+            effectDisplay:() => `${format(upgEff("p", 65))}`,
             unlocked:() => player.quests.completions.wnbpBar >= 5
         }
     },
     buyables: {
-        showRespec:() => hasUpgrade("p", 35) && !hasUpgrade("e", 33),
+        showRespec:() => hasUpg("p", 35) && !hasUpg("e", 33),
         respecText: "Resets ALL buyables and forces an investment reset",
         respecMessage: "Are you sure you want to respec? This will reset all investment and force an investment reset!",
         respec() {
@@ -696,35 +683,41 @@ addLayer("p", {
                     ret = decimalOne
                     if (inChallenge("s", 12)) ret = ret.div(10)
                     if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
-                    if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
-                    if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
+                    if (hasUpg("p", 53)) ret = ret.mul(upgEff("p", 53))
+                    if (hasUpg("sys", 13)) ret = ret.mul(upgEff("sys", 13))
                     if (hasAchievement("a", 85)) ret = ret.mul(1.5)
                 } else {
                     ret = player.p.points.div(1000000).pow(.5)
                     if (hasAchievement("a", 25)) ret = ret.mul(2)
-                    if (hasAchievement("a", 34)) ret = ret.mul(1.1)
+                    if (hasAchievement("a", 34)) ret = ret.mul(1.337)
                     if (hasAchievement("a", 44)) ret = ret.mul(1.2)
                     if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
-                    if (hasUpgrade("p", 43)) ret = ret.mul(upgradeEffect("p", 43))
-                    if (hasUpgrade("p", 53)) ret = ret.mul(upgradeEffect("p", 53))
+                    if (hasUpg("p", 43)) ret = ret.mul(upgEff("p", 43))
+                    if (hasUpg("p", 53)) ret = ret.mul(upgEff("p", 53))
                     ret = ret.mul(tmp.s.stored_investment.effects[1])
                     if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
                     ret = ret.mul(player.sys.points.add(1).pow(1.5))
-                    if (hasUpgrade("sys", 13)) ret = ret.mul(upgradeEffect("sys", 13))
-                    if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
+                    if (hasUpg("sys", 13)) ret = ret.mul(upgEff("sys", 13))
+                    if (hasMilestone("s", 1) && hasUpg("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
                     if (hasAchievement("a", 85)) ret = ret.mul(1.5)
                     ret = ret.mul(buyableEffect("p", 23))
                 
-                    if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
+                    if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(tmp.e.clickables[21].negEffect)
                 }
                 return ret
             },
             buy() {
-                player.p.investment.points = player.p.investment.points.add(tmp.p.buyables[11].gain)
-                player.p.investmentCooldown = 15
-                if (hasUpgrade("e", 35)) player.p.investmentCooldown -= 5
-                if (hasMilestone("s", 2)) player.p.investmentCooldown -= 5
-                if (hasMilestone("sys", 5) && hasUpgrade("e", 45)) player.p.investmentCooldown -= 2.5
+                let nextInvVal = player.p.investment.points.add(tmp.p.buyables[11].gain)
+                if ((!hasAchievement("a", 24) || !hasAchievement("a", 25)) && nextInvVal.gte(2)) {
+                    let check = confirm("Are you sure you want to perform an investment reset? You will not be able to complete the 9th/10th achievements until you perform another penny buyable respec, halting your progression!")
+                    if (!check) return
+                }
+
+                player.p.investment.points = nextInvVal
+                player.p.investmentCooldown = 10
+                if (hasUpg("e", 35)) player.p.investmentCooldown -= 3
+                if (hasMilestone("s", 2)) player.p.investmentCooldown -= 2
+                if (hasMilestone("sys", 5) && hasUpg("e", 45)) player.p.investmentCooldown -= 2
 
                 // reset data, keep investment and investment2
                 investmentReset(false, false)
@@ -733,7 +726,7 @@ addLayer("p", {
                     player.sys.businesses.acceleratorPower.points = player.sys.businesses.acceleratorPower.points.add(gain)
                 }
             },
-            unlocked:() => hasUpgrade("p", 25)
+            unlocked:() => hasUpg("p", 25)
         },
         12: {
             title: "Expansion Investment",
@@ -761,9 +754,9 @@ addLayer("p", {
             gain() {
                 let investmentExponent = new Decimal(".4")
                 let ret = player.p.investment.points.div(10000).pow(investmentExponent)
-                if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(5)
+                if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(tmp.e.clickables[21].negEffect)
                 if (hasMilestone("s", 1)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
-                if (hasMilestone("a", 6)) ret = ret.mul(1.01**(player.a.milestones.length+player.a.achievements.length-28))
+                if (hasMilestone("a", 6)) ret = ret.mul(1.01**(player.a.achievements.length-21))
                 if (hasAchievement("a", 85)) ret = ret.mul(1.5)
                 
                 let softcapStart = tmp.p.buyables[12].softcap
@@ -799,7 +792,7 @@ addLayer("p", {
                 // reset data, keep investment 2, lose investment
                 investmentReset(true, false)
             },
-            unlocked:() => hasUpgrade("p", 42),
+            unlocked:() => hasUpg("p", 42),
             softcap() {
                 let ret = new Decimal("1000")
                 ret = ret.mul(tmp.s.stored_dollars.effects[4])
@@ -810,7 +803,7 @@ addLayer("p", {
                 let ret = new Decimal("5000")
                 if (hasMilestone("s", 5)) ret = ret.mul(tmp.s.stored_expansion.effects[7]) 
                 ret = ret.mul(tmp.s.stored_dollars.effects[4])
-                if (hasUpgrade("sys", 21)) ret = ret.mul(2)
+                if (hasUpg("sys", 21)) ret = ret.mul(2)
                 ret = ret.mul(tmp.quests.bars.dollarGainBar.reward)
                 if (hasAchievement("a", 102)) ret = ret.mul(1.1)
 
@@ -841,7 +834,7 @@ addLayer("p", {
                 let effFormula1 = "log2(2*Investment)<sup>x</sup><br>"
                 let effFormula2 = format(player.p.investment.points.mul(2).log2()) + "<sup>x</sup><br>"
                 let costFormula = "<b><h3>Cost Formula:</h3></b><br>"
-                if (hasUpgrade("e", 13)) costFormula = costFormula + "2e5*2^(x/" + format(buyableEffect("p", 22)) + ")<sup>2</sup>"
+                if (hasUpg("e", 13)) costFormula = costFormula + "2e5*2^(x/" + format(buyableEffect("p", 22)) + ")<sup>2</sup>"
                 else costFormula = costFormula + "2e5*2^x<sup>2</sup>"
                 return effFormulaBase + effFormula1 + effFormula2 + "<br>" + costFormula
             },
@@ -857,13 +850,13 @@ addLayer("p", {
                 return effect
             },
             canAfford() {
-                return this.unlocked() && hasUpgrade("p", 31) && player.p.investment.points.gt(1) && player.p.points.gt(this.cost())
+                return this.unlocked() && hasUpg("p", 31) && player.p.investment.points.gt(1) && player.p.points.gt(this.cost())
             },
             buy() {
                 player.p.points = player.p.points.sub(this.cost())
                 addBuyables("p", 21, 1)
             },
-            unlocked:() => hasUpgrade("p", 31) || player.sys.unlocked
+            unlocked:() => hasUpg("p", 31) || player.sys.unlocked
         },
         22: {
             title: "Education II",
@@ -871,7 +864,7 @@ addLayer("p", {
                 let baseCost = 5e7
                 let base = 2.1
                 let exp = getBuyableAmount("p", 22)
-                if (hasUpgrade("p", 64)) exp = exp.div(upgradeEffect("p", 64))
+                if (hasUpg("p", 64)) exp = exp.div(upgEff("p", 64))
                 exp = exp.pow(1.9)
                 return exp.pow_base(base).mul(baseCost)
             },
@@ -889,7 +882,7 @@ addLayer("p", {
                 let effFormula1 = "1 + log4(1+Penny Expansions)/8 * x<br>"
                 let effFormula2 = "1 + " + format(player.e.penny_expansion.points.add(1).log(4).div(8)) + " * x<br>"
                 let costFormula = "<b><h3>Cost Formula:</h3></b><br>"
-                if (hasUpgrade("p", 64)) costFormula = costFormula + "5e7*2.1^(x/" + format(upgradeEffect("p", 64)) + ")<sup>1.9</sup>"
+                if (hasUpg("p", 64)) costFormula = costFormula + "5e7*2.1^(x/" + format(upgEff("p", 64)) + ")<sup>1.9</sup>"
                 else costFormula = costFormula + "5e7*2.1^x<sup>1.9</sup>"
                 return effFormulaBase + effFormula1 + effFormula2 + "<br>" +  costFormula
             },
@@ -902,25 +895,24 @@ addLayer("p", {
                 let softcapStart = this.softcapStart()
                 let softcapPower = new Decimal(".2")
                 if (effect.gte(softcapStart)) effect = softcap(effect, softcapStart, softcapPower)
-                    // effect = effect.pow(softcapPower).times(softcapStart.pow(decimalOne.sub(softcapPower)))
 
                 return effect
             },
             softcapStart() {
                 let ret = new Decimal("2")
                 if (hasMilestone("s", 2)) ret = tmp.s.stored_investment.effects[4]
-                if (hasUpgrade("sys", 15)) ret = ret.mul(upgradeEffect("sys", 15))
+                if (hasUpg("sys", 15)) ret = ret.mul(upgEff("sys", 15))
 
                 return ret
             },
             canAfford() {
-                return this.unlocked() && player.p.points.gt(this.cost()) && hasUpgrade("e", 13)
+                return this.unlocked() && player.p.points.gt(this.cost()) && hasUpg("e", 13)
             },
             buy() {
                 player.p.points = player.p.points.sub(this.cost())
                 addBuyables("p", 22, 1)
             },
-            unlocked:() => (hasUpgrade("e", 13) && hasUpgrade("p", 31)) || player.sys.unlocked
+            unlocked:() => (hasUpg("e", 13) && hasUpg("p", 31)) || player.sys.unlocked
         },
         23: {
             title: "Education III",
@@ -935,7 +927,7 @@ addLayer("p", {
             },
             coefficient:() => {
                 let ret = .25
-                if (hasUpgrade("sys", 25)) ret = ret + upgradeEffect("sys", 25)
+                if (hasUpg("sys", 25)) ret = ret + upgEff("sys", 25)
                 return ret
             },
             display() {
@@ -996,27 +988,28 @@ addLayer("p", {
         }
 
         
-        if ((hasUpgrade("e", 15) && !hasMilestone("sys", 0)) || (hasMilestone("sys", 0) && player.sys.autoEduBuyable)) {
+        if ((hasUpg("e", 15) && !hasMilestone("sys", 0)) || (hasMilestone("sys", 0) && player.sys.autoEduBuyable)) {
             player.p.autoBuyableCooldown += diff
 
             let divisor = 1
-            if (hasUpgrade("e", 35)) divisor *= 2.5
-            if (hasUpgrade("e", 45)) divisor *= !hasMilestone("sys", 5) ? 8 : 10
+            if (hasUpg("e", 35)) divisor *= 2.5
+            if (hasUpg("e", 45)) divisor *= !hasMilestone("sys", 5) ? 8 : 10
             if (hasMilestone("sys", 1)) divisor *= 2
             if (hasMilestone("sys", 4)) divisor *= 2
+            if (hasMilestone("sys", 9)) divisor *= 4
             let cooldown = 2.5 / divisor
 
             while (player.p.autoBuyableCooldown >= cooldown) {
                 if (canBuyBuyable("p", 21)) {
                     addBuyables("p", 21, 1)
                     updateBuyableTemp("p")
-                    player.sys.bestEducation1InReset = player.p.buyables[21].max(player.sys.bestEducation1InReset)
                 } else if (canBuyBuyable("p", 22)) {
                     addBuyables("p", 22, 1)
                     updateBuyableTemp("p")
                 }
                 player.p.autoBuyableCooldown -= cooldown
             }
+            player.sys.bestEducation1InReset = player.p.buyables[21].max(player.sys.bestEducation1InReset)
         }
 
         if (hasMilestone("sys", 5)) player.sys.bestPenniesInReset = player.sys.bestPenniesInReset.max(player.p.points)
@@ -1031,9 +1024,17 @@ addLayer("p", {
             let passiveInvGain = tmp.p.buyables[11].gain.mul(percent).mul(diff)
             player.p.investment.points = player.p.investment.points.add(passiveInvGain)
         }
+
+        if (tmp.a.achievements[53].unlocked && !player.a.achievements.includes("53") && player.p.points.gte(1e12) && player.p.upgrades.length <= 8) {
+            player.a.achievements.push("53")
+            doPopup("achievement", tmp.a.achievements[53].name, "Achievement Gotten!", 3, tmp.a.color)
+            player.tm.unlocked = true
+        }
     },
     automate() {
-        if (!hasUpgrade("p", 31) && hasUpgrade("e", 15) && canAffordUpgrade("p", 31)) 
+        if (tmp.sys.unlocked && !player.sys.autoPennyUpg) return
+
+        if (!hasUpg("p", 31) && hasUpg("e", 15) && canAffordUpgrade("p", 31)) 
             buyUpg("p", 31)
 
         if (hasMilestone("sys", 5)) {
@@ -1044,20 +1045,20 @@ addLayer("p", {
                 else if (isPlainObject(tmp.p.upgrades[id]) && (layers.p.upgrades[id].canAfford === undefined || layers.p.upgrades[id].canAfford() === true))
                     buyUpg("p", id) 
             }
-        } else if (hasUpgrade("e", 25) || (hasMilestone("sys", 0) && player.sys.autoPennyUpg) && player.p.autoUpgCooldown == 0) {
+        } else if (hasUpg("e", 25) || hasMilestone("sys", 0) && player.p.autoUpgCooldown == 0) {
             let upgIndices = [11, 12, 13, 14, 15, 21, 22]
             if (hasMilestone("sys", 4) && player.sys.autoWNBP) upgIndices.push(23)
             upgIndices = upgIndices.concat([24, 25, 31, 32, 33, 34, 35])
-            if (hasUpgrade("e", 45)) upgIndices.push(41, 42, 43, 44, 45)
+            if (hasUpg("e", 45)) upgIndices.push(41, 42, 43, 44, 45)
             function findUpg(index) {
-                return !hasUpgrade("p", index)
+                return !hasUpg("p", index)
             }
             upgIndices = upgIndices.filter(findUpg)
             for (i = 0; i < upgIndices.length; i++) {
                 let upgIndex = upgIndices[i]
                 if (canAffordUpgrade("p", upgIndex)) {
                     player.p.autoUpgCooldown = .5
-                    if (hasUpgrade("e", 45)) player.p.autoUpgCooldown = 1/3 // 3 per second
+                    if (hasUpg("e", 45)) player.p.autoUpgCooldown = 1/3 // 3 per second
                     buyUpg("p", upgIndex)
                     break
                 }
@@ -1070,7 +1071,7 @@ addLayer("p", {
                 "main-display",
                 ["display-text",
                     function() {
-                        if (!hasUpgrade("p", 25)) return ""
+                        if (!hasUpg("p", 25)) return ""
                         return "Tax divides penny gain by " + format(penniesTaxFactor()) + "<br>"
                             + "Tax begins at " + format(pennyTaxStart()) + " pennies<br><br>"
                     }
@@ -1088,7 +1089,7 @@ addLayer("p", {
                     function() {
                         let ret = "You currently have " + format(player.points) + " points<br>"
                             + "Your best pennies is " + formatWhole(player.p.best) 
-                        if (hasUpgrade("p", 52)) ret = ret + `<br>Your current reset time is ${timeDisplay(player.resetTime)}`
+                        if (hasUpg("p", 52)) ret = ret + `<br>Your current reset time is ${timeDisplay(player.resetTime)}`
                         return ret
                     }
                 ],
@@ -1101,7 +1102,7 @@ addLayer("p", {
                 "main-display",
                 ["display-text",
                     function() {
-                        if (!hasUpgrade("p", 25)) return ""
+                        if (!hasUpg("p", 25)) return ""
                         return "Tax divides penny gain by " + format(penniesTaxFactor()) + "<br>"
                             + "Tax begins at " + format(pennyTaxStart()) + " pennies<br><br>"
                     }
@@ -1124,12 +1125,12 @@ addLayer("p", {
                     }
                 ],
                 "blank",
-                ["display-text", "Press shift to see useful formulas and values (reload the page if it doesn't work)"],
+                ["display-text", "Press shift to see useful formulas and values (mobile users can use the shift down option)"],
                 "buyables", 
                 "blank"
             ],
             unlocked(){
-                return hasUpgrade("p", 25)
+                return hasUpg("p", 25)
             },
         },
         "Info": {
@@ -1138,7 +1139,7 @@ addLayer("p", {
                 ["microtabs", "info"]
             ],
             unlocked(){
-                return hasUpgrade("p", 25)
+                return hasUpg("p", 25)
             },
         }
     },
@@ -1149,7 +1150,7 @@ addLayer("p", {
                     ["display-text", function() {
                         let ret = "<br>Investment is used in a number of places to help boost overall progression. "
                             + "Investing will reset most upgrades (including 3rd row and beyond),  current points, current pennies, " 
-                        if (hasUpgrade("p", 31)) ret = ret + "best pennies, and Education buyables.<br><br>"
+                        if (hasUpg("p", 31)) ret = ret + "best pennies, and Education buyables.<br><br>"
                         else ret = ret + " and best pennies.<br><br>"
                         ret = ret + "The first effect that investment has is a direct boost to your point gain, which is " +
                             "given by the Now We're Getting Somewhere... upgrade."
@@ -1195,7 +1196,7 @@ addLayer("p", {
                     + "the <b>excess</b> value will be raised to a softcap exponent of .5. "
                     + "This effectively square roots penny gain on reset after the starting value of 1e9 pennies."
                     + "<br><br>Similar softcaps are applied to certain buyables which you can find in the Production tab. Their softcap "
-                    + "exponents and starting values are also shown in that tab. Most softcaps that are applied in the future "
+                    + "exponents and starting values are also shown in that tab. Most (relevant) softcaps that are applied in the future "
                     + "will be made clear to you in a similar way.<br><br>"]
                 ]
             }

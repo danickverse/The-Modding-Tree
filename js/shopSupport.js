@@ -5,23 +5,31 @@ function getShopData(id) {
             max = 3; title = "BEGINNER PACK"; cost = 1
             display = `Multiply post-nerf Penny gain, Expansion gain, effective Apple Trees, 
                         Time Flux, Global ELO, and loot gain by 1.2x per level, 
-                        and max TSLS (see Info) is reduced by 50 seconds per level`
+                        and max TSLS (see Info) is reduced by 20 seconds per level`
             effect = 1.2; type = "compounding"; break
         case 102:
-            max = 5; title = "STO INV EX"; cost = 2
-            display = `The Stored Investment softcap is increased by .02 per level (starts at .2)`
+            max = 5; title = "STO EX"; cost = 3
+            display = `The Stored Investment/Expansion gain softcap exponents
+                are increased by .02 per level
+                <br>(Softcap exponents start at .2/.5 respectively)`
             effect = .02; type = "additive"; break
         case 103:
-            max = 5; title = "EXP INV EX"; cost = 2
+            max = 5; title = "EXP INV EX"; cost = 3
             display = `Raise the Expansion Investment hardcap by ^1.01 per level`
             effect = 1.01; type = "compoundingExp"; break
         case 104:
-            max = 10; title = "CONV EX"; cost = 2
+            max = 10; title = "CONV EX"; cost = 5
             display = `Multiply the conversion rate by 1.05x per level`
             effect = 1.05; type = "compounding"; break
         case 105:
-            max = 10; title = ""
-        // auto-skip stages
+            max = 10; title = "SPECK EX"; cost = 5
+            display = 'Gain 1.25x more specks per level'
+            effect = 1.25; type = "compounding"; break
+        case 106:
+            max = 2; title = "TM ADV"; cost = 10
+            display = `Level 1: Unlock Temporal Sacrifice and a Temporal Power buyable in the Time Machine
+                       Level 2: Unlock the Sluggish Challenge in the Time Machine`; 
+            type = "unlock"; break
         default: throw Error(`Missing Shop grid case for id: ${id}`)
     }
     return {
@@ -36,12 +44,14 @@ function shopEffect(id) {
 }
 
 function updateShopDisplay(layer, id, exit=false) {
-    if (exit) { player.quests.specks.shopDisplay = ""; return }
     if (layer != "quests") return
+
+    if (exit) { player.quests.specks.shopDisplay = "Hover over a shop item for more information"; return }
 
     let shopData = getShopData(id)
     let levels = getGridData(layer, id)
 
+    let title = shopData.title
     let cost = `Cost: ${tmp.quests.grid.getCost(levels, id)} Specks`
     let dis = shopData.shopDisplay
     let eff = "Current effect: "
@@ -49,16 +59,18 @@ function updateShopDisplay(layer, id, exit=false) {
 
     switch (shopData.type) {
         case "compounding": 
-            if (id == 101) eff += effVal + "x, -" + timeDisplay(levels * 50, false);
+            if (id == 101) eff += effVal + "x, -" + timeDisplay(levels * 20, false);
             else eff += effVal + "x"
             break
         case "compoundingExp": eff += "^" + effVal; break;
         case "additive": eff += "+" + effVal; break;
+        case "unlock": 
+            if (id == 106) eff = ""; break;
         case "other":
             
             // do others
         default: throw Error("Shop item has invalid type: " + shopData.type)
     }
 
-    player.quests.specks.shopDisplay = `${cost}<br><br>${dis}<br><br>${eff}`
+    player.quests.specks.shopDisplay = `<h3>${title}</h3><br><br>${cost}<br><br>${dis}<br><br>${eff}`
 }

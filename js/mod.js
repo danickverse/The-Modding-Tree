@@ -9,7 +9,7 @@ let modInfo = {
 		"expansion.js", "storage.js", "system.js",
 		"bills.js", "banks.js", //"factory.js",
 		// remember to uncomment statement in getPointGen() when uncomment factory.js
-		"quests.js", "shopSupport.js", "effects.js"],
+		"quests.js", "shopSupport.js", "effects.js", "tm.js"],
 	allowSmall: false,
 
 	discordName: "",
@@ -23,11 +23,19 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.3.2",
+	num: "0.2.5",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.2.5</h3><br>
+		- Added the Time Machine, a side feature unlocked by the 23rd Achievement<br>
+		- Adjusted Shop values/effects and added more Shop items<br>
+		- Rebalanced and revamped a few early game features, notably buffing the first achievement milestone's effect,
+			modifying cost scaling for Penny Upgrades 13/14, buffing Achievement 14's reward, adding the Time Machine,
+			and much more, to craft a smoother experience<br>
+		- <br><br>
+
 	<h3>v0.2.3.2</h3><br>
 		- Emergency patch for endgame bug<br><br>
 
@@ -231,34 +239,34 @@ function getPointGen() {
 		return new Decimal(0)
 
 	let baseGain = decimalOne
-	if (hasUpgrade('p', 12)) baseGain = baseGain.add(upgradeEffect('p', 12))
+	if (hasUpg('p', 12)) baseGain = baseGain.add(upgEff('p', 12))
 	if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) baseGain = baseGain.add(1)
-	if (hasUpgrade("sys", 23)) baseGain = baseGain.add(upgradeEffect("sys", 23))
+	if (hasUpg("sys", 23)) baseGain = baseGain.add(upgEff("sys", 23))
 
 	let gainMult = decimalOne
-	if (hasUpgrade('p', 11)) gainMult = gainMult.mul(upgradeEffect('p', 11))
-	if (hasUpgrade('p', 15)) gainMult = gainMult.mul(upgradeEffect('p', 15))
-	if (hasUpgrade('p', 21)) gainMult = gainMult.mul(upgradeEffect('p', 21))
-	if (hasUpgrade('p', 22)) gainMult = gainMult.mul(upgradeEffect('p', 22))
-	if (hasUpgrade('p', 23)) gainMult = gainMult.mul(upgradeEffect('p', 23))
-	if (hasUpgrade('p', 25)) gainMult = gainMult.mul(upgradeEffect('p', 25))
-	if (hasUpgrade('p', 42)) gainMult = gainMult.mul(upgradeEffect('p', 42))
+	if (hasUpg('p', 11)) gainMult = gainMult.mul(upgEff('p', 11))
+	if (hasUpg('p', 15)) gainMult = gainMult.mul(upgEff('p', 15))
+	if (hasUpg('p', 21)) gainMult = gainMult.mul(upgEff('p', 21))
+	if (hasUpg('p', 22)) gainMult = gainMult.mul(upgEff('p', 22))
+	if (hasUpg('p', 23)) gainMult = gainMult.mul(upgEff('p', 23))
+	if (hasUpg('p', 25)) gainMult = gainMult.mul(upgEff('p', 25))
+	if (hasUpg('p', 42)) gainMult = gainMult.mul(upgEff('p', 42))
 	if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
-	if (hasUpgrade("p", 61)) gainMult = gainMult.mul(upgradeEffect('p', 61))
+	if (hasUpg("p", 61)) gainMult = gainMult.mul(upgEff('p', 61))
 
 	let gainExp = decimalOne
-	if (hasUpgrade("p", 52)) gainExp = gainExp.add(upgradeEffect("p", 52))
-	if (hasUpgrade("sys", 11)) gainExp = gainExp.mul(upgradeEffect("sys", 11))
+	if (hasUpg("p", 52)) gainExp = gainExp.add(upgEff("p", 52))
+	if (hasUpg("sys", 11)) gainExp = gainExp.mul(upgEff("sys", 11))
 	if (inChallenge("s", 11)) gainExp = gainExp.div(2)
 	if (inChallenge("s", 12)) gainExp = gainExp.div(4)
 
 	// direct effects to gain
 	let directMult = decimalOne
-	if (inChallenge("s", 11) && hasUpgrade("s", 11)) directMult = directMult.mul(5)
+	if (inChallenge("s", 11) && hasUpg("s", 11)) directMult = directMult.mul(5)
 
-	if (getClickableState("e", 21)) directMult = directMult.div(5)
+	if (getClickableState("e", 21)) directMult = directMult.div(tmp.e.clickables[21].negEffect)
 	if (getClickableState("e", 31)) directMult = directMult.mul(clickableEffect("e", 31))
-	if (getClickableState("e", 32)) directMult = directMult.div(10)
+	if (getClickableState("e", 32)) directMult = directMult.div(tmp.e.clickables[32].negEffect)
 
 	directMult = directMult.mul(buyableEffect("p", 23))
 
@@ -376,15 +384,23 @@ function fixOldSave(oldVersion){
 		player.quests.completions.wnbpBar = Math.min(3, player.quests.completions.wnbpBar)
 	}
 	if (oldVersion < "0.2.3.1") {
-		if (hasMilestone("bills", 0)) {
+		if (player.bills.milestones.includes('0') || player.bills.milestones.includes(0)) {
 			player.bills.milestones.pop()
 		}
 	}
 	if (oldVersion < "0.2.3.2") {
-		if (!player.bills.milestones.includes('1')) {
+		if (!player.bills.milestones.includes('1') || !player.bills.milestones.includes(1)) {
 			player.bills.milestones = []
 		} else {
 			player.bills.milestones = ['1']
 		}
+	}
+	if (oldVersion < "0.2.3.3") {
+		player.quests.specks.totalPurchases = getGridData("quests", 101) + getGridData("quests", 102) + getGridData("quests", 103) + getGridData("quests", 104)
+		if (player.bills.highestZone >= 10 && !hasMilestone("bills", 1)) player.bills.milestones.push('1')
+		player.quests.completions.acceleratorBar = Math.min(player.quests.completions.acceleratorBar, 3)
+	}
+	if (oldVersion < "0.2.5") {
+		if (player.a.achievements.includes('53')) player.tm.unlocked = true 
 	}
 }

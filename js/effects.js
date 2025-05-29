@@ -1,7 +1,7 @@
 addLayer("effects", {
     symbol: "EF",
     row: "side",
-    position: 2,
+    position: 3,
     type: "none",
     color: "white",
     startData() { 
@@ -23,11 +23,12 @@ addLayer("effects", {
             content: [
                 ["display-text", function() {
                     let ret = "You currently have " + player.a.achievements.length + " achievements. "
-                    if (hasUpgrade("p", 23)) ret += `As seen in the Achievements layer, this number directly...<br>
-                        <br>Multiplies point gain by ${format(upgradeEffect("p", 21))}`
+                        + `As seen in the Achievements layer, this number directly...<br>`
+                    if (hasUpgrade("p", 21)) ret += `<br>Multiplies point gain by ${format(upgradeEffect("p", 21))}`
+                    else { ret += `<br>Does nothing`; return ret }
                     if (hasUpgrade("p", 35)) ret += "<br>Multiplies penny gain by " + format(upgradeEffect("p", 35))
                     if (hasUpgrade("e", 24)) ret += "<br>Multiplies expansion/penny expansion gain by " + format(upgradeEffect("e", 24))
-                    if (hasMilestone("a", 8)) ret += "<br>and multiplies reset time by " + format(1 + (player.a.achievements.length ** 1.5)/1000, 4)
+                    if (hasMilestone("a", 8)) ret += "<br>Multiplies reset time by " + format(1 + (player.a.achievements.length ** 1.5)/1000, 4)
 
                     if (hasAchievement("a", 25)) {
                         ret += ".<br><br>Some achievements have specific effects. These effects include...<br>"
@@ -37,9 +38,9 @@ addLayer("effects", {
                         let pennyBoost = 1
                         let conversionRateBaseBoost = 0
                         if (hasAchievement("a", 34)) {
-                            investmentBoost *= 1.1
+                            investmentBoost *= 1.337
                             expansionBoost *= 1.1
-                            pennyBoost *= 1.1
+                            pennyBoost *= 1.337
                         }
                         if (hasAchievement("a", 44)) investmentBoost *= 1.2
                         if (hasAchievement("a", 85)) allInvestmentBoost *= 1.2
@@ -107,8 +108,8 @@ addLayer("effects", {
                     ret += "<br>Multiply penny, expansion, and point gain by " + format(upgradeEffect("p", 42)) + "x"
                     if (hasUpgrade("p", 43)) {
                         let boost = upgradeEffect("p", 42)
-                        if (hasUpgrade("p", 53)) boost = boost.mul(upgradeEffect("p", 53))
                         ret += "<br>Multiply investment gain by " + format(boost)
+                        ret += "<br>Multiply the Useless limit by " + format(boost)
                     }
                     if (hasUpgrade("p", 45)) ret += "<br>Multiply PTS (see Taxes) by " + format(upgradeEffect("p", 42)) + "x"
                     if (player.s.unlocked) ret += "<br>Multiply stored investment/stored expansion gain by " + format(upgradeEffect("p", 42).pow(.25)) + "x"

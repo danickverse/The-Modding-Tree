@@ -14,8 +14,8 @@ function createSysExpUpgrade(tit, desc, effectVars) {
         currencyDisplayName: "System Expansion",
         currencyInternalName: "points",
         currencyLocation:() => player.e.system_expansion,
-        canAfford() { return this.id < 120 ? true : hasUpgrade("e", this.id - 10) },
-        unlocked() { return this.id % 10 == 5 ? false : hasUpgrade("e", 111) }
+        canAfford() { return this.id < 120 ? true : hasUpg("e", this.id - 10) },
+        unlocked() { return this.id % 10 == 5 ? false : hasUpg("e", 111) }
     }
     Object.assign(ret, effectVars)
     return ret
@@ -50,12 +50,12 @@ addLayer("e", {
     getNextAt() {return decimalZero},
     baseAmount() {
         let boost = decimalZero
-        if (hasMilestone("s", 0) && (hasUpgrade("e", 11) || inChallenge("s", 12)) && player.s.stored_expansion.points.gt(0)) {
+        if (hasMilestone("s", 0) && (hasUpg("e", 11) || inChallenge("s", 12)) && player.s.stored_expansion.points.gt(0)) {
             // factorPercent = percent of upg effect that is used to increase base gain
             let boostPercent = tmp.s.stored_expansion.effects[2]
-            boost = upgradeEffect("e", 11).mul(boostPercent).div(100)
+            boost = upgEff("e", 11).mul(boostPercent).div(100)
             if (inChallenge("s", 12) && player.points.gt(decimalZero) && player.highestPointsEver.lt(1e10)) {
-                //console.log(upgradeEffect("e", 11).mag)
+                //console.log(upgEff("e", 11).mag)
                 //throw new Error("")
                 // ISSUE IS IN UPGRADE E11 SOMEHOW
                 // would use incorrect effect for a single tick due to game loop order
@@ -64,34 +64,34 @@ addLayer("e", {
         }
 
         if (player.highestPointsEver.lt(1e10)) return decimalZero
-        let base = new Decimal(player.highestPointsEver.log10().log10().sub(1))
+        let base = hasUpg("sys", 34) ? player.highestPointsEver.log2().log2() : player.highestPointsEver.log10().log10().sub(1)
         return base.add(boost)
     },
     gainMult() {
         let ret = decimalOne
-        if (hasUpgrade("e", 24)) ret = ret.mul(upgradeEffect("e", 24))
-        if (hasUpgrade("p", 42)) ret = ret.mul(upgradeEffect("p", 42))
+        if (hasUpg("e", 24)) ret = ret.mul(upgEff("e", 24))
+        if (hasUpg("p", 42)) ret = ret.mul(upgEff("p", 42))
 
         if (hasAchievement("a", 32)) ret = ret.mul(1.1)
         if (hasAchievement("a", 34)) ret = ret.mul(1.1)
         if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
 
         if (getClickableState("e", 21)) ret = ret.mul(clickableEffect("e", 21))
-        if (getClickableState("e", 22)) ret = ret.div(5)
+        if (getClickableState("e", 22)) ret = ret.div(tmp.e.clickables[22].negEffect)
 
         ret = ret.mul(tmp.s.stored_expansion.effects[1])
 
         ret = ret.mul(1.25**player.sys.milestones.length)
 
-        if (hasUpgrade("bills", 23)) ret = ret.mul(upgradeEffect("bills", 23))
+        if (hasUpg("bills", 23)) ret = ret.mul(upgEff("bills", 23))
             
         ret = ret.mul(shopEffect(101))
         return ret
     },
     gainExp() {
         let exp = 1
-        if (hasUpgrade("e", 111)) exp *= upgradeEffect("e", 111)[0]
-        if (hasUpgrade("e", 121)) exp *= upgradeEffect("e", 121)
+        if (hasUpg("e", 111)) exp *= upgEff("e", 111)[0]
+        if (hasUpg("e", 121)) exp *= upgEff("e", 121)
         
         return exp
     },
@@ -123,6 +123,8 @@ addLayer("e", {
         if (layer == "sys") {
             let keptUpgrades = player.e.upgrades.filter((index) => index < 200 && index > 100)
             let bestSystemExp = player.e.system_expansion.best
+            let keep = []
+            if (hasMilestone("a", 12)) keep.push("clickables")
             layerDataReset("e")
             player.e.upgrades = keptUpgrades
             player.e.system_expansion.best = bestSystemExp
@@ -142,61 +144,58 @@ addLayer("e", {
     canReset() {return false},
     lossRate() {
         let ret = .003
-        if (hasUpgrade("bills", 22)) ret = .01
-        if (hasUpgrade("e", 111)) ret += upgradeEffect("e", 111)[1]
+        if (hasUpg("bills", 22)) ret = .01
+        if (hasUpg("e", 111)) ret += upgEff("e", 111)[1]
         return ret
     },
     penny_expansion: {
         gain() {
             if (player.e.points.lt(decimalOne)) return decimalZero
             let ret = this.baseGain().times(this.gainMult()) // base gain
-            if (getClickableState("e", 21)) ret = ret.div(5)
+            if (getClickableState("e", 21)) ret = ret.div(tmp.e.clickables[21].negEffect)
             if (getClickableState("e", 22)) ret = ret.mul(clickableEffect("e", 22))
             return ret
         },
         gainMult() {
             let ret = decimalOne
-            if (hasUpgrade("e", 24)) ret = ret.times(upgradeEffect("e", 24))
+            if (hasUpg("e", 24)) ret = ret.times(upgEff("e", 24))
             if (hasMilestone("a", 1)) ret = ret.times(1.05**player.a.milestones.length)
             if (tmp.s.challenges[12].unlocked) ret = ret.mul(challengeEffect("s", 12)[0])
-            if (inChallenge("s", 12) && hasMilestone("s", 5)) ret = ret.mul(upgradeEffect("p", 14))
+            if (inChallenge("s", 12) && hasMilestone("s", 5)) ret = ret.mul(upgEff("p", 14))
             ret = ret.mul(1.25**player.sys.milestones.length)
-            if (hasUpgrade("sys", 24)) ret = ret * upgradeEffect("sys", 24)
+            if (hasUpg("sys", 24)) ret = ret * upgEff("sys", 24)
             return ret
         },
         baseGain() {
             let divisor = new Decimal(200)
             if (hasMilestone("s", 4)) divisor = divisor.sub(tmp.s.stored_expansion.effects[6]) 
             let ret = new Decimal(player.e.points.div(divisor))
-            if (hasUpgrade("e", 11)) ret = ret.add(upgradeEffect("e", 11))
+            if (hasUpg("e", 11)) ret = ret.add(upgEff("e", 11))
             return ret
         },
         lossRate() {
             let ret = .01
             if (hasMilestone("s", 1)) ret = ret * 9 / 10
-            if (hasUpgrade("sys", 24)) ret = ret * 10
-            if (hasUpgrade("e", 111)) ret += upgradeEffect("e", 111)[1]
+            if (hasUpg("sys", 24)) ret = ret * 10
+            if (hasUpg("e", 111)) ret += upgEff("e", 111)[1]
 
             return ret
         },
         staticMult() {
-            return !hasUpgrade("e", 35) ? 2 : (!hasMilestone("a", 6) ? 5 : 8)
+            return tmp.e.upgrades[51].unlocked ? 100 : !hasUpg("e", 35) ? 2 : (!hasMilestone("a", 6) ? 5 : 8)
         }
     },
     system_expansion: {
-        unlocked() { return hasUpgrade("bills", 22) },
+        unlocked() { return hasUpg("bills", 22) },
         gain() {
             if (!this.unlocked() || player.e.points.lt(decimalOne)) return decimalZero
             let ret = this.baseGain().times(this.gainMult()).pow(this.gainExp())
-            
-            // applies only to penny expansion, might let it affect system expansion?
-            // if (getClickableState("e", 21)) ret = ret.div(5)
-            // if (getClickableState("e", 23)) ret = ret.mul(clickableEffect("e", 23))
+        
             return ret
         },
         gainMult() {
             let ret = decimalOne
-            if (hasUpgrade("e", 112)) ret = ret.mul(upgradeEffect("e", 112))
+            if (hasUpg("e", 112)) ret = ret.mul(upgEff("e", 112))
             
             return ret
         },
@@ -225,7 +224,7 @@ addLayer("e", {
         },
         lossRate() {
             let ret = .01
-            if (hasUpgrade("e", 111)) ret += upgradeEffect("e", 111)[1]
+            if (hasUpg("e", 111)) ret += upgEff("e", 111)[1]
 
             return ret
         },
@@ -236,7 +235,7 @@ addLayer("e", {
         },
         // rowsUnlocked() {
         //     let ret = []
-        //     if (hasUpgrade("e", 111)) ret += 1
+        //     if (hasUpg("e", 111)) ret += 1
 
         //     if (3 <= player.e.upgrades.filter(
         //             (index) => Math.floor(index / 10) == 11
@@ -248,31 +247,44 @@ addLayer("e", {
     upgrades: {
         11: {
             title: "It's Only Reasonable",
-            description:() => {
-                if (player.shiftDown) {
-                    if (hasMilestone("sys", 2)) return "Uses Expansion Upgrades and System Upgrades<sup>2</sup>"
-                    return "Uses Expansion Upgrades"
+            description() {
+                if (!hasUpg("e", 51)) {
+                    if (player.shiftDown) {
+                        if (hasMilestone("sys", 2)) return "Uses Expansion Upgrades and System Upgrades<sup>2</sup>"
+                        return "Uses Expansion Upgrades"
+                    }
+                    let ret = "Increases base penny expansion gain by "
+                    if (!hasUpg("e", 21)) ret = ret +  "log4(4 + Upgrades<sup>*</sup>) / 50"
+                    else if (!hasUpg("e", 31)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 10"
+                    else if (!hasUpg("e", 41)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 4"
+                    else ret = ret + "log2(4 + Upgrades<sup>*</sup>) * 5"
+                    return ret
                 }
-                let ret = "Increases base penny expansion gain by "
-                if (!hasUpgrade("e", 21)) ret = ret +  "log4(4 + Upgrades<sup>*</sup>) / 50"
-                else if (!hasUpgrade("e", 31)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 10"
-                else if (!hasUpgrade("e", 41)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 4"
-                else ret = ret + "log2(4 + Upgrades<sup>*</sup>) * 5"
-                return ret
+                // has upg 51
+                if (player.shiftDown) {
+                    return "U = Expansion Upgrades * System Upgrades<sup>2</sup>"
+                }
+                return "Multiplies penny expansion gain by log2(U<sup>*</sup>)"
             },
             cost() { return expansionUpgradeCost(this.id) },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            effect:() => {
-                let upgCount = 4 + player.e.upgrades.length
-                if (hasMilestone("sys", 2)) upgCount += player.sys.upgrades.length ** 2
+            effect() {
+                let ret 
+                if (hasUpg("e", 51)) {
+                    let upgCount = player.e.upgrades.length * tmp.sys.getMainUpgCount ** 2
+                    return Decimal.log2(upgCount)
+                } else {
+                    let upgCount = 4 + player.e.upgrades.length
+                    if (hasMilestone("sys", 2)) upgCount += tmp.sys.getMainUpgCount ** 2
 
-                let ret
-                if (hasUpgrade("e", 41)) ret = Decimal.log2(upgCount).mul(5)
-                else if (hasUpgrade("e", 31)) ret = Decimal.ln(upgCount).div(4)
-                else if (hasUpgrade("e", 21)) ret = Decimal.ln(upgCount).div(10)
-                else ret = Decimal.log(upgCount, 4).div(50)
+                    if (hasUpg("e", 51)) ret = Decimal.log(upgCount, 1.5).mul(5)
+                    else if (hasUpg("e", 41)) ret = Decimal.log2(upgCount).mul(5)
+                    else if (hasUpg("e", 31)) ret = Decimal.ln(upgCount).div(4)
+                    else if (hasUpg("e", 21)) ret = Decimal.ln(upgCount).div(10)
+                    else ret = Decimal.log(upgCount, 4).div(50)
+                }
 
                 if (inChallenge("s", 12)) ret = ret.min(5)
 
@@ -280,22 +292,22 @@ addLayer("e", {
 
                 // let upgCount = player.e.upgrades.length
                 // if (hasMilestone("sys", 2)) upgCount += player.sys.upgrades.length ** 2
-                // if (!hasUpgrade("e", 21)) return new Decimal(Math.log(4 + upgCount)/Math.log(4)/50)
-                // if (!hasUpgrade("e", 31)) return new Decimal(Math.log(4 + upgCount)/10)
-                // if (!hasUpgrade("e", 41)) return new Decimal(Math.log(4 + upgCount)/4)
+                // if (!hasUpg("e", 21)) return new Decimal(Math.log(4 + upgCount)/Math.log(4)/50)
+                // if (!hasUpg("e", 31)) return new Decimal(Math.log(4 + upgCount)/10)
+                // if (!hasUpg("e", 41)) return new Decimal(Math.log(4 + upgCount)/4)
                 // return new Decimal(Math.log2(4 + upgCount) * 5)
             },
-            effectDisplay:() => "+" + format(upgradeEffect("e", 11))
+            effectDisplay:() => hasUpg("e", 51) ? `${format(upgEff("e", 11))}x` : "+" + format(upgEff("e", 11))
         },
         12: {
             title: "Is This Even Worth It?",
             description:() => {
                 let ret = "Increases WNBP limit exponent by Expansion"
-                if (hasUpgrade("e", 42)) ret = ret + "<sup>.11</sup>"
+                if (hasUpg("e", 42)) ret = ret + "<sup>.11</sup>"
                 else ret = ret + "<sup>.1</sup>"
-                if (!hasUpgrade("e", 22)) return ret + "/100"
-                if (!hasUpgrade("e", 32)) return ret + "/10"
-                if (!hasUpgrade("e", 42)) return ret + "/7.5"
+                if (!hasUpg("e", 22)) return ret + "/100"
+                if (!hasUpg("e", 32)) return ret + "/10"
+                if (!hasUpg("e", 42)) return ret + "/7.5"
                 return ret + "/6"
             },
             cost() { return expansionUpgradeCost(this.id) },
@@ -305,15 +317,15 @@ addLayer("e", {
             effect() {
                 let exp = .1
                 let divisor = 100
-                if (hasUpgrade("e", 22)) divisor = 10
-                if (hasUpgrade("e", 32)) divisor = 7.5
-                if (hasUpgrade("e", 42)) {
+                if (hasUpg("e", 22)) divisor = 10
+                if (hasUpg("e", 32)) divisor = 7.5
+                if (hasUpg("e", 42)) {
                     divisor = 6
                     exp = .11
                 }
                 return player.e.points.pow(exp).div(divisor).min(1.5)
             },
-            effectDisplay:() => "+" + format(upgradeEffect("e", 12), 4)
+            effectDisplay:() => "+" + format(upgEff("e", 12), 4)
         },
         13: {
             title: "Cheaper Education",
@@ -325,10 +337,9 @@ addLayer("e", {
         },
         14: {
             title: "These Actually Matter?",
-            description:() => {
-                let name = hasMilestone("a", 5) ? "There's A Coin For This?" : "Seriously"
-                return "Increases " + name + " exponent from .2 -> .8"
-            },
+            description:() => "Increases " 
+                + (hasMilestone("a", 5) ? "There's A Coin For This?" : "Seriously?")
+                + " exponent from .2 -> .8",
             cost() { return expansionUpgradeCost(this.id) },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
@@ -345,7 +356,7 @@ addLayer("e", {
                 return title + "<br>" + description + "<br><br>" + requirement
             },
             requirement() {
-                return hasUpgrade("e", 11) && hasUpgrade("e", 12) && hasUpgrade("e", 13) && hasUpgrade("e", 14)
+                return hasUpg("e", 11) && hasUpg("e", 12) && hasUpg("e", 13) && hasUpg("e", 14)
             },
             canAfford() {
                 let cost = expansionUpgradeCost(this.id)
@@ -365,7 +376,7 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 15)
+            unlocked:() => hasUpg("e", 15)
         },
         22: {
             title: "GIVE ME MORE!!!",
@@ -374,7 +385,7 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 15)
+            unlocked:() => tmp.e.upgrades[21].unlocked
         },
         23: {
             fullDisplay() {
@@ -395,13 +406,13 @@ addLayer("e", {
             onPurchase() {
                 if (!hasMilestone("sys", 4)) {
                     player.e.everUpg23 = true
-                    if (!hasUpgrade("p", 23)) player.p.upgrades.push(23)
+                    if (!hasUpg("p", 23)) player.p.upgrades.push(23)
                 }
             },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 15)
+            unlocked:() => tmp.e.upgrades[21].unlocked
         },
         24: {
             title: "Why Do These Matter???",
@@ -424,8 +435,8 @@ addLayer("e", {
                 if (inChallenge("s", 12)) ret = new Decimal("1.02")
                 return ret.pow(Math.min(player.a.achievements.length, 40)-13)
             },
-            effectDisplay:() => format(upgradeEffect("e", 24)) + "x",
-            unlocked:() => hasUpgrade("e", 15)
+            effectDisplay:() => format(upgEff("e", 24)) + "x",
+            unlocked:() => tmp.e.upgrades[21].unlocked
         },
         25: {
             fullDisplay() {
@@ -437,7 +448,7 @@ addLayer("e", {
                 return title + "<br>" + description + "<br><br>" + requirement
             },
             requirement() {
-                return hasUpgrade("e", 21) && hasUpgrade("e", 22) && hasUpgrade("e", 23) && hasUpgrade("e", 24)
+                return hasUpg("e", 21) && hasUpg("e", 22) && hasUpg("e", 23) && hasUpg("e", 24)
             },
             canAfford() {
                 let cost = expansionUpgradeCost(this.id)
@@ -445,12 +456,12 @@ addLayer("e", {
             },
             onPurchase() {
                 player.p.autoUpgCooldown = .5
-                // if (!hasUpgrade("p", 25)) player.p.upgrades.push(25)
+                // if (!hasUpg("p", 25)) player.p.upgrades.push(25)
             },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 15)
+            unlocked:() => tmp.e.upgrades[21].unlocked
         },
         31: {
             title: "It's So Beautiful",
@@ -459,7 +470,7 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 25)
+            unlocked:() => hasUpg("e", 25)
         },
         32: {
             title: "The Machine Is Hungry...",
@@ -468,7 +479,7 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 25)
+            unlocked:() => tmp.e.upgrades[31].unlocked
         },
         33: {
             title: "We Should Get A Wallet",
@@ -480,7 +491,7 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 33) || hasUpgrade("e", 25)
+            unlocked:() => hasUpg("e", 33) || tmp.e.upgrades[31].unlocked
         },
         34: {
             title: "Earning Your Pay",
@@ -493,39 +504,39 @@ addLayer("e", {
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
             effect: 1.8,
-            unlocked:() => hasUpgrade("e", 25)
+            unlocked:() => tmp.e.upgrades[31].unlocked
         },
         35: {
             fullDisplay() {
                 let title = "<h3></b>QOL 3</h3></b>"
-                let description = "Reduces investment cooldown by 5 seconds and autobuy Education buyables 2.5x faster"
+                let description = "Reduces investment cooldown by 3 seconds and autobuy Education buyables 2.5x faster"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                 if (!this.requirement()) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
             },
             requirement() {
-                return hasUpgrade("e", 31) && hasUpgrade("e", 32) && hasUpgrade("e", 33) && hasUpgrade("e", 34)
+                return hasUpg("e", 31) && hasUpg("e", 32) && hasUpg("e", 33) && hasUpg("e", 34)
             },
             canAfford() {
                 let cost = expansionUpgradeCost(this.id)
                 return player.e.penny_expansion.points.gte(cost) && this.requirement()
             },
             onPurchase() {
-                if (!hasUpgrade("p", 35)) player.p.upgrades.push(35)
+                if (!hasUpg("p", 35)) player.p.upgrades.push(35)
             },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 25)
+            unlocked:() => tmp.e.upgrades[31].unlocked
         },
         41: {
             title: "It's Compassion Is Unmatched",
-            description: "Multiply effect of upgrade three rows above this one by 20 and reduce its ln to log2",
+            description: "Multiply effect of It's Only Reasonable by 20 and reduce its ln to log2",
             cost() { return expansionUpgradeCost(this.id) },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 35)
+            unlocked:() => hasUpg("e", 35)
         },
         42: {
             title: "Maximum Overdrive",
@@ -535,7 +546,7 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 35)
+            unlocked:() => tmp.e.upgrades[41].unlocked
         },
         43: {
             fullDisplay() {
@@ -550,7 +561,7 @@ addLayer("e", {
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
             canAfford:() => player.s.milestones.length >= 3,
-            unlocked:() => hasUpgrade("e", 43) || hasUpgrade("e", 35)
+            unlocked:() => hasUpg("e", 43) || tmp.e.upgrades[41].unlocked
         },
         44: {
             title: "It's Like A Reward",
@@ -560,9 +571,38 @@ addLayer("e", {
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 35)
+            unlocked:() => tmp.e.upgrades[41].unlocked
         },
         45: {
+            fullDisplay() {
+                let title = "<h3></b>QOL 4</h3></b>"
+                let description = !hasMilestone("sys", 5) ? `Double all Focused Production buffs, autobuy one more penny upgrade 
+                    & 8x more buyables per second, autobuy from row 4` 
+                    : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 1 second"
+                let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
+                    
+                return title + "<br>" + description + "<br><br>" + requirement
+            },
+            effect() { return !hasMilestone("sys", 5) ? 2 : 3 },
+            canAfford() {
+                let cost = expansionUpgradeCost(this.id)
+                return player.e.penny_expansion.points.gte(cost) //&& (hasUpg("e", 41) && hasUpg("e", 42) && hasUpg("e", 43) && hasUpg("e", 44))
+            },
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
+            currencyLocation:() => player.e.penny_expansion,
+            unlocked:() => tmp.e.upgrades[41].unlocked
+        },
+        51: {
+            title: "Real One",
+            description: "It's Only Reasonable has a new effect, and 2nd Stored Exp. eff. is 10x stronger",
+            cost() { return expansionUpgradeCost(this.id) },
+            currencyDisplayName: "Penny Expansion",
+            currencyInternalName: "points",
+            currencyLocation:() => player.e.penny_expansion,
+            unlocked:() => hasUpg("sys", 34) && hasUpg("e", 41) && hasUpg("e", 42) && hasUpg("e", 43) && hasUpg("e", 44) && hasUpg("e", 45)
+        },
+        55: {
             fullDisplay() {
                 let title = "<h3></b>QOL 4</h3></b>"
                 let description = !hasMilestone("sys", 5) ? `Double all Focused Production buffs, autobuy one more penny upgrade 
@@ -575,15 +615,12 @@ addLayer("e", {
             effect() { return !hasMilestone("sys", 5) ? 2 : 3 },
             canAfford() {
                 let cost = expansionUpgradeCost(this.id)
-                return player.e.penny_expansion.points.gte(cost) //&& (hasUpgrade("e", 41) && hasUpgrade("e", 42) && hasUpgrade("e", 43) && hasUpgrade("e", 44))
-            },
-            onPurchase() {
-                if (!hasUpgrade("p", 45)) player.p.upgrades.push(45)
+                return player.e.penny_expansion.points.gte(cost) //&& (hasUpg("e", 41) && hasUpg("e", 42) && hasUpg("e", 43) && hasUpg("e", 44))
             },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.penny_expansion,
-            unlocked:() => hasUpgrade("e", 35)
+            unlocked:() => tmp.e.upgrades[51].unlocked
         },
         111: {
             fullDisplay() {
@@ -604,15 +641,15 @@ addLayer("e", {
             "Multiply System Expansion gain by 1.5<sup>upgrades</sup>",
             {
                 effect() { return 1.5 ** tmp.e.system_expansion.upgCount },
-                effectDisplay() { return `${format(upgradeEffect("e", this.id))}x` }
+                effectDisplay() { return `${format(upgEff("e", this.id))}x` }
             }
         ),
         113: createSysExpUpgrade(
             "Lazy Writing", 
-            "Increase the base conversion rate by 3 * Upgrades%", 
+            "Increase the base conversion rate by [Upgrades * 3]%", 
             {
                 effect() { return tmp.e.system_expansion.upgCount * 3 / 100 },
-                effectDisplay() { return `+${upgradeEffect("e", this.id) * 100}%` }
+                effectDisplay() { return `+${upgEff("e", this.id) * 100}%` }
             }
         ),
         114: createSysExpUpgrade(
@@ -620,15 +657,15 @@ addLayer("e", {
             "",
             {
                 description() {
-                    return `Multiply loot gain by ${!hasUpgrade("e", 124) ? 1.5 : "(Best Sys. Exp.)<sup>.2</sup>"} * log2(2 + Upgrades / 10)`
+                    return `Multiply loot gain by ${!hasUpg("e", 124) ? 1.5 : "(Best Sys. Exp.)<sup>.2</sup>"} * log2(2 + Upgrades / 10)`
                 },
                 effect() { 
                     let ret = new Decimal(1.5)
-                    if (hasUpgrade("e", 124)) ret = player.e.system_expansion.best.pow(.2)
+                    if (hasUpg("e", 124)) ret = player.e.system_expansion.best.pow(.2)
                     ret = ret.mul(Math.log2(2 + tmp.e.system_expansion.upgCount / 10))
                     return ret.toNumber() 
                 },
-                effectDisplay() { return `${format(upgradeEffect("e", this.id))}x` }
+                effectDisplay() { return `${format(upgEff("e", this.id))}x` }
             }
         ),
         // 115: {
@@ -642,14 +679,14 @@ addLayer("e", {
         //     currencyDisplayName: "System Expansion",
         //     currencyInternalName: "points",
         //     currencyLocation:() => player.e.system_expansion,
-        //     unlocked:() => hasUpgrade("e", 111) && player.banks.unlocked
+        //     unlocked:() => hasUpg("e", 111) && player.banks.unlocked
         // },
         121: createSysExpUpgrade(
-            "Aownfew",
+            "Ahownafew",
             "Expansion gain is raised ^1.01 per upgrade",
             {
                 effect() { return 1.01 ** tmp.e.system_expansion.upgCount },
-                effectDisplay() { return `^${format(upgradeEffect("e", this.id), 4)}` }
+                effectDisplay() { return `^${format(upgEff("e", this.id), 4)}` }
             }
         ),
         122: createSysExpUpgrade(
@@ -680,7 +717,7 @@ addLayer("e", {
             currencyDisplayName: "System Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.system_expansion,
-            unlocked() { return hasUpgrade("e", this.id - 10) }
+            unlocked() { return hasUpg("e", this.id - 10) }
         },
         132: {
             fullDisplay() {
@@ -694,7 +731,7 @@ addLayer("e", {
             currencyDisplayName: "System Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.system_expansion,
-            unlocked() { return hasUpgrade("e", this.id - 10) }
+            unlocked() { return hasUpg("e", this.id - 10) }
         },
         133: {
             fullDisplay() {
@@ -708,7 +745,7 @@ addLayer("e", {
             currencyDisplayName: "System Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.system_expansion,
-            unlocked() { return hasUpgrade("e", this.id - 10) }
+            unlocked() { return hasUpg("e", this.id - 10) }
         },
         134: {
             fullDisplay() {
@@ -722,7 +759,7 @@ addLayer("e", {
             currencyDisplayName: "System Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.system_expansion,
-            unlocked() { return hasUpgrade("e", this.id - 10) }
+            unlocked() { return hasUpg("e", this.id - 10) }
         },
         135: {
             fullDisplay() {
@@ -736,7 +773,7 @@ addLayer("e", {
             currencyDisplayName: "System Expansion",
             currencyInternalName: "points",
             currencyLocation:() => player.e.system_expansion,
-            unlocked() { return hasUpgrade("e", this.id - 10) }
+            unlocked() { return hasUpg("e", this.id - 10) }
         }
     },
     clickables: {
@@ -772,12 +809,13 @@ addLayer("e", {
                 player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
             },
             canClick:() => tmp.e.system_expansion.upgCount - 1 > 0,
-            unlocked:() => hasUpgrade("e", 111)
+            unlocked:() => hasUpg("e", 111)
         },
         21: {
             title: "Focused Expansion",
             display() {
-                let ret = "Multiplies Expansion gain by " + format(clickableEffect("e", 21), 1) + ", but divides other currencies' gain by 5"
+                let ret = "Multiplies Expansion gain by " + format(clickableEffect("e", 21), 1)
+                if (!hasMilestone("a", 12)) ret += ", but divides other currencies' gain by 5"
                 ret = ret + "<br>Currently: " + (getClickableState("e", 21) ? "Active" : "Inactive")
                 return ret
             },
@@ -785,14 +823,18 @@ addLayer("e", {
             canClick:() => getClickableState("e", 21) || getClickableState("e", 21) != !getClickableState("e", 22),
             effect() {
                 let ret = 1.5
-                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
+                if (hasUpg("e", 45)) ret *= upgEff("e", 45)
                 return ret
+            },
+            negEffect() {
+                return !hasMilestone("a", 12) ? 5 : 1
             }
         },
         22: {
             title: "Focused Penny Expansion",
             display() {
-                let ret = "Multiplies Penny Expansion gain by " + format(clickableEffect("e", 21), 1) + ", but divides other currencies' gain by 5"
+                let ret = "Multiplies Penny Expansion gain by " + format(clickableEffect("e", 21), 1)
+                if (!hasMilestone("a", 12)) ret += ", but divides other currencies' gain by 5"
                 ret = ret + "<br>Currently: " + (getClickableState("e", 22) ? "Active" : "Inactive")
                 return ret
             },
@@ -800,14 +842,18 @@ addLayer("e", {
             canClick:() => getClickableState("e", 22) || getClickableState("e", 21) != !getClickableState("e", 22),
             effect() {
                 let ret = 1.5
-                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
+                if (hasUpg("e", 45)) ret *= upgEff("e", 45)
                 return ret
+            },
+            negEffect() {
+                return !hasMilestone("a", 12) ? 5 : 1
             }
         },
         31: {
             title: "Focused Points",
             display() {
-                let ret = "Multiplies Point gain and WNPB limit by " + formatWhole(clickableEffect("e", 31), 1) + ", but divides Penny gain by 10"
+                let ret = "Multiplies Point gain and WNPB limit by " + formatWhole(clickableEffect("e", 31), 1)
+                if (!hasMilestone("a", 12)) ret += ", but divides Penny gain by 10"
                 ret = ret + "<br>Currently: " + (getClickableState("e", 31) ? "Active" : "Inactive")
                 return ret
             },
@@ -815,15 +861,19 @@ addLayer("e", {
             canClick:() => getClickableState("e", 31) || getClickableState("e", 31) != !getClickableState("e", 32),
             effect() {
                 let ret = 3
-                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
+                if (hasUpg("e", 45)) ret *= upgEff("e", 45)
                 return ret
+            },
+            negEffect() {
+                return !hasMilestone("a", 12) ? 10 : 1
             },
             unlocked:() => hasAchievement("a", 63)
         },
         32: {
             title: "Focused Pennies",
             display() {
-                let ret = "Multiplies Penny gain by " + formatWhole(clickableEffect("e", 32), 1) + ", but divides Point gain and WNBP limit by 10"
+                let ret = "Multiplies Penny gain by " + formatWhole(clickableEffect("e", 32), 1)
+                if (!hasMilestone("a", 12)) ret += ", but divides Point gain and WNBP limit by 10"
                 ret = ret + "<br>Currently: " + (getClickableState("e", 32) ? "Active" : "Inactive")
                 return ret
             },
@@ -831,8 +881,11 @@ addLayer("e", {
             canClick:() => getClickableState("e", 32) || getClickableState("e", 32) != !getClickableState("e", 31),
             effect() {
                 let ret = 5
-                if (hasUpgrade("e", 45)) ret *= upgradeEffect("e", 45)
+                if (hasUpg("e", 45)) ret *= upgEff("e", 45)
                 return ret
+            },
+            negEffect() {
+                return !hasMilestone("a", 12) ? 10 : 1
             },
             unlocked:() => hasAchievement("a", 63)
         }
@@ -885,7 +938,7 @@ addLayer("e", {
                 ],
                 "blank",
                 ["clickable", [11]],
-                ["upgrades", [1, 2, 3, 4]]
+                ["upgrades", [1, 2, 3, 4, 5]]
             ],
             unlocked:() => player.e.points.gte(".1") || player.s.unlocked || player.sys.unlocked
         },
@@ -908,7 +961,7 @@ addLayer("e", {
                         let genText = gen.lt(10) ? format(gen, 4) : format(gen)
                         let ret = "You are gaining " + genText + " System Expansion per second and losing "
                         ret += format(tmp.e.system_expansion.lossRate * 100) + "% of your current System Expansion per second"
-                        if (hasUpgrade("e", 111)) {
+                        if (hasUpg("e", 111)) {
                             ret += "<br>Purchasing an upgrades in a column unlocks the next upgrade in that column"
                             ret += "<br>Purchasing <i>any</i> upgrade multiplies the cost of other upgrades by a static value"
                             ret += "<br><br><h3>The static multiplier is currently " + format(tmp.e.system_expansion.staticMult, 1) + "</h3>"
@@ -968,9 +1021,10 @@ addLayer("e", {
                             let scaling = 1 + Math.pow(Math.E, exp)
                             divisor = divisor.sub(limitingValue/scaling)
                         }
-                        let ret = `<br>Highest Points Ever: ${format(player.highestPointsEver)}  
-                        <br><br>Expansion base gain:<br>max(0, log10(log10(Highest Points Ever)) - 1)<br><br>
-                        Penny Exp. base gain:<br>Expansion / ${format(divisor)}<br><br>`
+                        let ret = `<br>Highest Points Ever: ${format(player.highestPointsEver)}<br><br>`
+                        ret += hasUpg("sys", 34) ? `Expansion base gain:<br>max(0, log2(log2(Highest Points Ever)))`
+                            : `Expansion base gain:<br>max(0, log10(log10(Highest Points Ever)) - 1)`
+                        ret += `<br><br>Penny Exp. base gain:<br>Expansion / ${format(divisor)}<br><br>`
 
                         if (tmp.e.system_expansion.unlocked) ret +=
                             `System Exp. base gain:<br>log10(1 + Expansion))/100 * 1.1<sup>sqrt(Highest Zone Completed - 15)</sup>

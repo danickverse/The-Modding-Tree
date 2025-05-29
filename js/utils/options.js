@@ -14,6 +14,8 @@ function getStartOptions() {
 		forceOneTab: false,
 		oldStyle: false,
 		tooltipForcing: true,
+		// custom
+		shiftForcing: false
 	}
 }
 
@@ -26,6 +28,8 @@ function toggleOpt(name) {
 		changeTreeQuality();
 	if (name == "oldStyle")
 		updateStyle();
+	if (name == "shiftForcing")
+		player.shiftDown = options[name]
 }
 var styleCooldown = 0;
 function updateStyle() {

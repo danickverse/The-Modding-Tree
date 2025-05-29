@@ -2,6 +2,10 @@ function hasUpgrade(layer, id) {
 	return ((player[layer].upgrades.includes(toNumber(id)) || player[layer].upgrades.includes(id.toString())) && !tmp[layer].deactivated)
 }
 
+function hasUpg(layer, id) {
+	return hasUpgrade(layer, id)
+}
+
 function hasMilestone(layer, id) {
 	return ((player[layer].milestones.includes(toNumber(id)) || player[layer].milestones.includes(id.toString())) && !tmp[layer].deactivated)
 }
@@ -52,6 +56,10 @@ function setGridData(layer, id, data) {
 
 function upgradeEffect(layer, id) {
 	return (tmp[layer].upgrades[id].effect)
+}
+
+function upgEff(layer, id) {
+	return upgradeEffect(layer, id)
 }
 
 function challengeEffect(layer, id) {

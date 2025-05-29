@@ -62,9 +62,9 @@ addLayer("sys", {
     layerShown:() => player.sys.unlocked,
     baseResource() { return !hasMilestone("sys", 5) ? "pennies" : "best pennies in this System reset" },
     baseAmount() { return !hasMilestone("sys", 5) ? player.p.best : player.sys.bestPenniesInReset },
-    canReset() { return tmp[this.layer].baseAmount.gte(tmp[this.layer].requires) && hasUpgrade("p", 55) },
+    canReset() { return tmp[this.layer].baseAmount.gte(tmp[this.layer].requires) && hasUpg("p", 55) },
     gainMult() { 
-        return conversionRate()
+        return tmp.sys.conversionRate
     },
     getResetGain() {
         if (tmp[this.layer].baseAmount.lt(tmp[this.layer].requires)) return decimalZero
@@ -95,12 +95,12 @@ addLayer("sys", {
 
         updateMilestones("sys")
 
-        if (tmp.a.achievements[93].unlocked && player.a.achievements.indexOf("93") == -1 && challengeCompletions("s", 11) == 0) {
+        if (tmp.a.achievements[93].unlocked && !player.a.achievements.includes("93") && challengeCompletions("s", 11) == 0) {
             player.a.achievements.push("93")
             doPopup("achievement", tmp.a.achievements[93].name, "Achievement Gotten!", 3, tmp.a.color)
         }
 
-        if (tmp.a.achievements[112].unlocked && player.a.achievements.indexOf("112") == -1 && player.sys.bestEducation1InReset.lte(10)) {
+        if (tmp.a.achievements[112].unlocked && !player.a.achievements.includes("112") && player.sys.bestEducation1InReset.lte(10)) {
             player.a.achievements.push("112")
             doPopup("achievement", tmp.a.achievements[112].name, "Achievement Gotten!", 3, tmp.a.color)
         }
@@ -114,7 +114,8 @@ addLayer("sys", {
             keptApples = (player.sys.milestones.length - 2) ** 2
         }
         if (hasMilestone("sys", 8)) {
-            keptLand = (player.sys.milestones.length - 7) ** 2
+            keptApples = (player.sys.milestones.length - 2) ** 3
+            keptLand = (player.sys.milestones.length - 7) ** 3
         }
 
         player.sys.businesses.apples.points = player.sys.businesses.apples.points.min(keptApples)
@@ -123,10 +124,16 @@ addLayer("sys", {
         player.sys.bestPenniesInReset = decimalZero
         player.sys.bestEducation1InReset = decimalZero
 
-        if (hasUpgrade("sys", 124)) {
+        setBuyableAmount("sys", 23, decimalZero)
+        if (hasUpg("sys", 124)) {
             let recharge = tmp.sys.businesses.land.recharge.gain
             player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.add(recharge)
             setBuyableAmount("sys", 21, decimalZero)
+
+            if (tmp.a.achievements[115].unlocked && !player.a.achievements.includes("115") && recharge.gte(10)) {
+                player.a.achievements.push("115")
+                doPopup("achievement", tmp.a.achievements[115].name, "Achievement Gotten!", 3, tmp.a.color)
+            }
         }
     },
     effect() {
@@ -164,8 +171,8 @@ addLayer("sys", {
         3: {
             requirementDescription: "4 System Resets and 0.5 Stored Dollars",
             effectDescription:() => `Unlock the Accelerator, Accelerator Power, & Business Upgrades,
-                and keep (milestones - 2)<sup>2</sup> Apples/Expansion Investment on System resets
-                <br>Currently: ${formatWhole(Math.max(player.sys.milestones.length - 2, 0) ** 2)}`,
+                and keep (milestones - 2)<sup>${hasMilestone("sys", 8) ? 3 : 2}</sup> Apples/Expansion Investment on System resets
+                <br>Currently: ${formatWhole(Math.max(player.sys.milestones.length - 2, 0) ** (hasMilestone("sys", 8) ? 3 : 2))}`,
             done() { return player.sys.resetCount >= 4 && player.s.stored_dollars.points.gte(.5) }
         },
         4: {
@@ -191,8 +198,7 @@ addLayer("sys", {
         6: {
             requirementDescription: "10 System Resets and 46 Achievements",
             effectDescription:() => player.shiftDown ? "Challenge effect applies when challenge is unlocked"
-                : `Unlock another Business upgrade, 2 kept Storage Milestones,
-                and even more achievements,
+                : `Unlock another Business upgrade and 2 kept Storage Milestones,
                 and keep Expansion Challenge completions on reset<sup>*</sup>`,
             done() { return player.sys.resetCount >= 10 && player.a.achievements.length >= 46 }
         },
@@ -207,9 +213,15 @@ addLayer("sys", {
         },
         8: {
             requirementDescription: "Zone 20 Completed and 36 Land",
-            effectDescription:() => `Keep (milestones - 7)<sup>2</sup> Land on reset
-                <br>Currently: ${formatWhole(Math.max(player.sys.milestones.length - 7, 1) ** 2)}`,
+            effectDescription:() => `Keep (milestones - 7)<sup>3</sup> Land on reset, raise the 4th System milestone effect ^1.5,
+                and raise effects of the 3rd Stored Expansion reward ^1.25
+                <br>Currently: ${formatWhole(Math.max(player.sys.milestones.length - 7, 1) ** 3)}`,
             done() { return tmp.bills.highestZoneCompleted >= 20 && player.sys.businesses.land.points.gte(36) }
+        },
+        9: {
+            requirementDescription: "2 Total Banks Opened and 3 Total Department Levels",
+            effectDescription: "Unlock 2 more rows of System upgrades and autobuy Penny buyables 4x faster",
+            done() { return player.banks.total.gte(2) && hasUpg("sys", 131) }
         }
     },
     getMainUpgCount() {
@@ -220,24 +232,24 @@ addLayer("sys", {
             title: "Where'd All My Money Go?!?",
             description:() => {
                 if (!player.shiftDown) return "Multiply the point gain exponent by 1.02<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 10 upgrades<br>"
+                return "Maxes at 10 upgrades"
             },
             cost:() => systemUpgradeCost(1),
             effect:() => 1.02 ** Math.min(tmp.sys.getMainUpgCount, 10),
-            effectDisplay:() => `${format(upgradeEffect("sys", 11), 4)}x`
+            effectDisplay:() => `${format(upgEff("sys", 11), 4)}x`
         },
         12: {
             title: "There's Always More Space",
             description: "Multiply stored investment & stored expansion gain by 1.25<sup>upgrades</sup>",
             cost:() => systemUpgradeCost(1),
             effect:() => 1.25 ** tmp.sys.getMainUpgCount,
-            effectDisplay:() => `${format(upgradeEffect("sys", 12))}x`
+            effectDisplay:() => `${format(upgEff("sys", 12))}x`
         },
         13: {
             title: "Higher Level Education",
             description:() => {
                 if (!player.shiftDown) return "All Education levels multiply investment gain by 1.02<sup>upgrades<sup>*</sup></sup>"
-                return "Maxes at 5 upgrades and stays active in challenges<br>"
+                return "Maxes at 5 upgrades and stays active in challenges"
             },
             cost:() => systemUpgradeCost(1),
             effect:() => {
@@ -246,24 +258,24 @@ addLayer("sys", {
                 let upgPow = Math.min(tmp.sys.getMainUpgCount, 5)
                 return Math.pow(base, buyablePow.mul(upgPow))
             },
-            effectDisplay:() => `${format(upgradeEffect("sys", 13))}x`
+            effectDisplay:() => `${format(upgEff("sys", 13))}x`
         },
         14: {
             title: "Dollars = More Dollars",
             description: "Multiply the conversion rate by 1.05<sup>upgrades</sup>",
             cost:() => systemUpgradeCost(1),
             effect:() => 1.05 ** tmp.sys.getMainUpgCount,
-            effectDisplay:() => `${format(upgradeEffect("sys", 14))}x`
+            effectDisplay:() => `${format(upgEff("sys", 14))}x`
         },
         15: {
             title: "Go Easy On Me",
             description:() => {
                 if (!player.shiftDown) return "The Education II softcap starts 1.03<sup>upgrades<sup>*</sup></sup>x later"
-                return "Maxes at 10 upgrades<br>"
+                return "Maxes at 10 upgrades"
             },
             cost:() => systemUpgradeCost(1),
             effect:() => 1.03 ** Math.min(tmp.sys.getMainUpgCount, 10),
-            effectDisplay:() => `${format(upgradeEffect("sys", 15))}x`
+            effectDisplay:() => `${format(upgEff("sys", 15))}x`
         },
         // *** fullDisplay USED TO SHOW DECIMALS IN COST *** 
         21: {
@@ -316,7 +328,7 @@ addLayer("sys", {
             fullDisplay() {
                 let title = "Efficient Education"
                 let desc = "Increase the coefficients used for Education III by .01 * upgrades<sup>*</sup>"
-                if (player.shiftDown) desc = "Maxes at 10 upgrades<br>"
+                if (player.shiftDown) desc = "Maxes at 10 upgrades"
                 let eff = `Currently: +${format(this.effect())}`
                 let cost = `Cost: ${format(this.cost())} dollars`
 
@@ -324,6 +336,43 @@ addLayer("sys", {
             },
             cost:() => systemUpgradeCost(2),
             effect:() => .01  * Math.min(tmp.sys.getMainUpgCount, 10),
+        },
+        31: {
+            title: "Cheating the System",
+            description: "If Pennies > 1e100, raise base conversion rate ^(log10(Pennies) * .02)",
+            cost:() => systemUpgradeCost(3),
+            effect:() => player.p.points.gte(1e100) ? player.p.points.log10().mul(.02).toNumber() : 1,
+            effectDisplay() { return `^${format(this.effect())}` },
+            unlocked:() => hasMilestone("sys", 8)
+        },
+        32: {
+            title: "You Are Worthy",
+            description: "Zones completed each increase the base conversion rate by 0.5% (maxes at 50%)",
+            cost:() => systemUpgradeCost(3),
+            effect:() => Math.min(0.5, tmp.bills.highestZoneCompleted * .005),
+            effectDisplay() { return `+${format(this.effect() * 100)}%` },
+            unlocked:() => hasMilestone("sys", 8)
+        },
+        33: {
+            title: "Must Be Nice",
+            description: "Increase Speck spawn chance multiplier by 2%",
+            cost:() => systemUpgradeCost(3),
+            unlocked:() => hasMilestone("sys", 8)
+        },
+        34: {
+            title: "Expand Your Mind",
+            description: "Reduce both log10 -> log2 and remove the -1 in Expansion base gain formula, and unlock 5 Penny Expansion upgrades",
+            cost:() => systemUpgradeCost(3),
+            effect:() => .02,
+            unlocked:() => hasMilestone("sys", 8)
+        },
+        35: {
+            title: "Optimal Investment",
+            description: "5th Stored Dollars effect also generates Acc. Power<sup>*</sup>",
+            cost:() => systemUpgradeCost(3),
+            effect:() => tmp.s.stored_dollars.effects[5].div(100).mul(tmp.sys.businesses.acceleratorPower.investmentResetGain),
+            effectDisplay() { return `${format(this.effect())} Acc. Pow / second`},
+            unlocked:() => hasMilestone("sys", 8)
         },
         111: {
             title: "Workplace Morale",
@@ -333,7 +382,7 @@ addLayer("sys", {
             cost: 8,
             baseEffect:() => {
                 let ret = new Decimal("1.02")
-                if (hasUpgrade("sys", 121)) ret = ret.add(upgradeEffect("sys", 121))
+                if (hasUpg("sys", 121)) ret = ret.add(upgEff("sys", 121))
 
                 return ret
             },
@@ -373,8 +422,6 @@ addLayer("sys", {
                 }
                 return ret.pow(.1)
             },
-                // getBuyableAmount("sys", 11).mul(getBuyableAmount("sys", 12)).mul(getBuyableAmount("sys", 13))
-                // .add(1).pow(.1),
             effectDisplay() { return `${format(this.effect())}x`},
             currencyDisplayName: "Accelerator Power",
             currencyInternalName: "points",
@@ -404,9 +451,9 @@ addLayer("sys", {
         },
         121: {
             title: "Free Donuts",
-            description: "Workplace Morale base effect is increased by .002 per bought Apple Tree up to 10",
+            description: "Workplace Morale base effect is increased by .001 per bought Apple Tree up to 10",
             cost: 5,
-            effect:() => getBuyableAmount("sys", 11).min(10).mul(.002),
+            effect:() => getBuyableAmount("sys", 11).min(10).mul(.001),
             effectDisplay() { return `+${this.effect().toStringWithDecimalPlaces(3)}` },
             unlocked:() => getBuyableAmount("sys", 41).gte(1),
             currencyDisplayName: "Apple Pickers",
@@ -415,19 +462,19 @@ addLayer("sys", {
         },
         122: {
             fullDisplay() {
-                let title = "Expansion Division"
+                let title = "Expansive Division"
                 let desc = "Unlock a new Industry"
                 let req = "Requires: 10,000 Apples"
                 return basicUpgradeFormat(title, desc, req)
             },
             canAfford:() => player.sys.businesses.apples.points.gte(10000),
-            unlocked:() => hasUpgrade("sys", 121)
+            unlocked:() => hasUpg("sys", 121)
         },
         123: {
             title: "Oiled Up",
-            description: "Multiply Land Cultivator Strength by 1 + [% of Charges used]",
+            description: "Incresase Effective Strength by 4% per Used Charge",
             cost: 10,
-            effect:() => 1 + (tmp.sys.buyables[21].maxCharges - tmp.sys.buyables[21].remainingCharges) / tmp.sys.buyables[21].maxCharges,
+            effect:() => player.sys.buyables[21].div(25).add(1),
             effectDisplay() { return `${format(this.effect())}x`},
             unlocked:() => getBuyableAmount("sys", 22).gte(1),
             currencyDisplayName: "Land",
@@ -439,9 +486,13 @@ addLayer("sys", {
             description:() => player.shiftDown ? "Requires 5 Used Charges for conversion"
                 : "When performing a System Reset, Used Charges convert to Recharge<sup>*</sup>",
             cost: 30,
-            effect:() => 1.1,
-            effectDisplay() { return `${format(this.effect())}<sup>x - 5</sup>`},
-            unlocked:() => hasUpgrade("sys", 123),
+            effect() {
+                let ret = new Decimal(1.1)
+                if (hasUpg("sys", 201)) ret = ret.add(upgEff("sys", 201))
+                return ret
+            },
+            effectDisplay() { return `${format(this.effect(), 3)}<sup>x - 5</sup>`},
+            unlocked:() => hasUpg("sys", 123),
             currencyDisplayName: "Land",
             currencyInternalName: "points",
             currencyLocation:() => player.sys.businesses.land
@@ -452,7 +503,7 @@ addLayer("sys", {
             cost: 250,
             effect:() => timeFlux() ** .25,
             effectDisplay() { return `${format(this.effect())}x`},
-            unlocked:() => hasUpgrade("sys", 124),
+            unlocked:() => hasUpg("sys", 124),
             currencyDisplayName: "Land",
             currencyInternalName: "points",
             currencyLocation:() => player.sys.businesses.land
@@ -460,7 +511,7 @@ addLayer("sys", {
         131: { // if change id, then also change id for tabFormat and microtabs
             title: "The Big One",
             description() { 
-                return !hasUpgrade("sys", 131) ? (
+                return !hasUpg("sys", 131) ? (
                     player.shiftDown ? "See Info for more detail"
                     : "Businesses buffed permanently based on Department levels<sup>*</sup>"
                 ) : "Unlock Departments" 
@@ -479,9 +530,19 @@ addLayer("sys", {
                     33: 0
                 }
             },
-            unlocked:() => hasUpgrade("sys", 125) && getBuyableAmount("sys", 23).gt(0),
+            unlocked:() => hasUpg("sys", 125) && getBuyableAmount("sys", 23).gt(0),
             currencyDisplayName: "Land",
             currencyInternalName: "points",
+            currencyLocation:() => player.sys.businesses.land
+        },
+        201: {
+            title: "I Am Speed",
+            description: "Increase Battery Pack base by .001 per Recharge buyable",
+            cost: 10,
+            effect:() => getBuyableAmount("sys", 201).add(getBuyableAmount("sys", 202)).add(getBuyableAmount("sys", 203)).mul(.001),
+            effectDisplay() { return `+${this.effect().toStringWithDecimalPlaces(3)}`},
+            currencyDisplayName: "Recharge",
+            currencyInternalName: "recharge",
             currencyLocation:() => player.sys.businesses.land
         }
     },
@@ -521,7 +582,7 @@ addLayer("sys", {
                 let ret = getBuyableAmount("sys", 11)
                 if (hasAchievement("a", 92)) ret = ret.add(1)
 
-                if (hasUpgrade("sys", 111)) ret = ret.mul(upgradeEffect("sys", 111)[0])
+                if (hasUpg("sys", 111)) ret = ret.mul(upgEff("sys", 111)[0])
                 ret = ret.mul(shopEffect(101))
 
                 ret = ret.mul(buyableEffect("sys", 111))
@@ -537,7 +598,7 @@ addLayer("sys", {
                 let ret = tmp.sys.buyables[11].effectiveLevels
                 ret = ret.mul(tmp.s.stored_dollars.effects[3])
                 
-                if (hasMilestone("s", 1) && hasUpgrade("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
+                if (hasMilestone("s", 1) && hasUpg("s", 14)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
                     ret = ret.mul(getBuyableAmount("sys", 41).pow_base(5))
                 
                 return ret
@@ -578,11 +639,11 @@ addLayer("sys", {
             effectiveLevels() {
                 let ret = getBuyableAmount("sys", 12)
                 if (ret.eq(0)) return ret
-                if (hasUpgrade("sys", 112)) ret = ret.add(upgradeEffect("sys", 112))
+                if (hasUpg("sys", 112)) ret = ret.add(upgEff("sys", 112))
                 ret = ret.add(getBuyableAmount("sys", 41))
                 
                 ret = ret.mul(tmp.quests.bars.applesBar.reward)
-                if (hasUpgrade("sys", 111)) ret = ret.mul(upgradeEffect("sys", 111)[1])
+                if (hasUpg("sys", 111)) ret = ret.mul(upgEff("sys", 111)[1])
 
                 ret = ret.mul(buyableEffect("sys", 112))
                 return ret
@@ -638,10 +699,10 @@ addLayer("sys", {
             effectiveLevels() {
                 let ret = getBuyableAmount("sys", 13)
                 if (ret.eq(0)) return ret
-                if (hasUpgrade("sys", 112)) ret = ret.add(upgradeEffect("sys", 112))
+                if (hasUpg("sys", 112)) ret = ret.add(upgEff("sys", 112))
                 ret = ret.add(getBuyableAmount("sys", 41))
 
-                if (hasUpgrade("sys", 111)) ret = ret.mul(upgradeEffect("sys", 111)[2])
+                if (hasUpg("sys", 111)) ret = ret.mul(upgEff("sys", 111)[2])
 
                 ret = ret.mul(buyableEffect("sys", 111))
                 
@@ -684,9 +745,21 @@ addLayer("sys", {
                     default: throw Error(`Invalid number of Apple Visionaries: ${x}`)
                 }
             },
+            requiredTrees() {
+                let x = getBuyableAmount(this.layer, this.id).toNumber()
+                switch (x) {
+                    case 0: return 5
+                    case 1: return 15
+                    case 2: return 30
+                    case 3: return 50
+                    case 4:
+                    case 5: return 100
+                    default: throw Error(`Invalid number of Apple Visionaries: ${x}`)
+                }
+            },
             canAfford() {
-                return getBuyableAmount(this.layer, this.id).neq(5) && 
-                    getBuyableAmount(this.layer, 11).gte(5) &&
+                return getBuyableAmount(this.layer, this.id).lt(5) && 
+                    getBuyableAmount(this.layer, 11).gte(this.requiredTrees()) &&
                     getBuyableAmount(this.layer, 12).eq(tmp.sys.buyables[12].maxLevels) &&
                     getBuyableAmount(this.layer, 13).eq(tmp.sys.buyables[13].maxLevels)
             },
@@ -699,7 +772,7 @@ addLayer("sys", {
                 // ret += `<h3>PURCHASABLE NEXT UPDATE</h3>`
                 // return ret
                 if (getBuyableAmount("sys", 41).lt(5)) {
-                    ret += `<h3><b>Requires:</h3></b> ${format(this.cost())} ${coloredApples}, 5 Trees, maxed Pickers/Vendors`
+                    ret += `<h3><b>Requires:</h3></b> ${format(this.cost())} ${coloredApples}, ${this.requiredTrees()} Trees, max Pickers/Vendors`
                 } else {
                     ret += `<h3><b>MAXED</h3></b>`
                 }
@@ -719,7 +792,7 @@ addLayer("sys", {
                 player.sys.businesses.apples.timer = 0
                 addBuyables(this.layer, this.id, 1)
             },
-            unlocked:() => hasUpgrade("sys", 115),
+            unlocked:() => hasUpg("sys", 115),
             style() { 
                 return {
                     "width":"150px",
@@ -731,11 +804,16 @@ addLayer("sys", {
             title: "Land Cultivator",
             baseCost() {
                 let ret = new Decimal(10000)
-                ret = ret.mul(getBuyableAmount("sys", 23).pow_base(250))
+                ret = ret.mul(buyableEffect("sys", 23)[2])
+                return ret
+            },
+            linearScaling() {
+                let ret = new Decimal(1.3)
+                ret = ret.mul(buyableEffect("sys", 23)[3])
                 return ret
             },
             cost(x) { 
-                return x.pow_base(1.3).mul(x.pow(2).pow_base(1.001)).mul(this.baseCost())
+                return x.pow_base(this.linearScaling()).mul(x.pow(2).pow_base(1.001)).mul(this.baseCost())
             },
             display() { 
                 if (!player.shiftDown) {
@@ -749,7 +827,8 @@ addLayer("sys", {
                 }
 
                 let effFormula = `<h3><b>Effect Formula:</h3></b><br>0.1 * [Effective Strength] * [Accelerator Power Effect]`
-                let costFormula = `<h3><b>Cost Formula:</h3></b><br>${format(this.baseCost())} * 1.3<sup>x</sup> * 1.001^x<sup>2</sup>`
+                let costFormula = `<h3><b>Cost Formula:</h3></b>
+                    ${format(this.baseCost())} * ${format(this.linearScaling())}<sup>x</sup> * 1.001^x<sup>2</sup>`
                 return `${effFormula}<br><br>${costFormula}`
 
             },
@@ -764,7 +843,7 @@ addLayer("sys", {
             },
             effectiveStr() {
                 let ret = decimalOne
-                if (hasUpgrade(this.layer, 123)) ret = ret.mul(upgradeEffect(this.layer, 123))
+                if (hasUpg(this.layer, 123)) ret = ret.mul(upgEff(this.layer, 123))
                 ret = ret.mul(buyableEffect("sys", 22)[0])
 
                 //ret = ret.mul(buyableEffect("sys", 121))
@@ -784,7 +863,7 @@ addLayer("sys", {
                 player.sys.businesses.apples.points = player.sys.businesses.apples.points.sub(this.cost())
                 player.sys.businesses.land.timer = 0
             },
-            unlocked:() => hasUpgrade("sys", 122)
+            unlocked:() => hasUpg("sys", 122)
         },
         22: {
             title: "Land Surveyor",
@@ -826,7 +905,7 @@ addLayer("sys", {
                 player.sys.businesses.land.points = player.sys.businesses.land.points.pow(.25)
                 addBuyables(this.layer, this.id, 1)
             },
-            unlocked:() => hasUpgrade("sys", 122)
+            unlocked:() => hasUpg("sys", 122)
         },
         23: {
             title: "Land Revitalizer",
@@ -837,7 +916,7 @@ addLayer("sys", {
                 if (!player.shiftDown) {
                     let levels = `<h3><b>Levels:</h3></b> ${formatWhole(getBuyableAmount("sys", this.id))}/${this.maxLevels()}`
                     let effectiveLevels = `<h3><b>Effective Levels:</h3></b> ${format(tmp.sys.buyables[this.id].effectiveLevels)}`
-                    let effDesc = `<h3><b>Effect:</h3></b> Reset Used Charges, increase max Charges by 5, multiply cost base by 250x, and Charges last 1.5x longer`
+                    let effDesc = `<h3><b>Effect:</h3></b> Reset Used Charges and Recharge, increase max Charges by 5, multiply Cultivator cost base by 250x and linear cost scaling by 1.1x, and Charges last 2x longer`
                     let eff = `<h3>Currently:</h3> +${this.effect()[0]} max Charges, ${format(this.effect()[1])}x Charge duration`
                     let cost = `<h3><b>Requires:</h3></b> ${format(this.cost())} Used Charges`
 
@@ -853,7 +932,12 @@ addLayer("sys", {
             },
             effect() {
                 let effLvl = this.effectiveLevels()
-                return [effLvl.mul(5).toNumber(), effLvl.pow_base(1.5).toNumber()]
+                return [
+                    effLvl.mul(5).toNumber(), 
+                    effLvl.pow_base(2).toNumber(),
+                    getBuyableAmount("sys", 23).pow_base(250),
+                    getBuyableAmount("sys", 23).pow_base(1.1)
+                ]
             },
             maxLevels() { return 5 },
             canAfford() { 
@@ -861,9 +945,10 @@ addLayer("sys", {
             },
             buy() {
                 setBuyableAmount(this.layer, 21, decimalZero)
+                player.sys.businesses.land.recharge = decimalZero
                 addBuyables(this.layer, this.id, 1)
             },
-            unlocked:() => hasUpgrade("sys", 122)
+            unlocked:() => hasUpg("sys", 122)
         },
 
         // when add all businesses, remove continue statement from upg 113
@@ -1017,9 +1102,9 @@ addLayer("sys", {
             }
         },
         203: {
-            title: "Recharger II",
+            title: "Recharger III",
             cost(x) {
-                return x.pow_base(2)
+                return x.pow_base(3)
             },
             display() { 
                 if (!player.shiftDown) {
@@ -1031,7 +1116,7 @@ addLayer("sys", {
                 }
 
                 return `<h3>Effect Formula:</h3><br>1.01<sup>x</sup>
-                    <br><h3>Cost Formula:</h3><br>2<sup>x</sup>`
+                    <br><h3>Cost Formula:</h3><br>3<sup>x</sup>`
             },
             effect(x) {
                 return x.pow_base(1.01)
@@ -1089,6 +1174,34 @@ addLayer("sys", {
             }
         }
     },
+    baseConversionRate() {
+        let ret = 1
+        if (hasAchievement("a", 82)) ret += .01
+        if (hasAchievement("a", 83)) ret += .01
+        if (hasAchievement("a", 84)) ret += .01
+        if (hasAchievement("a", 85)) ret += .02
+        ret += Number(tmp.s.stored_dollars.effects[2])
+        if (tmp.s.challenges[12].unlocked && hasMilestone("s", 6)) ret += challengeEffect("s", 12)[1]
+        if (hasUpg("e", 113)) ret += upgEff("e", 113)
+        if (hasUpg("sys", 32)) ret += upgEff("sys", 32)
+    
+        let pow = 1
+        if (hasUpg("sys", 31)) pow *= upgEff("sys", 31)
+
+        return ret ** pow
+    },
+    conversionRate() {
+        let base = tmp.sys.baseConversionRate
+    
+        let mul = 1
+        if (hasMilestone("a", 9)) mul *= 1.01 ** Math.max(0, player.a.achievements.length - 35)
+        if (hasUpg("sys", 14)) mul *= upgEff("sys", 14)
+        if (hasUpg("sys", 114)) mul *= upgEff("sys", 114)
+        mul *= tmp.quests.bars.penniesBar.reward
+        mul *= shopEffect(104)
+    
+        return (base * mul) / 100
+    },
     businesses: {
         apples: {
             gain() {
@@ -1114,12 +1227,12 @@ addLayer("sys", {
             }
         },
         land: {
-            unlocked:() => hasUpgrade("sys", 122),
+            unlocked:() => hasUpg("sys", 122),
             gain() {
                 let ret = new Decimal(0.1)
                 ret = ret.mul(tmp.sys.buyables[21].effectiveStr)
                 ret = ret.mul(tmp.sys.businesses.acceleratorPower.effect)
-                if (hasUpgrade("sys", 125)) ret = ret.mul(upgradeEffect("sys", 125))
+                if (hasUpg("sys", 125)) ret = ret.mul(upgEff("sys", 125))
                 
                 return ret
             },
@@ -1128,7 +1241,7 @@ addLayer("sys", {
                 return ret
             },
             effectTrees() {
-                let ret = player.sys.businesses.land.best.add(1).log2().div(2).ceil().sub(1)
+                let ret = player.sys.businesses.land.best.add(1).log2().div(3).ceil().sub(1)
                 return ret.floor().toNumber()
             },
             effectCost() {
@@ -1139,13 +1252,14 @@ addLayer("sys", {
                 let ret = 10
                 ret *= buyableEffect("sys", 22)[1]
                 ret *= buyableEffect("sys", 23)[1]
-                if (hasUpgrade("sys", 125)) ret /= 1.5
+                if (hasUpg("sys", 125)) ret /= 1.5
                 return ret
             },
             recharge: {
                 gain() {
                     let usedCharges = getBuyableAmount("sys", 21).sub(5).max(0)
-                    return usedCharges.pow_base(upgradeEffect("sys", 124)).mul(buyableEffect("sys", 201))
+                    if (usedCharges.eq(0)) return 0
+                    return usedCharges.pow_base(upgEff("sys", 124)).mul(buyableEffect("sys", 201))
                 }
             }
         },
@@ -1168,9 +1282,9 @@ addLayer("sys", {
             allGainMult() {
                 let ret = decimalOne 
                 ret = ret.mul(tmp.quests.bars.acceleratorBar.reward)
-                if (hasUpgrade("sys", 113)) ret = ret.mul(upgradeEffect("sys", 113))
+                if (hasUpg("sys", 113)) ret = ret.mul(upgEff("sys", 113))
                 ret = ret.mul(getBuyableAmount("sys", 41).pow_base(2))
-                if (hasUpgrade("bills", 15)) ret = ret.mul(upgradeEffect("bills", 15))
+                if (hasUpg("bills", 15)) ret = ret.mul(upgEff("bills", 15))
                 ret = ret.mul(buyableEffect("sys", 202))
                 return ret
             },
@@ -1215,7 +1329,7 @@ addLayer("sys", {
                 ["main-display", 2],
                 "prestige-button", "blank",
                 "resource-display", "blank",
-                ["display-text", function () { return "Current conversion rate is " + format(100*conversionRate(), 4) + " : 100 OoM" }],
+                ["display-text", function () { return "Current conversion rate is " + format(100*tmp.sys.conversionRate, 4) + " : 100 OoM" }],
                 ["display-text", "Purchasing a upgrade increases the cost of other upgrades in the same row (see Info)"],
                 "blank", 
                 ["upgrades", [1, 2, 3, 4, 5]]
@@ -1232,7 +1346,6 @@ addLayer("sys", {
         },
         "Businesses": {
             content: [
-                //["main-display", 2],
                 ["display-text", () => {
                     let ret = `You have <h2 style="color: maroon; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
                     ${format(player.sys.businesses.apples.points)}</h2> apples, 
@@ -1265,7 +1378,7 @@ addLayer("sys", {
                 ], "blank",
                 ["buyables", [11, 12, 13]]
             ],
-            unlocked:() => hasUpgrade("sys", 131)
+            unlocked:() => hasUpg("sys", 131)
         },
         "Info": {
             content: [
@@ -1296,10 +1409,10 @@ addLayer("sys", {
                     ["display-text", () => `You have ${format(player.sys.businesses.land.recharge)} Recharge<br>
                         You will gain ${format(tmp.sys.businesses.land.recharge.gain)} Recharge if you perform a system reset`],
                     "blank",
-                    ["buyables", [20]],
-                    "blank"
+                    ["buyables", [20]], "blank",
+                    ["upgrades", [20]], "blank"
                 ],
-                unlocked:() => true || hasUpgrade("sys", 124)
+                unlocked:() => true || hasUpg("sys", 124)
             }
         },
         info: {
@@ -1312,8 +1425,8 @@ addLayer("sys", {
                         you will gain 1 dollar for every 100 orders of magnitude of pennies. <br><br>
                         For example, assuming a conversion rate of 1 : 100 OoM, if you had 1e100 pennies, 
                         you would gain 1 dollar on reset. Or, if you had 1e40 pennies, you would gain 0.4 dollars on reset.
-                        <br><br>The base conversion rate is currently: ${format(baseConversionRate(), 4)} : 100 OoM
-                        <br>The conversion rate after other boosts is currently: ${format(conversionRate() * 100, 4)} : 100 OoM`
+                        <br><br>The base conversion rate is currently: ${format(tmp.sys.baseConversionRate, 4)} : 100 OoM
+                        <br>The conversion rate after other boosts is currently: ${format(tmp.sys.conversionRate * 100, 4)} : 100 OoM`
                     }],
                     "blank"
                 ]
@@ -1330,6 +1443,7 @@ addLayer("sys", {
                         <br><br>The cost increases are as follows:
                         <br>Row 1: .15 Dollars per upgrade
                         <br>Row 2: .5 Dollars per upgrade
+                        <br>Row 3: 750 Dollars per upgrade
                         <br><br>Business upgrades do not follow this convention, and are not used in the calculation for upgrade count`
                     ],
                     "blank"
@@ -1377,7 +1491,7 @@ addLayer("sys", {
                         // and double accelerator power gain from all sources.`
                     }], "blank"
                 ],
-                unlocked:() => hasUpgrade("sys", 115)
+                unlocked:() => hasUpg("sys", 115)
             },
             "Departments": {
                 content: [
@@ -1385,7 +1499,7 @@ addLayer("sys", {
                     ["display-text", ``
                     ], "blank", "blank"
                 ],
-                unlocked:() => hasUpgrade("sys", 131)
+                unlocked:() => hasUpg("sys", 131)
             }
         }
     },
