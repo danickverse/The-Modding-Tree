@@ -145,7 +145,7 @@ addLayer("a", {
                 if (this.unlocked() && player.p.upgrades.length >= 15 && upgrade23Limit().gte("1e10") 
                         && player.highestPointsEver.gte("1e10") && player.p.investment.points.gte(50)) return true
             },
-            tooltip: "Unlock Expansions at 1e10 points, 50 investment, and 15 upgrades<br><br>Unlock more achievements and increase the WNBP exponent by .005",
+            tooltip: "Unlock Expansions and the Time Machine at 1e10 points, 50 investment, and 15 upgrades<br><br>Unlock more achievements and increase the WNBP exponent by .005",
             unlocked:() => hasAchievement("a", 21),
             style: achBlueStyle
         },

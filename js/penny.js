@@ -29,18 +29,22 @@ addLayer("p", {
     exponent: .5, // Prestige currency exponent
     gainMult() { // Calculate the multiplier for main currency from bonuses
         let mult = new Decimal(1)
-        if (hasUpg("p", 13)) mult = mult.times(upgEff("p", 13))
-        if (hasUpg("p", 14)) mult = mult.times(upgEff("p", 14))
-        if (hasUpg("p", 15)) mult = mult.times(upgEff("p", 15))
-        if (hasUpg("p", 24)) mult = mult.times(upgEff("p", 24))
-        if (hasUpg("p", 35)) mult = mult.times(upgEff("p", 35))
-        if (hasUpg("p", 42)) mult = mult.times(upgEff("p", 42))
-        if (hasUpg("p", 44)) mult = mult.times(upgEff("p", 44))
-        if (hasUpg("p", 54)) mult = mult.times(upgEff("p", 54))
+        // row 1
+        if (!player.tm.sluggish.inChallenge) {
+            if (hasUpg("p", 13)) mult = mult.times(upgEff("p", 13))
+            if (hasUpg("p", 14)) mult = mult.times(upgEff("p", 14))
+            if (hasUpg("p", 15)) mult = mult.times(upgEff("p", 15))
+            if (hasUpg("p", 24)) mult = mult.times(upgEff("p", 24))
+            if (hasUpg("p", 42)) mult = mult.times(upgEff("p", 42))
+            if (hasUpg("p", 44)) mult = mult.times(upgEff("p", 44))
+            if (hasUpg("p", 54)) mult = mult.times(upgEff("p", 54))
+            mult = mult.times(buyableEffect("p", 21))
+            if (hasUpg("p", 61)) mult = mult.mul(upgEff('p', 61))
+        }
+
         if (hasAchievement("a", 34)) mult = mult.times(1.337)
-        mult = mult.times(buyableEffect("p", 21))
+        if (hasUpg("p", 35)) mult = mult.times(upgEff("p", 35))
         mult = mult.times(tmp.sys.effect)
-        if (hasUpg("p", 61)) mult = mult.mul(upgEff('p', 61))
         return mult
     },
     gainExp() { // Calculate the exponent on main currency from bonuses
@@ -50,23 +54,27 @@ addLayer("p", {
     },
     directMult() {
         let ret = decimalOne
+        // row 1
+        if (!player.tm.sluggish.inChallenge) {
+            if (getClickableState("e", 32)) ret = ret.mul(clickableEffect("e", 32))
+            if (inChallenge("s", 11) && hasUpg("s", 11)) ret = ret.mul(5)
+            if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
+            ret = ret.mul(buyableEffect("p", 23))
+            if (hasUpg("p", 63)) ret = ret.mul(upgEff("p", 63))
+        }
         if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(tmp.e.clickables[21].negEffect)
         if (getClickableState("e", 31)) ret = ret.div(tmp.e.clickables[31].negEffect)
-        if (getClickableState("e", 32)) ret = ret.mul(clickableEffect("e", 32))
-        if (inChallenge("s", 11) && hasUpg("s", 11)) ret = ret.mul(5)
-        if (hasMilestone("s", 4)) ret = ret.mul(tmp.s.stored_investment.effects[6])
-        ret = ret.mul(buyableEffect("p", 23))
         ret = ret.mul(tmp.sys.businesses.apples.effect)
         ret = ret.mul(tmp.quests.bars.pointsBar.reward)
-        if (hasUpg("p", 63)) ret = ret.mul(upgEff("p", 63))
         ret = ret.mul(shopEffect(101))
         return ret
     },
     softcap: new Decimal("1e9"),
     softcapPower() {
         let ret = new Decimal(.5)
-        if (player.s.stored_dollars.points.gt(0)) ret = ret.add(tmp.s.stored_dollars.effects[1])
-
+        if (!player.tm.sluggish.inChallenge) {
+            if (player.s.stored_dollars.points.gt(0)) ret = ret.add(tmp.s.stored_dollars.effects[1])
+        }
         return ret
     },
     getResetGain() {
@@ -228,6 +236,7 @@ addLayer("p", {
             fullDisplay:() => {
                 let title = "<b><h3>There's A Coin For This?</b></h3>"
                 let description = () => {
+                    if (player.tm.sluggish.inChallenge) return "Increase point gain by 50% per achievement"
                     if (!hasUpg("e", 44)) {
                         if (!hasMilestone("a", 5)) return "Increase point gain by 50% per achievement"
                         let exp = format(!hasUpg("e", 14) ? .2 : (!hasUpg("e", 34) ? upgEff("e", 14) : upgEff("e", 34)), 1)
@@ -239,7 +248,7 @@ addLayer("p", {
                 return title + "<br>" + description() + "<br>" + effect + "<br>Cost: 50 pennies"
             },
             effect:() => {
-                if (hasMilestone("a", 5)) return upgEff("p", 35)
+                if (hasMilestone("a", 5) && !player.tm.sluggish.inChallenge) return upgEff("p", 35)
                 return new Decimal(1 + .5 * player.a.achievements.length)
             },
             unlocked:() => hasUpg("p", 15) || hasUpg("p", 25)
@@ -429,11 +438,12 @@ addLayer("p", {
                 let desc = "Requires Achievement 6"
                 if (hasAchievement("a", 21)) {
                     desc = "Achievements boost pennies "
-                    if (!hasMilestone("a", 5)) {
+                    if (player.tm.sluggish.inChallenge) {
+                        desc += "based on the effect of There's A Coin For This? (^.2)"
+                    } else if (!hasMilestone("a", 5)) {
                         desc += "based on the effect of There's A Coin For This? (^" 
                             + format(!hasUpg("e", 14) ? .2 : (!hasUpg("e", 34) ? upgEff("e", 14) : upgEff("e", 34))) + ")"
-                    }
-                    else desc += "at the same rate as There's A Coin For This?"
+                    } else desc += "at the same rate as There's A Coin For This?"
                     if (!hasUpg("e", 33)) desc += ". Unlocks a buyable respec"
                     desc += "<br>Currently: " + format(upgEff("p", 35)) + "x"
                 }
@@ -441,7 +451,8 @@ addLayer("p", {
                 return title + "<br>" + desc + "<br><br>" + cost
             },
             cost: 2e7,
-            effect:() => {
+            effect() {
+                if (player.tm.sluggish.inChallenge) return new Decimal(1 + .5 * player.a.achievements.length).pow(.2)
                 if (!hasUpg("e", 44)) {
                     let ret = new Decimal(1 + .5 * player.a.achievements.length)
                     ret = ret.pow(!hasUpg("e", 14) ? .2 : (!hasUpg("e", 34) ? upgEff("e", 14) : upgEff("e", 34)))
@@ -686,6 +697,8 @@ addLayer("p", {
                     if (hasUpg("p", 53)) ret = ret.mul(upgEff("p", 53))
                     if (hasUpg("sys", 13)) ret = ret.mul(upgEff("sys", 13))
                     if (hasAchievement("a", 85)) ret = ret.mul(1.5)
+                } else if (player.tm.sluggish.inChallenge) {
+                    ret = decimalOne
                 } else {
                     ret = player.p.points.div(1000000).pow(.5)
                     if (hasAchievement("a", 25)) ret = ret.mul(2)

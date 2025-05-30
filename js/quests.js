@@ -732,7 +732,7 @@ addLayer("quests", {
                         spawn chance. It is initially set to 0.03, which means that your spawn chance is initially capped at 3%.
                         <br><br>The check displayed above is <h3 style="color: red">not</h3> called every tick. It is called once every 20 
                         seconds, which means that, no matter what your spawn chance is, only one speck can spawn per 20 seconds (at first).
-                        <br><br>If a Speck is not collected within 10 minutes of spawning, it will be automatically collected for 25% the value.`],
+                        <br><br>If a Speck is not collected within 1 minute of spawning, it will be automatically collected for 25% the value.`],
                     "blank"
                 ]
             }
@@ -746,7 +746,7 @@ addLayer("quests", {
 
 const speckParticle = {
     speck: true,
-    time: 600,
+    time: 60,
     width:() => tmp.quests.specks.speckDimensions,
     height:() => tmp.quests.specks.speckDimensions,
     lifespan: 0,
@@ -762,7 +762,7 @@ const speckParticle = {
         return this.onMouseOver()
     },
     death() {
-        player.quests.specks.points =  player.quests.specks.points.add(tmp.quests.specks.gain.div(4))
+        player.quests.specks.points = player.quests.specks.points.add(tmp.quests.specks.gain.div(4))
         player.quests.specks.speckCount--
         player.quests.specks.collected++
         Vue.delete(particles, this.id)

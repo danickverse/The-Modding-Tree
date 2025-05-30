@@ -27,8 +27,8 @@ function getShopData(id) {
             effect = 1.25; type = "compounding"; break
         case 106:
             max = 2; title = "TM ADV"; cost = 10
-            display = `Level 1: Unlock Temporal Sacrifice and a Temporal Power buyable in the Time Machine
-                       Level 2: Unlock the Sluggish Challenge in the Time Machine`; 
+            display = `Level 1: Unlock Stored Time and a Temporal Power buyable in the Time Machine<br>
+                       Level 2: Unlock the Sluggish 4 challenge in the Time Machine`; 
             type = "unlock"; break
         default: throw Error(`Missing Shop grid case for id: ${id}`)
     }
@@ -58,14 +58,17 @@ function updateShopDisplay(layer, id, exit=false) {
     let effVal = toPlaces(gridEffect(layer, id), 2)
 
     switch (shopData.type) {
-        case "compounding": 
-            if (id == 101) eff += effVal + "x, -" + timeDisplay(levels * 20, false);
-            else eff += effVal + "x"
-            break
+        case "compounding":
+            switch (id) {
+                case 101: eff += effVal + "x, -" + timeDisplay(levels * 20, false); break;
+                default: eff += effVal + "x";
+            }
+            break;
         case "compoundingExp": eff += "^" + effVal; break;
         case "additive": eff += "+" + effVal; break;
         case "unlock": 
-            if (id == 106) eff = ""; break;
+            if (id == 106) eff = ""; 
+            break;
         case "other":
             
             // do others

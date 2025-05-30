@@ -16,7 +16,8 @@ let modInfo = {
 	discordLink: "",
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
 	offlineLimit:() => {
-		let ret = 2
+		let ret = 0.125
+		if (player.tm.challenges[12] == 1) ret *= 2
 		return ret
 	},  // In hours
 }
@@ -239,41 +240,46 @@ function getPointGen() {
 		return new Decimal(0)
 
 	let baseGain = decimalOne
-	if (hasUpg('p', 12)) baseGain = baseGain.add(upgEff('p', 12))
+	let gainMult = decimalOne
+	let gainExp = decimalOne
+	let directMult = decimalOne
+
+	// row 1
+	if (!player.tm.sluggish.inChallenge) {
+		if (hasUpg('p', 12)) baseGain = baseGain.add(upgEff('p', 12))
+		if (hasUpg('p', 11)) gainMult = gainMult.mul(upgEff('p', 11))
+		if (hasUpg('p', 15)) gainMult = gainMult.mul(upgEff('p', 15))
+		if (hasUpg('p', 22)) gainMult = gainMult.mul(upgEff('p', 22))
+		if (hasUpg('p', 23)) gainMult = gainMult.mul(upgEff('p', 23))
+		if (hasUpg('p', 25)) gainMult = gainMult.mul(upgEff('p', 25))
+		if (hasUpg('p', 42)) gainMult = gainMult.mul(upgEff('p', 42))
+		if (hasUpg("p", 61)) gainMult = gainMult.mul(upgEff('p', 61))
+		if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
+		if (hasUpg("p", 52)) gainExp = gainExp.add(upgEff("p", 52))
+
+		if (inChallenge("s", 11) && hasUpg("s", 11)) directMult = directMult.mul(5)
+
+		if (getClickableState("e", 21)) directMult = directMult.div(tmp.e.clickables[21].negEffect)
+		if (getClickableState("e", 31)) directMult = directMult.mul(clickableEffect("e", 31))
+		if (getClickableState("e", 32)) directMult = directMult.div(tmp.e.clickables[32].negEffect)
+
+		directMult = directMult.mul(buyableEffect("p", 23))
+	}
+
+
+	if (hasUpg('p', 21)) gainMult = gainMult.mul(upgEff('p', 21))
 	if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) baseGain = baseGain.add(1)
 	if (hasUpg("sys", 23)) baseGain = baseGain.add(upgEff("sys", 23))
 
-	let gainMult = decimalOne
-	if (hasUpg('p', 11)) gainMult = gainMult.mul(upgEff('p', 11))
-	if (hasUpg('p', 15)) gainMult = gainMult.mul(upgEff('p', 15))
-	if (hasUpg('p', 21)) gainMult = gainMult.mul(upgEff('p', 21))
-	if (hasUpg('p', 22)) gainMult = gainMult.mul(upgEff('p', 22))
-	if (hasUpg('p', 23)) gainMult = gainMult.mul(upgEff('p', 23))
-	if (hasUpg('p', 25)) gainMult = gainMult.mul(upgEff('p', 25))
-	if (hasUpg('p', 42)) gainMult = gainMult.mul(upgEff('p', 42))
-	if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
-	if (hasUpg("p", 61)) gainMult = gainMult.mul(upgEff('p', 61))
-
-	let gainExp = decimalOne
-	if (hasUpg("p", 52)) gainExp = gainExp.add(upgEff("p", 52))
 	if (hasUpg("sys", 11)) gainExp = gainExp.mul(upgEff("sys", 11))
 	if (inChallenge("s", 11)) gainExp = gainExp.div(2)
 	if (inChallenge("s", 12)) gainExp = gainExp.div(4)
 
 	// direct effects to gain
-	let directMult = decimalOne
-	if (inChallenge("s", 11) && hasUpg("s", 11)) directMult = directMult.mul(5)
-
-	if (getClickableState("e", 21)) directMult = directMult.div(tmp.e.clickables[21].negEffect)
-	if (getClickableState("e", 31)) directMult = directMult.mul(clickableEffect("e", 31))
-	if (getClickableState("e", 32)) directMult = directMult.div(tmp.e.clickables[32].negEffect)
-
-	directMult = directMult.mul(buyableEffect("p", 23))
 
 	//if (player.factory.unlocked) directMult = directMult.mul(tmp.factory.effect)
 
-	let ret = baseGain.mul(gainMult).pow(gainExp).mul(directMult)
-	return ret
+	return baseGain.mul(gainMult).pow(gainExp).mul(directMult)
 }
 
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
