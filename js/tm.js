@@ -5,6 +5,10 @@ function resetSluggish(on) {
     player.tm.sluggish.best = decimalZero
     player.tm.sluggish.total = decimalZero
     player.tm.sluggish.inChallenge = on
+
+    for (let clock in player.tm.sluggish.clocks) {
+        player.tm.sluggish.clocks[clock] = tmp.tm.startData().sluggish.clocks[clock]
+    }
 }
 
 function updateClock(clock, diff) {
@@ -12,10 +16,16 @@ function updateClock(clock, diff) {
     let tclocks = tmp.tm.sluggish.clocks
     pclocks[clock].timer += diff * tclocks[clock].speed
     if (pclocks[clock].timer >= 12) {
-        let x = tmp.tm.sluggish.baseGain.mul(Math.trunc(pclocks[clock].timer / 12))
-        player.tm.sluggish.points = player.tm.sluggish.points.add(x)
-        player.tm.sluggish.total = player.tm.sluggish.total.add(x)
-        player.tm.sluggish.best = player.tm.sluggish.best.max(player.tm.sluggish.points)
+        if (clock == "clock1") {
+            let x = tmp.tm.sluggish.gain.mul(Math.trunc(pclocks[clock].timer / 12))
+            player.tm.sluggish.points = player.tm.sluggish.points.add(x)
+            player.tm.sluggish.total = player.tm.sluggish.total.add(x)
+            player.tm.sluggish.best = player.tm.sluggish.best.max(player.tm.sluggish.points)
+        } else {
+            let prevClock = "clock" + (clock.charAt(5) - 1)
+            let x = pclocks[clock].clockPower.mul(Math.trunc(pclocks[clock].timer / 12))
+            pclocks[prevClock].clockPower = pclocks[prevClock].clockPower.add(x)
+        }
         pclocks[clock].timer %= 12
     }
 }
@@ -139,13 +149,13 @@ addLayer("tm", {
                 inChallenge: false,
                 clockMade: false,
                 clocks: {
-                    "clockA": {times: 0, timer:0},
-                    "clockB": {times: 0, timer:0},
-                    "clockC": {times: 0, timer:0},
-                    "clockD": {times: 0, timer:0},
-                    "clockE": {times: 0, timer:0},
-                    "clockF": {times: 0, timer:0},
-                    "clockG": {times: 0, timer:0}
+                    "clock1": {times: 0, timer:0, cpower:new Decimal(1), bonus:decimalOne},
+                    "clock2": {times: 0, timer:0, cpower:new Decimal(2), bonus:decimalOne},
+                    "clock3": {times: 0, timer:0, cpower:new Decimal(3), bonus:decimalOne},
+                    "clock4": {times: 0, timer:0, cpower:new Decimal(4), bonus:decimalOne},
+                    "clock5": {times: 0, timer:0, cpower:new Decimal(5), bonus:decimalOne},
+                    "clock6": {times: 0, timer:0, cpower:new Decimal(6), bonus:decimalOne},
+                    "clock7": {times: 0, timer:0, cpower:new Decimal(7), bonus:decimalOne}
                 }
             }
         }
@@ -176,43 +186,49 @@ addLayer("tm", {
         return ret.mul(buyableEffect("tm", 12))
     },
     sluggish: {
-        baseGain() { return decimalOne },
+        gain() {
+            let bonusTotal = decimalOne
+            for (let clock in player.tm.sluggish.clocks) {
+                bonusTotal = bonusTotal.mul(player.tm.sluggish.clocks[clock].bonus)
+            }
+            return player.tm.sluggish.clocks["clock1"].cpower.mul(bonusTotal)
+        },
         clocks: {
-            clockA: {
+            clock1: {
                 unlocked() { return true },
-                speed() { return 1/10 }
+                speed() { return 1/20 }
             },
-            clockB: {
+            clock2: {
                 unlocked() { return true },
                 speed() { return 1/100 }
             },
-            clockC: {
+            clock3: {
                 unlocked() { return true },
-                speed() { return 1/2000 }
+                speed() { return 1/1000 }
             },
-            clockD: {
+            clock4: {
                 unlocked() { return true },
-                speed() { return 1/80000 }
+                speed() { return 1/20000 }
             },
-            clockE: {
+            clock5: {
                 unlocked() { return true },
-                speed() { return 1/80000 }
+                speed() { return 1/800000 }
             },
-            clockF: {
+            clock6: {
                 unlocked() { return true },
-                speed() { return 1/80000 }
+                speed() { return 1/64000000 }
             }
         }
     },
     update(diff) {
-        if (player.offTime !== undefined || !player.tm.unlocked) return
+        if (player.offTime !== undefined || player.tm.isWarping || !player.tm.unlocked) return
         let timeFluxFactor = 1//timeFlux() ** .25
-        player.tm.points = player.tm.points.add(timeFluxFactor * diff).min(this.stoTimeLimit())
+        player.tm.points = player.tm.points.add(.01 * timeFluxFactor * diff).min(this.stoTimeLimit())
 
         if (player.tm.sluggish.inChallenge) {
             let inSluggishTab = player.tab == "tm" && player.subtabs.tm.mainTabs == "Sluggish"
             
-            for (clock in tmp.tm.sluggish.clocks) {
+            for (let clock in tmp.tm.sluggish.clocks) {
                 if (!tmp.tm.sluggish.clocks[clock].unlocked) continue
                 updateClock(clock, diff)
                 if (inSluggishTab) setupClock(clock)
@@ -313,6 +329,10 @@ addLayer("tm", {
                 addBuyables("tm", 13, 1)
             },
             unlocked:() => shopEffect(106) >= 1
+        },
+        31: {
+            title: "Flux Capacitor A",
+
         }
     },
     clickables: {
@@ -341,15 +361,13 @@ addLayer("tm", {
     challenges: {
         11: {
             name: "Sluggish 1",
-            challengeDescription:() => `Nullify all row 1 point/penny boosts except for upgrades based on achievements (at their initial formulas),
+            challengeDescription:() => `Nullify all row 1 point/penny boosts except for Penny upgrades based on achievements,
                 investment gain is 1, and perform a penny buyable respec`,
             goalDescription() { return format(this.requirement) + " temporal power" },
-            rewardDescription:() => `Time Flux boosts TP gain at a <i>heavily</i> reduced rate,
-                and double offline time limit`,
+            rewardDescription:() => `Increase 
+                and double offline time limit (7.5m --> 15m)`,
             rewardEffect() { 
-                let x = challengeCompletions("tm", 12)
-                if (x == 0) return 1
-                return Math.min(Math.pow(timeFlux(), 0.02), 1.2)
+                return challengeCompletions("tm", 12) == 0 ? 1 : Math.pow(timeFlux(), 0.02)
             },
             rewardDisplay() { 
                 return format(challengeEffect("tm", 12), 2) + "x"
@@ -375,11 +393,9 @@ addLayer("tm", {
             challengeDescription:() => `Time Flux is square rooted, then divided by 2`,
             goalDescription() { return format(this.requirement) + " temporal power" },
             rewardDescription:() => `Time Flux boosts TP gain at a <i>heavily</i> reduced rate,
-                and double offline time limit`,
-            rewardEffect() { 
-                let x = challengeCompletions("tm", 12)
-                if (x == 0) return 1
-                return Math.pow(timeFlux(), 1.5)
+                and double offline time limit (15m --> 30m)`,
+            rewardEffect() {
+                return challengeCompletions("tm", 12) == 0 ? 1 : Math.pow(timeFlux(), 0.02)
             },
             rewardDisplay() { 
                 return format(challengeEffect("tm", 12), 2) + "x"
@@ -398,7 +414,7 @@ addLayer("tm", {
             },
             completionLimit: 100,
             requirement: 1e9,
-            unlocked:() => player.tm.challenges[11] != 0
+            unlocked:() => player.tm.challenges[11] != 0 && hasMilestone("s", 1)
         }
     },
     tabFormat: {
@@ -418,7 +434,7 @@ addLayer("tm", {
         "Challenges": {
             content: [
                 "main-display",
-                ["display-text", () => `Each completed challenge multiplies TP gain by 1.1x<br>
+                ["display-text", () => `Each completed challenge increases TP gain by 1%<br>
                     ${0} challenge completions = ${1}x TP gain`], "blank",
                 ["display-text", "Entering a challenge grants access to the Sluggish tab; Sluggish progress is reset when exiting a challenge"],
                 "blank",
@@ -432,19 +448,38 @@ addLayer("tm", {
                     ${format(player.tm.sluggish.points)}</h2> temporal energy`
                 ], "blank",
                 ["display-text", () => 
-                    `<canvas id="clockA" width="200" height="200" style="background-color:#0f0f0f"></canvas>
-                    <canvas id="clockB" width="200" height="200" style="background-color:#0f0f0f"></canvas>
-                    <canvas id="clockC" width="200" height="200" style="background-color:#0f0f0f"></canvas><br>
-                    <canvas id="clockD" width="200" height="200" style="background-color:#0f0f0f"></canvas>
-                    <canvas id="clockE" width="200" height="200" style="background-color:#0f0f0f"></canvas>
-                    <canvas id="clockF" width="200" height="200" style="background-color:#0f0f0f"></canvas>`
+                    `<div class = "clockCanvasContainer">
+                        <div class="clockDiv">
+                            <canvas id="clock1" width="200" height="200" style="background-color:#0f0f0f"></canvas>
+                        </div>
+                        <div class="clockDiv">
+                            <canvas id="clock2" width="200" height="200" style="background-color:#0f0f0f"></canvas>
+                        </div>
+                        <div class="clockDiv">
+                            <canvas id="clock3" width="200" height="200" style="background-color:#0f0f0f"></canvas>
+                        </div>
+                    </div><br>
+                    <canvas id="clock4" width="200" height="200" style="background-color:#0f0f0f"></canvas>
+                    <canvas id="clock5" width="200" height="200" style="background-color:#0f0f0f"></canvas>
+                    <canvas id="clock6" width="200" height="200" style="background-color:#0f0f0f"></canvas>`
                 ]
             ],
             unlocked:() => player.tm.sluggish.inChallenge
         },
         "Info": {
             content: [
-                ["display-text", ""]
+                ["display-text", `<b>NOTHING</b> in this node will update during offline time or warp calculation. These features
+                    only update while the game is open and running normally.
+                    Each clock's hand runs clockwise from 0 --> 12 (which loops back around to 0). 
+                    Everytime a clock's hand reaches the 12th hour, it produces a certain currency.
+                    The 6th Clock produces 5th Clocks, the 5th produces 4th, etc. down to the 1st Clock, which produces Temporal Energy.
+                    The amount of currency (clocks or TE) that a clock produces is equivalent to its Clock Power.
+                    <br><br>Everytime a clock's hand reaches another hour (1, 2, 3, etc.), 1 point is allocated to 1 of the clock's stats.
+                    Each clock has exactly 3 stats: Speed, Production, and Bonus. Speed boosts the rate at which a clock's hand moves.
+                    Production boosts the Clock Power gained by the clock.
+                    Bonus provides an overall boost to Temporal Power gain.
+                    <br><br>Therefore, the total Temporal Power gained when the 1st Clock reaches 12 is equal to:
+                    <br><br>(<b>Clock Power</b> of <b>Clock 1</b>) * (Product of all <b>Bonus</b>)`]
             ]
         }
     }

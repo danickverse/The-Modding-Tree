@@ -28,7 +28,7 @@ function getShopData(id) {
         case 106:
             max = 2; title = "TM ADV"; cost = 10
             display = `Level 1: Unlock Stored Time and a Temporal Power buyable in the Time Machine<br>
-                       Level 2: Unlock the Sluggish 4 challenge in the Time Machine`; 
+                       Level 2: Unlock the Sluggish 4 challenge and Flux Capacitors in the Time Machine`; 
             type = "unlock"; break
         default: throw Error(`Missing Shop grid case for id: ${id}`)
     }

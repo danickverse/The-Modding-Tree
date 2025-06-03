@@ -160,6 +160,13 @@ addLayer("s", {
             6: () => player.s.stored_dollars.points.add(1).root(5),
         }
     },
+    stored_time: {
+        gain:() => player.tm.points,
+        effects: {
+            1: () => player.s.stored_time.points.div(1000).add(10).log10().log10().add(1),
+            2: () => player.s.stored_time.points.div(10).add(1).pow(.01)
+        }
+    },
     milestones: {
         0: {
             requirementDescription: "30,000 Stored Investment",

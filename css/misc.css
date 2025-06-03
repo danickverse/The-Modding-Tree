@@ -54,6 +54,17 @@
 
 }
 
+.clockDiv {
+    width:200px;
+    height:300px;
+}
+
+.clockCanvasContainer {
+    display: flex;
+    justify-content: space-between; /* Adjust spacing between canvases */
+    gap: 10px; /* Optional: Adds consistent spacing */
+}
+
 /* .grid-container {
     display: grid;
     grid-template-columns: auto auto auto;

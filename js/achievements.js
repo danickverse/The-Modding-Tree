@@ -152,9 +152,9 @@ addLayer("a", {
         32: {
             name: "12",
             done() {
-                if (this.unlocked() && player.p.investment.points.gte(100)) return true
+                if (this.unlocked() && player.p.investment.points.gte(100) && player.tm.challenges[11] == 1) return true
             },
-            tooltip: "Reach 100 Investment<br><br>Multiply expansion gain by 1.1 and generate .1% of Pennies on reset per second per achievement in this row",
+            tooltip: "Reach 100 Investment and complete Sluggish 1<br><br>Multiply expansion gain by 1.1 and generate .1% of Pennies on reset per second per achievement in this row",
             unlocked:() => hasAchievement("a", 31),
             style: achBlueStyle,
             effect() {
