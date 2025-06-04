@@ -54,9 +54,12 @@
 
 }
 
+/* Start TM CSS */
+
 .clockDiv {
     width:200px;
-    height:300px;
+    height:320px;
+    background-color:#0f0f0f;
 }
 
 .clockCanvasContainer {
@@ -64,6 +67,9 @@
     justify-content: space-between; /* Adjust spacing between canvases */
     gap: 10px; /* Optional: Adds consistent spacing */
 }
+
+/* End TM CSS */
+
 
 /* .grid-container {
     display: grid;

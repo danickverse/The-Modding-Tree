@@ -9,7 +9,7 @@ let modInfo = {
 		"expansion.js", "storage.js", "system.js",
 		"bills.js", "banks.js", //"factory.js",
 		// remember to uncomment statement in getPointGen() when uncomment factory.js
-		"quests.js", "shopSupport.js", "effects.js", "tm.js"],
+		"quests.js", "shopSupport.js", "effects.js", "tm.js", "tmSupport.js"],
 	allowSmall: false,
 
 	discordName: "",

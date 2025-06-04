@@ -13,6 +13,9 @@ addLayer("s", {
         stored_dollars: {
             points: decimalZero
         },
+        stored_time: {
+            points: decimalZero
+        },
         high_scores: {
             11: {
                 points: decimalZero
