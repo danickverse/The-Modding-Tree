@@ -785,14 +785,7 @@ addLayer("e", {
                     + "without rewarding currency, and could unnecessarily slow down progression!"
                 if (!confirm(confirmText)) return
                 investmentReset(false, false)
-                function removeUpgrades(index) {
-                    return index == 33 || index == 43 || index > 100
-                }
-                player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
-                if (!hasMilestone("sys", 0)) {
-                    player.p.autoUpgCooldown = -1
-                    player.p.autoBuyableCooldown = -1
-                }
+                respecExpansionUpgrades(["PE"])
             },
             canClick:() => player.e.upgrades.length > 0
         },
@@ -803,10 +796,7 @@ addLayer("e", {
                 let confirmText = "Are you sure you want to respec? This does NOT return spent currency "
                     + "and could unnecessarily slow down progression!"
                 if (!confirm(confirmText)) return
-                function removeUpgrades(index) {
-                    return index < 100 || index == 111 || index > 200
-                }
-                player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
+                respecExpansionUpgrades(["SE"])
             },
             canClick:() => tmp.e.system_expansion.upgCount - 1 > 0,
             unlocked:() => hasUpg("e", 111)

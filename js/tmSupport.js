@@ -14,7 +14,15 @@ function resetSluggish(on) {
 function updateClock(clock, diff) {
     let pclocks = player.tm.sluggish.clocks
     let tclocks = tmp.tm.sluggish.clocks
+    let prevTime = pclocks[clock].timer
     pclocks[clock].timer += diff * tclocks[clock].speed
+
+    if (prevTime < Math.trunc(pclocks[clock].timer)) {
+        let statsGenerated = Math.trunc(pclocks[clock].timer) - Math.trunc(prevTime)
+        let focus = pclocks[clock].focus
+        pclocks[clock][focus] = pclocks[clock][focus].add(statsGenerated)
+    }
+
     if (pclocks[clock].timer >= 12) {
         if (clock == "clock1") {
             let x = tmp.tm.sluggish.gain.mul(Math.trunc(pclocks[clock].timer / 12))
@@ -43,7 +51,7 @@ function setupDropdowns(clock) {
         let bonusText = document.getElementById(clock + "Bonus")
         if (x == "production") {
             // set focus to production
-            player.tm.sluggish.clocks[clock].focus = "p"
+            player.tm.sluggish.clocks[clock].focus = "prod"
             prodText.style.fontWeight = "bold"
             prodText.style.color = "purple"
             speedText.style.fontWeight = "normal"
@@ -53,7 +61,7 @@ function setupDropdowns(clock) {
         } else if (x == "speed") {
             // set focus to speed
             prodText.style.fontWeight = "normal"
-            player.tm.sluggish.clocks[clock].focus = "s"
+            player.tm.sluggish.clocks[clock].focus = "speed"
             prodText.style.color = "#dfdfdf"
             speedText.style.fontWeight = "bold"
             speedText.style.color = "purple"
@@ -61,7 +69,7 @@ function setupDropdowns(clock) {
             bonusText.style.color = "#dfdfdf"
         } else if (x == "bonus") {
             // set focus to bonus
-            player.tm.sluggish.clocks[clock].focus = "b"
+            player.tm.sluggish.clocks[clock].focus = "bonus"
             prodText.style.fontWeight = "normal"
             prodText.style.color = "#dfdfdf"
             speedText.style.fontWeight = "normal"
@@ -73,11 +81,11 @@ function setupDropdowns(clock) {
 }
 
 function updateClockStatDisplay(clock) {
-    document.getElementById(clock + "ProdEff").textContent = "peffect"
+    document.getElementById(clock + "ProdEff").textContent = format(tmp.tm.sluggish.clocks[clock].prod)
     document.getElementById(clock + "ProdVal").textContent = format(player.tm.sluggish.clocks[clock].prod, 1)
-    document.getElementById(clock + "SpeedEff").textContent = "seffect"
+    document.getElementById(clock + "SpeedEff").textContent = format(tmp.tm.sluggish.clocks[clock].speed)
     document.getElementById(clock + "SpeedVal").textContent = format(player.tm.sluggish.clocks[clock].speed, 1)
-    document.getElementById(clock + "BonusEff").textContent = "beffect"
+    document.getElementById(clock + "BonusEff").textContent = format(tmp.tm.sluggish.clocks[clock].bonus)
     document.getElementById(clock + "BonusVal").textContent = format(player.tm.sluggish.clocks[clock].bonus, 1)
 }
 
@@ -240,4 +248,8 @@ function sluggishDisplay() {
         ret += `</div>`
     }
     return ret
+}
+
+function inSluggishChallenge(challNumber) {
+    return
 }

@@ -221,14 +221,14 @@ addLayer("p", {
                 let title = "<b><h3>Biggest Bestest Coin</b></h3>"
                 let description = hasUpg("p", 51) ? (
                     player.shiftDown ? "Originally, this multiplied point/penny gain by 1.25"
-                        : "Multiply point/penny gain by log10(10 + Best Pennies)<sup>1.25</sup>"
+                        : "Multiply point/penny gain by log10(10 + Best Pennies)<sup>1.325</sup>"
                 ) : "Multiply point/penny gain by 1.25"
                 let effect = hasUpg("p", 51) ? `Currently: ${format(upgEff("p", 15))}x<br>` : ""
                 let cost = "Cost: 25 pennies"
                 return title + "<br>" + description + "<br>" + effect + "<br>" + cost
             },
             cost: new Decimal("25"),
-            effect:() => hasUpg("p", 51) ? player.p.best.add(10).log10().pow(1.25) : 1.25,
+            effect:() => hasUpg("p", 51) ? player.p.best.add(10).log10().pow(1.325) : 1.25,
             unlocked:() => hasUpg("p", 14) || hasUpg("p", 25)
         },
         21: {
@@ -557,7 +557,7 @@ addLayer("p", {
             cost:() => !hasAchievement("a", 81) ? new Decimal("3e26") : new Decimal("1e9"),
             canAfford:() => hasAchievement("a", 71),
             max() { return .25 },
-            effect() { return Math.min(this.max(), (player.resetTime ** .25) / 30) },
+            effect() { return Math.min(this.max(), (player.resetTime ** .25) / 25) },
             effectDisplay:() => "+" + format(upgEff("p", 52)),
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },

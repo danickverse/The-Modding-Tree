@@ -18,13 +18,13 @@ addLayer("tm", {
                 inChallenge: false,
                 clockMade: false,
                 clocks: {
-                    "clock1": {times: 0, timer:0, cenergy:new Decimal(1), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
-                    "clock2": {times: 0, timer:0, cenergy:new Decimal(2), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
-                    "clock3": {times: 0, timer:0, cenergy:new Decimal(3), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
-                    "clock4": {times: 0, timer:0, cenergy:new Decimal(4), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
-                    "clock5": {times: 0, timer:0, cenergy:new Decimal(5), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
-                    "clock6": {times: 0, timer:0, cenergy:new Decimal(6), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
-                    "clock7": {times: 0, timer:0, cenergy:new Decimal(7), focus:"p", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock1": {times: 0, timer:0, cenergy:new Decimal(1), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock2": {times: 0, timer:0, cenergy:new Decimal(2), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock3": {times: 0, timer:0, cenergy:new Decimal(3), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock4": {times: 0, timer:0, cenergy:new Decimal(4), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock5": {times: 0, timer:0, cenergy:new Decimal(5), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock6": {times: 0, timer:0, cenergy:new Decimal(6), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
+                    "clock7": {times: 0, timer:0, cenergy:new Decimal(7), focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
                 }
             }
         }
@@ -58,45 +58,101 @@ addLayer("tm", {
         gain() {
             let bonusTotal = decimalOne
             for (let clock in player.tm.sluggish.clocks) {
-                bonusTotal = bonusTotal.mul(player.tm.sluggish.clocks[clock].bonus)
+                bonusTotal = bonusTotal.mul(tmp.tm.sluggish.clocks[clock].bonus)
             }
             return player.tm.sluggish.clocks["clock1"].cenergy.mul(tmp.tm.sluggish.clocks["clock1"].prod).mul(bonusTotal)
         },
         clocks: {
             clock1: {
                 unlocked() { return true },
-                prod() { return player.tm.sluggish.clocks["clock1"].prod },
-                speed() { return 1/20 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock1"].prod.div(12).add(1).root(1/2) 
+                },
+                speed() { 
+                    let base = 1/20
+                    return player.tm.sluggish.clocks["clock1"].speed.div(24).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock1"].bonus.add(1).log2().div(10).add(1)
+                }
             },
             clock2: {
                 unlocked() { return false },
-                prod() { return 1 },
-                speed() { return 1/100 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock2"].prod.div(12).add(1).root(1/3) 
+                },
+                speed() { 
+                    let base = 1/100
+                    return player.tm.sluggish.clocks["clock2"].speed.div(120).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock2"].bonus.add(1).log2().div(9).add(1)
+                }
             },
             clock3: {
                 unlocked() { return false },
-                prod() { return 1 },
-                speed() { return 1/1000 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock3"].prod.div(12).add(1).root(1/4) 
+                },
+                speed() { 
+                    let base = 1/500
+                    return player.tm.sluggish.clocks["clock3"].speed.div(120).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock3"].bonus.add(1).log2().div(8).add(1)
+                }
             },
             clock4: {
                 unlocked() { return false },
-                prod() { return 1 },
-                speed() { return 1/20000 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock4"].prod.div(12).add(1).root(1/5) 
+                },
+                speed() { 
+                    let base = 1/5000
+                    return player.tm.sluggish.clocks["clock4"].speed.div(120).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock4"].bonus.add(1).log2().div(7).add(1)
+                }
             },
             clock5: {
                 unlocked() { return false },
-                prod() { return 1 },
-                speed() { return 1/800000 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock5"].prod.div(12).add(1).root(1/6) 
+                },
+                speed() { 
+                    let base = 1/60000
+                    return player.tm.sluggish.clocks["clock5"].speed.div(120).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock5"].bonus.add(1).log2().div(6).add(1)
+                }
             },
             clock6: {
                 unlocked() { return false },
-                prod() { return 1 },
-                speed() { return 1/64000000 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock6"].prod.div(12).add(1).root(1/7) 
+                },
+                speed() { 
+                    let base = 1/720000
+                    return player.tm.sluggish.clocks["clock6"].speed.div(120).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock6"].bonus.add(1).log2().div(5).add(1)
+                }
             },
             clock7: {
                 unlocked() { return false },
-                prod() { return 1 },
-                speed() { return 1 }
+                prod() { 
+                    return player.tm.sluggish.clocks["clock7"].prod.div(12).add(1).root(1/8) 
+                },
+                speed() { 
+                    let base = 1/100000000
+                    return player.tm.sluggish.clocks["clock7"].speed.div(120).add(2).log(2).mul(base)
+                },
+                bonus() { 
+                    return player.tm.sluggish.clocks["clock7"].bonus.add(1).log2().div(4).add(1)
+                }
             }
         }
     },
@@ -244,8 +300,9 @@ addLayer("tm", {
     challenges: {
         11: {
             name: "Sluggish 1",
+            id: 1,
             challengeDescription:() => `Nullify all row 1 point/penny boosts except for Penny upgrades based on achievements,
-                investment gain is 1, and perform a penny buyable respec`,
+                investment gain is 1, perform a penny buyable respec, and reset Penny/Expansion`,
             goalDescription() { return format(this.requirement) + " temporal power" },
             rewardDescription:() => `Increase 
                 and double offline time limit (7.5m --> 15m)`,
@@ -264,6 +321,13 @@ addLayer("tm", {
             onEnter() {
                 resetSluggish(on=true)
                 investmentReset(true, true)
+                respecExpansionUpgrades(["PE", "SE"])
+                let keptEUpgrades = player.e.upgrades
+                player.highestPointsEver = decimalZero
+                layerDataReset("e")
+                player.e.upgrades = keptEUpgrades
+                player.p.upgrades = []
+                updateTempData(layers.e, tmp.e, funcs.e)
             },
             onExit() {
                 resetSluggish(on=false)

@@ -100,7 +100,7 @@ function upgrade23LimitExp() {
     if (hasUpg("p", 34)) exp = exp.add(upgEff("p", 34))
     if (hasUpg("e", 12)) exp = exp.add(upgEff("e", 12))
     if (hasAchievement('a', 31)) exp = exp.add(.01)
-    if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) exp = exp.add(.01)
+    if (hasAchievement('a', 35) && !tmp.a.achievements[35].effLocked) exp = exp.add(.01)
     if (hasMilestone("s", 1)) exp = exp.add(tmp.s.stored_investment.effects[3][0])
     return exp
 }
@@ -186,6 +186,26 @@ function investmentReset(resetInvestment, resetInvestment2) {
 
     if (resetInvestment) player.p.investment.points = decimalZero
     if (resetInvestment2) player.p.investment2.points = decimalZero
+}
+
+function respecExpansionUpgrades(sectionsToRemove) {
+    if (sectionsToRemove.includes("PE")) {
+            function removeUpgrades(index) {
+            return index == 33 || index == 43 || index > 100
+        }
+        player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
+        if (!hasMilestone("sys", 0)) {
+            player.p.autoUpgCooldown = -1
+            player.p.autoBuyableCooldown = -1
+        }
+    }
+
+    if (sectionsToRemove.includes("SE")) {
+        function removeUpgrades(index) {
+            return index < 100 || index == 111 || index > 200
+        }
+        player.e.upgrades = player.e.upgrades.filter(removeUpgrades)
+    }
 }
 
 function expansionUpgradeCost(id) {
