@@ -124,7 +124,7 @@ addLayer("sys", {
         player.sys.bestPenniesInReset = decimalZero
         player.sys.bestEducation1InReset = decimalZero
 
-        setBuyableAmount("sys", 23, decimalZero)
+        //setBuyableAmount("sys", 23, decimalZero)
         if (hasUpg("sys", 124)) {
             let recharge = tmp.sys.businesses.land.recharge.gain
             player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.add(recharge)
@@ -1258,7 +1258,7 @@ addLayer("sys", {
             recharge: {
                 gain() {
                     let usedCharges = getBuyableAmount("sys", 21).sub(5).max(0)
-                    if (usedCharges.eq(0)) return 0
+                    if (usedCharges.eq(0)) return decimalZero
                     return usedCharges.pow_base(upgEff("sys", 124)).mul(buyableEffect("sys", 201))
                 }
             }

@@ -37,7 +37,8 @@ addLayer("a", {
             if (hasMilestone("sys", 1)) {
                 for (i = 1; i <= Math.min(player.sys.milestones.length, 7); i++) {
                     for (j = 1; j <= 5; j++) {
-                        if (!keptAchs.has(i*10 + j)) keptAchs.add(i*10 + j)
+                        let achIndex = i*10 + j
+                        keptAchs.add(achIndex)
                     }
                 }
                 //console.log(keptAchs)
@@ -50,7 +51,7 @@ addLayer("a", {
             // handle milestones
             function milestoneFilter(index) {
                 //console.log(`${index}: ${tmp.a.milestones[index].done()}`)
-                return index > 8 || index == 5 || tmp.a.milestones[index].done()
+                return index >= 8 || index == 5 || tmp.a.milestones[index].done()
             }
             player.a.milestones = player.a.milestones.filter(milestoneFilter)
         }
@@ -166,8 +167,9 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && tmp.e.getResetGain.gte(.106)) return true
             },
-            tooltip: "Reach a rate of .106 Expansions per second",
-            unlocked:() => hasAchievement("a", 31)
+            tooltip: "Reach a rate of .106 Expansions per second<br>Unlock Expansion milestones",
+            unlocked:() => hasAchievement("a", 31),
+            style: achBlueStyle
         },
         34: {
             name: "14",
@@ -259,10 +261,8 @@ addLayer("a", {
             done() {
                 return false // handled by penny.js --> update(diff) to unlock TM
             },
-            tooltip: `Reach 1e12 pennies with at most 8 Penny upgrades
-                <br><br>Unlock the Time Machine`,
-            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked,
-            style: achBlueStyle
+            tooltip: `Reach 1e12 pennies with at most 8 Penny upgrades`,
+            unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
         },
         54: {
             name: "24",
@@ -347,7 +347,7 @@ addLayer("a", {
             done() {
                 return (this.unlocked() && player.p.investment2.points.gte(5000))
             },
-            tooltip: "Reach 5000 Expansion Investment<br><br>Unlock storage upgrades and more storage milestones",
+            tooltip: "Reach 5000 Expansion Investment<br><br>Unlock Storage upgrades and more Storage milestones",
             unlocked:() => hasMilestone("s", 3) || player.sys.unlocked,
             style: achBlueStyle
         },
@@ -373,7 +373,7 @@ addLayer("a", {
                 return this.unlocked() && hasUpg("p", 55) && player.sys.points.gt(0)
             },
             tooltip: `Reset for Dollars
-                <br><br>Unlock more achievements & milestones and Wait A Second...
+                <br><br>Unlock more achievements & milestones and Waste of Pocket Space
                 effect is [Penny Upgrades] - 6, but nullify Ach 15`,
             unlocked:() => player.sys.unlocked,
             style: achBlueStyle
@@ -472,9 +472,9 @@ addLayer("a", {
         102: {
             name: "47",
             done() { 
-                return timeFlux() >= 2
+                return timeFlux() >= 2.5
             },
-            tooltip: `Reach a Time Flux of 2`,
+            tooltip: `Reach a Time Flux of 2.5`,
             unlocked:() => hasMilestone("a", 10)
         },
         103: {
@@ -602,7 +602,7 @@ addLayer("a", {
         },
         8: {
             requirementDescription: "35 Achievements Finished",
-            effectDescription:() => { return "Multiply Time Flux by (1 + Achievements<sup>1.5</sup>/1000)x (more Reset Time)<br>Currently: "
+            effectDescription:() => { return "Multiply Time Flux by (1 + Achievements<sup>1.5</sup>/1000)x<br>Currently: "
                 + format(1 + player.a.achievements.length**1.5/1000, 3) + "x" },
             done() { return this.unlocked && player.a.achievements.length >= 35 },
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked

@@ -54,18 +54,37 @@
 
 }
 
+.vertical-slider {
+    writing-mode: sideways-lr; /* vertical-lr; */
+    direction: ltr;
+}
+
 /* Start TM CSS */
 
 .clockDiv {
     width:200px;
-    height:320px;
-    background-color:#0f0f0f;
+    height:330px;
+    padding-left:20px;
+    padding-right:20px;
 }
 
 .clockCanvasContainer {
     display: flex;
     justify-content: space-between; /* Adjust spacing between canvases */
     gap: 10px; /* Optional: Adds consistent spacing */
+}
+
+.windupDiv {
+    padding:5px;
+    border: 2px dotted white;
+}
+
+.windupContainer {
+    padding: 15px;
+    border: 5px solid white;
+    display: flex;
+    align-items: center; /* vertically align items */
+    gap: 10px;
 }
 
 /* End TM CSS */

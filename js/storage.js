@@ -704,9 +704,13 @@ addLayer("s", {
             },
             unlocked:() => hasMilestone("s", 4)
         }
-        // 13: dollar challenge --> all boosts from row 1 are nullified
+        // 13: IDEA 1 
+        // dollar challenge --> all boosts from row 1 are nullified
         // perform dollar storage, but also resets toys
         // main objective is to grind toys for more dollars (see "sell toys")
         // more dollars = better row 2 boosts = more points = higher score
+
+        // 13: IDEA 2
+        // dollar challenge --> all boosts from row 1 are nullified, PTE is multiplied by x, boosts from row 2 raise x to a power below 1
     }
 })

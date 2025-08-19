@@ -104,7 +104,7 @@ addLayer("bills", {
         2: {
             requirementDescription: "Reach Zone 25",
             effectDescription:() => player.shiftDown ? "Scaling not impacted by Effective Level"
-                : `Unlock Banks and multiply loot gain by 2.5x, but enemies at and after Zone 25 are much tougher<sup>*</sup>`,
+                : `Unlock Banks and multiply loot gain by 2.5x, but enemies at and after Zone 25 are much tougher and have Shield<sup>*</sup>`,
             done() { return this.unlocked() && player.bills.highestZone >= 25 },
             unlocked() { return hasAchievement("a", 105) }
         }
@@ -778,6 +778,12 @@ addLayer("bills", {
                 }
 
                 return base.add(linearAddScaling).mul(multScaling).mul(bossScaling).pow(expScaling)
+            },
+            shield() {
+                if (player.bills.zone < 25) return decimalZero
+
+                let ret = decimalZero
+                return ret
             },
             loot() {
                 return lootGain(tmp.bills.effLvl)

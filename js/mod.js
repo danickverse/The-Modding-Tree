@@ -24,17 +24,23 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.2.5",
+	num: "0.3",
 	name: "Oh, Right, This is a Tree",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.2.5</h3><br>
-		- Added the Time Machine, a side feature unlocked by the 23rd Achievement<br>
+	<h3>v0.3</h3><br>
+		- Added the Time Machine, a side feature unlocked by the 11th Achievement<br>
+		- Added 9 buyables to the Time Machine feature, 3 of which are available immediately<br>
+		- Added Time Warps to the Time Machine feature<br>
+		- Added Sluggish, a minigame included in the Time Machine that is unlocked by entering challenges<br>
 		- Adjusted Shop values/effects and added more Shop items<br>
+		- Expanded the Banks layer to include more upgrades, milestones, and more<br>
+		- A lot more stuff here and there that I've just forgotten about, to be honest<br>
 		- Rebalanced and revamped a few early game features, notably buffing the first achievement milestone's effect,
 			modifying cost scaling for Penny Upgrades 13/14, buffing Achievement 14's reward, adding the Time Machine,
-			and much more, to craft a smoother experience<br>
+			and much more, to craft a smoother experience up to and including the first System reset<br>
+		- A lot of bug fixes :D<br>
 		- <br><br>
 
 	<h3>v0.2.3.2</h3><br>
@@ -245,35 +251,45 @@ function getPointGen() {
 	let directMult = decimalOne
 
 	// row 1
-	if (!player.tm.sluggish.inChallenge) {
-		if (hasUpg('p', 12)) baseGain = baseGain.add(upgEff('p', 12))
-		if (hasUpg('p', 11)) gainMult = gainMult.mul(upgEff('p', 11))
-		if (hasUpg('p', 15)) gainMult = gainMult.mul(upgEff('p', 15))
-		if (hasUpg('p', 22)) gainMult = gainMult.mul(upgEff('p', 22))
-		if (hasUpg('p', 23)) gainMult = gainMult.mul(upgEff('p', 23))
-		if (hasUpg('p', 25)) gainMult = gainMult.mul(upgEff('p', 25))
-		if (hasUpg('p', 42)) gainMult = gainMult.mul(upgEff('p', 42))
-		if (hasUpg("p", 61)) gainMult = gainMult.mul(upgEff('p', 61))
-		if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
-		if (hasUpg("p", 52)) gainExp = gainExp.add(upgEff("p", 52))
+	if (hasUpg('p', 12)) baseGain = baseGain.add(upgEff('p', 12))
+	if (hasUpg('p', 11)) gainMult = gainMult.mul(upgEff('p', 11))
+	if (hasUpg('p', 15)) gainMult = gainMult.mul(upgEff('p', 15))
+	if (hasUpg('p', 21)) gainMult = gainMult.mul(upgEff('p', 21))
+	if (hasUpg('p', 22)) gainMult = gainMult.mul(upgEff('p', 22))
+	if (hasUpg('p', 23)) gainMult = gainMult.mul(upgEff('p', 23))
+	if (hasUpg('p', 25)) gainMult = gainMult.mul(upgEff('p', 25))
+	if (hasUpg('p', 42)) gainMult = gainMult.mul(upgEff('p', 42))
+	if (hasUpg("p", 61)) gainMult = gainMult.mul(upgEff('p', 61))
+	if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
+	if (hasUpg("p", 52)) gainExp = gainExp.add(upgEff("p", 52))
 
-		if (inChallenge("s", 11) && hasUpg("s", 11)) directMult = directMult.mul(5)
+	if (inChallenge("s", 11) && hasUpg("s", 11)) directMult = directMult.mul(5)
 
-		if (getClickableState("e", 21)) directMult = directMult.div(tmp.e.clickables[21].negEffect)
-		if (getClickableState("e", 31)) directMult = directMult.mul(clickableEffect("e", 31))
-		if (getClickableState("e", 32)) directMult = directMult.div(tmp.e.clickables[32].negEffect)
+	if (getClickableState("e", 21)) directMult = directMult.div(tmp.e.clickables[21].negEffect)
+	if (getClickableState("e", 31)) directMult = directMult.mul(clickableEffect("e", 31))
+	if (getClickableState("e", 32)) directMult = directMult.div(tmp.e.clickables[32].negEffect)
 
-		directMult = directMult.mul(buyableEffect("p", 23))
+	directMult = directMult.mul(buyableEffect("p", 23))
+	
+	if (inSluggishLayer(1)) {
+		let nerfExp = new Decimal(0.5)
+		if (inSluggishLayer(2)) nerfExp = nerfExp.mul(0.9 ** (player.tm.sluggish.layer - 1))
+		baseGain = baseGain.pow(.5)
+		gainMult = gainMult.pow(.5)
+		gainExp = gainExp.pow(.5)
+		directMult = directMult.pow(.5)
 	}
 
-
-	if (hasUpg('p', 21)) gainMult = gainMult.mul(upgEff('p', 21))
+	if (hasUpg("tm", 112)) gainMult = gainMult.mul(upgEff("tm", 112))
+	if (hasUpg("tm", 211)) gainMult = gainMult.mul(upgEff("tm", 211)[0])
 	if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) baseGain = baseGain.add(1)
 	if (hasUpg("sys", 23)) baseGain = baseGain.add(upgEff("sys", 23))
 
 	if (hasUpg("sys", 11)) gainExp = gainExp.mul(upgEff("sys", 11))
 	if (inChallenge("s", 11)) gainExp = gainExp.div(2)
 	if (inChallenge("s", 12)) gainExp = gainExp.div(4)
+
+	if (hasUpg("tm", 113)) gainExp = gainExp.mul(upgEff("tm", 113))
 
 	// direct effects to gain
 
@@ -285,6 +301,7 @@ function getPointGen() {
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
 function addedPlayerData() { return {
 	highestPointsEver: new Decimal("0"),
+	best: decimalZero,
 	resetTime: 0,
 	shiftDown: false,
 	particles: {},
@@ -293,10 +310,10 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	() => timeFlux() != 1 || player.sys.unlocked ? 
-		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}`
-			: `Time Flux: ${format(timeFlux(), 4)}x`)
-	: "",
+	() => (timeFlux() != 1 || player.sys.unlocked ? 
+		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}<br>`
+			: `Time Flux: ${format(timeFlux(), 4)}x<br>`)
+	: "") + `Time played: ${formatTime(player.timePlayed)}`,
 	"Current endgame: 1 Bank, HZC 30, Specks Unlocked",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
 		<br>The game is not balanced here, and is subject to bugs and inflation.
@@ -406,7 +423,8 @@ function fixOldSave(oldVersion){
 		if (player.bills.highestZone >= 10 && !hasMilestone("bills", 1)) player.bills.milestones.push('1')
 		player.quests.completions.acceleratorBar = Math.min(player.quests.completions.acceleratorBar, 3)
 	}
-	if (oldVersion < "0.2.5") {
-		if (player.a.achievements.includes('53')) player.tm.unlocked = true 
+	if (oldVersion < "0.3") {
+		if (player.a.achievements.includes('31')) player.tm.unlocked = true
+		//alert("It is recommended, although not required by any means that you start a new game to experience the new content.")
 	}
 }

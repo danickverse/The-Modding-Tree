@@ -1,15 +1,95 @@
-function resetSluggish(on) {
+let interpolatedClockButtonColors = 
+    ['rgb(51, 51, 51)', 'rgb(62, 48, 48)', 'rgb(72, 46, 46)', 
+    'rgb(83, 43, 43)', 'rgb(94, 40, 40)', 'rgb(105, 38, 38)', 
+    'rgb(115, 35, 35)', 'rgb(126, 32, 32)', 'rgb(137, 30, 30)', 
+    'rgb(148, 27, 27)', 'rgb(158, 24, 24)', 'rgb(169, 21, 21)', 
+    'rgb(180, 19, 19)', 'rgb(191, 16, 16)', 'rgb(201, 13, 13)', 
+    'rgb(212, 11, 11)', 'rgb(223, 8, 8)', 'rgb(234, 5, 5)', 
+    'rgb(244, 3, 3)', 'rgb(255, 0, 0)',
+    'rgba(145, 116, 116, 1)'] // final step --> broken down, designated with distinct color
+
+/* Array was given by the following code 
+    with the call interpolateColors("rgb(51, 51, 51)", "rgb(255, 0, 0)", 20):
+    
+function interpolateColor(color1, color2, factor) {
+    if (arguments.length < 3) { 
+        factor = 0.5; 
+    }
+    var result = color1.slice();
+    for (var i = 0; i < 3; i++) {
+        result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+    }
+    return result;
+};
+
+function interpolateColors(color1, color2, steps) {
+    var stepFactor = 1 / (steps - 1),
+        interpolatedColorArray = [];
+
+    color1 = color1.match(/\d+/g).map(Number);
+    color2 = color2.match(/\d+/g).map(Number);
+
+    for(var i = 0; i < steps; i++) {
+        let arr = interpolateColor(color1, color2, stepFactor * i);
+        interpolatedColorArray.push(`rgb(${arr[0]}, ${arr[1]}, ${arr[2]})`);
+    }
+
+    return interpolatedColorArray;
+}
+*/
+
+function resetSluggish(on, layer, max) {
     player.subtabs.tm.mainTabs = "Challenges"
 
+    // Reset sluggish data regardless of "on"
     player.tm.sluggish.points = decimalZero
     player.tm.sluggish.best = decimalZero
     player.tm.sluggish.total = decimalZero
-    player.tm.sluggish.inChallenge = on
+    player.tm.upgrades = []
+    player.tm.upgradeMenu = "Temporal Energy"
 
-    for (let clock in player.tm.sluggish.clocks) {
-        player.tm.sluggish.clocks[clock] = tmp.tm.startData().sluggish.clocks[clock]
+    // If on, then enter challenge and set sluggish layer. Else, exit
+    player.tm.sluggish.inChallenge = on
+    player.tm.sluggish.layer = on ? layer : 0
+
+    player.tm.sluggish.clocks = tmp.tm.startData().sluggish.clocks
+
+    if (on) {
+        player.tm.sluggish.maxPoints = max
+        doPopup("tm", "Sluggish Entered", "A clock has appeared...", 3, tmp.tm.color)
+        switch (layer) {
+            // higher layers come at the top to ensure that lower layers are also on
+            case 2:
+            case 1:
+                investmentReset(true, true)
+                respecExpansionUpgrades(["PE", "SE"])
+                let keptEUpgrades = player.e.upgrades
+                player.highestPointsEver = decimalZero
+                layerDataReset("e")
+                player.e.upgrades = keptEUpgrades
+                player.p.upgrades = [25]
+                updateTempData(layers.e, tmp.e, funcs.e)
+                break
+            default: throw Error(`Invalid sluggish layer: ${layer}`)
+        }
+    } else {
+        player.tm.sluggish.maxPoints = decimalZero
+        doPopup("tm", "The clocks have disappeared...", "Sluggish Exited", 3, tmp.tm.color)
     }
 }
+
+/*
+
+BREAKDOWN:
+RED BUTTON ON CENTER OF CLOCK --> CLICK 5 TIMES TO TURN BACK ON
+WHEN FIXED, GAIN 1 BREAKDOWN POINT AND THEN RANDOM BONUS TO 1 OF THE FOLLOWING: 
+    1. STAT POINT GAIN
+    2. ADDITIONAL BONUS (I.E CLOCK BONUS)
+    3. GLOBAL CLOCK SPEED (I.E BOOST ALL CLOCKS BY SAME VALUE)
+
+
+*/
+
 
 function updateClock(clock, diff) {
     let pclocks = player.tm.sluggish.clocks
@@ -30,9 +110,10 @@ function updateClock(clock, diff) {
             player.tm.sluggish.total = player.tm.sluggish.total.add(x)
             player.tm.sluggish.best = player.tm.sluggish.best.max(player.tm.sluggish.points)
         } else {
+            let x = tmp.tm.sluggish.clocks[clock].prod.mul(pclocks[clock].cenergy).mul(Math.trunc(pclocks[clock].timer / 12))
+            
             let prevClock = "clock" + (clock.charAt(5) - 1)
-            let x = pclocks[clock].clockPower.mul(Math.trunc(pclocks[clock].timer / 12))
-            pclocks[prevClock].clockPower = pclocks[prevClock].clockPower.add(x)
+            pclocks[prevClock].cenergy = pclocks[prevClock].cenergy.add(x)
         }
         pclocks[clock].timer %= 12
     }
@@ -40,16 +121,18 @@ function updateClock(clock, diff) {
 
 function setupDropdowns(clock) {
     var clockSel = document.getElementById(clock + "Menu");
+    clockSel.value = player.tm.sluggish.clocks[clock].focus
     changeDropdowns()
 
     clockSel.onchange = changeDropdowns
+    console.log("wtf")
 
     function changeDropdowns() {
         let x = clockSel.value
         let prodText = document.getElementById(clock + "Prod")
         let speedText = document.getElementById(clock + "Speed")
         let bonusText = document.getElementById(clock + "Bonus")
-        if (x == "production") {
+        if (x == "prod") {
             // set focus to production
             player.tm.sluggish.clocks[clock].focus = "prod"
             prodText.style.fontWeight = "bold"
@@ -80,30 +163,119 @@ function setupDropdowns(clock) {
     }
 }
 
-function updateClockStatDisplay(clock) {
-    document.getElementById(clock + "ProdEff").textContent = format(tmp.tm.sluggish.clocks[clock].prod)
-    document.getElementById(clock + "ProdVal").textContent = format(player.tm.sluggish.clocks[clock].prod, 1)
-    document.getElementById(clock + "SpeedEff").textContent = format(tmp.tm.sluggish.clocks[clock].speed)
-    document.getElementById(clock + "SpeedVal").textContent = format(player.tm.sluggish.clocks[clock].speed, 1)
-    document.getElementById(clock + "BonusEff").textContent = format(tmp.tm.sluggish.clocks[clock].bonus)
-    document.getElementById(clock + "BonusVal").textContent = format(player.tm.sluggish.clocks[clock].bonus, 1)
+function setupClockButton(clock, radius, canvas, ctx) {
+    function getMousePos(event) {
+        var bound = canvas.getBoundingClientRect();
+        return {
+            x: event.clientX - bound.left,
+            y: event.clientY - bound.top,
+        };
+    }
+    
+    function isInside(pos, button) {
+        return ((pos.x - button.x) ** 2 + (pos.y - button.y) ** 2) <= button.r ** 2
+    }
+
+    var button = {
+        x: radius,
+        y: radius,
+        r: radius * .9 * .1
+    };
+
+    // Binding the click event on the canvas
+    canvas.addEventListener('click', function(event) {
+        var mousePos = getMousePos(event);
+
+        if (isInside(mousePos, button)) {
+            console.log('clicked inside button');
+            // ctx.beginPath();
+            // ctx.arc(0, 0, radius*0.1, 0, 2*Math.PI);
+            // ctx.fillStyle = '#111';
+            player.tm.sluggish.clocks[clock].breakdownStep += 1
+            player.tm.sluggish.clocks[clock].breakdownStep %= 21
+            // ctx.fill();
+        } else {
+            console.log('clicked outside button');
+        }
+    }, false);
 }
 
+function setupWindupButton(radius, canvas, ctx) {
+    function getMousePos(event) {
+        var bound = canvas.getBoundingClientRect();
+        return {
+            x: event.clientX - bound.left,
+            y: event.clientY - bound.top,
+        };
+    }
+    
+    function isInside(pos, button) {
+        return ((pos.x - button.x) ** 2 + (pos.y - button.y) ** 2) <= button.r ** 2
+    }
+
+    var button = {
+        x: radius,
+        y: radius,
+        r: radius * .9 * .55
+    };
+
+    // Binding the click event on the canvas
+    // click, mousedown
+    canvas.addEventListener('mousemove', function(event) {
+        var mousePos = getMousePos(event);
+
+        player.tm.sluggish.windup.cursorInside = isInside(mousePos, button)
+
+        // if (isInside(mousePos, button)) {
+        //     console.log('clicked inside button');
+        //     // ctx.beginPath();
+        //     // ctx.arc(0, 0, radius*0.1, 0, 2*Math.PI);
+        //     // ctx.fillStyle = '#111';
+        //     player.tm.sluggish.windup.position += 2*Math.PI/50
+        //     player.tm.sluggish.windup.position %= 2*Math.PI
+        //     // ctx.fill();
+        // } else {
+        //     console.log('clicked outside button');
+        // }
+    }, false);
+}
+
+function updateClockStatDisplay(clock) {
+    let pclock = player.tm.sluggish.clocks[clock]
+    let tclock = tmp.tm.sluggish.clocks[clock]
+    document.getElementById(clock + "Energy").textContent = format(pclock.cenergy)
+    document.getElementById(clock + "ProdEff").textContent = format(tclock.prod)
+    document.getElementById(clock + "ProdVal").textContent = format(pclock.prod, 1)
+    document.getElementById(clock + "SpeedEff").textContent = format(tclock.speed)
+    document.getElementById(clock + "SpeedVal").textContent = format(pclock.speed, 1)
+    document.getElementById(clock + "BonusEff").textContent = format(tclock.bonus)
+    document.getElementById(clock + "BonusVal").textContent = format(pclock.bonus, 1)
+}
+
+function updateWindupStatDisplay() {
+    document.getElementById("windupPoints").textContent = `${format(player.tm.sluggish.windup.points)}/${format(tmp.tm.sluggish.windup.cap)}`
+
+}
+
+
+// Blessed w3schools, thank you for your gifts
 function setupClock(clock) {
     const canvas = document.getElementById(clock);
     const ctx = canvas.getContext("2d");
     let radius = canvas.height / 2;
     if (!player.tm.sluggish.clockMade) {
         setupDropdowns(clock)
+        setupClockButton(clock, radius, canvas, ctx)
         ctx.translate(radius, radius);
         radius = radius * 0.90
     }
+
     drawClock();
 
     function drawClock() {
         drawFace(ctx, radius);
-        drawNumbers(ctx, radius, clock)
-        drawTime(ctx, radius, clock)
+        drawNumbers(ctx, radius)
+        drawHand(ctx, player.tm.sluggish.clocks[clock].timer * Math.PI / 6, radius * 0.6, radius * 0.08)
     }
 
     function drawFace(ctx, radius) {
@@ -118,26 +290,14 @@ function setupClock(clock) {
         ctx.strokeStyle = grad;
         ctx.lineWidth = radius*0.1;
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, 0, radius*0.1, 0, 2*Math.PI);
-        ctx.fillStyle = '#333';
-        ctx.fill();
     }
 
-    function drawNumbers(ctx, radius, clock) {
+    function drawNumbers(ctx, radius) {
         ctx.font = radius * 0.15 + "px arial";
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
-        // let increment = 1;
-        // let max = -1;
-        // switch (clock) {
-        //     case "secondClock": max = 60; increment = 5; break;
-        //     case "minuteClock": max = 60; increment = 5; break;
-        //     case "hourClock": max = 24; increment = 2; break;
-        //     case "dayClock": max = 30; increment = 3; break;
-        //     default: throw Error(`Invalid clock: ${clock}`)
-        // }
-        // for (let num = increment; num <= max; num += increment){
+        ctx.fillStyle = '#333';
+
         for (let num = 1; num < 13; num++) {
             let ang = num * Math.PI / 6;
             ctx.rotate(ang);
@@ -150,34 +310,12 @@ function setupClock(clock) {
         }
     }
 
-    function drawTime(ctx, radius, clock) {
-        // const now = new Date();
-        // let second = now.getSeconds() * Math.PI / 30;
-        // let minute = now.getMinutes() * Math.PI / 30 + second / 60;
-        // let hour = now.getHours() * Math.PI / 12 + minute / 24;
-        // let day = 29 * Math.PI / 15 + hour / 24
-        // switch (clock) {
-        //     case "secondClock": 
-        //         //second = (second * Math.PI / 30)
-        //         drawHand(ctx, second, radius * 0.6, radius * 0.02)
-        //         break;
-        //     case "minuteClock":
-        //         //minute = (minute * Math.PI/30) + (second*Math.PI/(30*60))
-        //         drawHand(ctx, minute, radius * 0.6, radius * 0.04)
-        //         break;
-        //     case "hourClock":
-        //         //hour = (hour*Math.PI/6)+(minute*Math.PI/(6*60))+(second*Math.PI/(360*60));
-        //         drawHand(ctx, hour, radius*0.6, radius*0.06);
-        //         break;
-        //     case "dayClock":
-        //         drawHand(ctx, day, radius*0.6, radius * 0.08)
-        //         break;
-        //     default: throw Error(`Invalid clock: ${clock}`)
-        // }
-        drawHand(ctx, player.tm.sluggish.clocks[clock].timer * Math.PI / 6, radius * 0.6, radius * 0.08)
-    }
-
     function drawHand(ctx, pos, length, width) {
+        let index = player.tm.sluggish.clocks[clock].breakdownStep
+        ctx.fillStyle = interpolatedClockButtonColors[index];
+        ctx.strokeStyle = interpolatedClockButtonColors[index];
+        
+        // Hand
         ctx.beginPath();
         ctx.lineWidth = width;
         ctx.lineCap = "round";
@@ -186,42 +324,93 @@ function setupClock(clock) {
         ctx.lineTo(0, -length);
         ctx.stroke();
         ctx.rotate(-pos);
+
+        // Center
+        ctx.beginPath();
+        ctx.arc(0, 0, radius*0.1, 0, 2*Math.PI);
+        ctx.fill();
     }
 }
 
-function sluggishDisplay() {
+function setupWindup() {
+    const canvas = document.getElementById("windupCanvas");
+    const ctx = canvas.getContext("2d");
+    let radius = canvas.height / 2;
+    let ballPosition = player.tm.sluggish.windup.position
+    if (!player.tm.sluggish.clockMade) {
+        setupWindupButton(radius, canvas, ctx)
+        ctx.translate(radius, radius);
+        radius = radius * 0.90
+    }
+
+    drawWindupCanvas();
+
+    function drawWindupCanvas() {
+        drawActivityRegion(ctx, radius);
+        drawBall(ctx, radius, ballPosition)
+    }
+
+    function drawActivityRegion(ctx, radius) {
+        const gradOuter = ctx.createRadialGradient(0,0,radius*0.85, 0,0,radius*0.95);
+        gradOuter.addColorStop(0, '#333');
+        gradOuter.addColorStop(0.5, 'white');
+        gradOuter.addColorStop(1, '#333');
+        ctx.beginPath();
+        ctx.arc(0, 0, radius*.9, 0, 2*Math.PI);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.strokeStyle = gradOuter;
+        ctx.lineWidth = radius*0.1;
+        ctx.stroke();
+        const gradInner = ctx.createRadialGradient(0,0,radius*0.55, 0,0,radius*0.65);
+        gradInner.addColorStop(0, '#333');
+        gradInner.addColorStop(0.5, 'white');
+        gradInner.addColorStop(1, '#333');
+        ctx.beginPath();
+        ctx.arc(0, 0, radius*.6, 0, 2*Math.PI);
+        ctx.fillStyle = '#333';
+        ctx.fill();
+        ctx.strokeStyle = gradInner;
+        ctx.lineWidth = radius*0.1;
+        ctx.stroke();
+    }
+
+    function drawBall(ctx, radius, pos) {
+        // pos is a value between 0 and 2*PI
+        let pathStart = -radius*.75
+        let x = -Math.sin(pos) * pathStart
+        let y = Math.cos(pos) * pathStart
+        ctx.beginPath();
+        ctx.arc(x,y,radius*.1,0,2*Math.PI);
+        ctx.fillStyle = '#fa4';
+        ctx.fill();
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = radius*0.01;
+        ctx.stroke();
+    }
+}
+
+function sluggishClocksDisplay() {
     let ret = ``
     let rowsOfClocks = 2
+
+    if (tmp.tm.sluggish.windup.unlocked) {
+        ret += `<div class = "windupContainer">
+                    <div class = "windupDiv">
+                        <canvas id="windupCanvas" width="150" height="150"></canvas>
+                    </div>
+                    <div>
+                        Windup Points:&ensp;<span id="windupPoints">...</span>
+                        <p>Hello World!</p>
+                    </div>
+                </div><br>`
+    }
+
     for (let i = 0; i < rowsOfClocks; i++) {
-        // let firstClockNum = 3 * i + 1
-        // let secondClockNum = 3 * i + 2
-        // let thirdClockNum = 3 * i + 3
-        // ret += `<div class = "clockCanvasContainer">
-        //             <div class="clockDiv">
-        //                 1st Clock, A0
-        //                 <canvas id="clock${firstClockNum}" width="200" height="200"></canvas>
-        //                 <span height="100">
-        //                     Selected: <select name="selected" id="clock1Menu">
-        //                         <option value="production" selected="selected">Production</option>
-        //                         <option value="speed">Speed</option>
-        //                         <option value="bonus">Bonus</option>
-        //                     </select><br>
-        //                     <br><span id="clock${firstClockNum}Prod">Production</span>: ... (...)
-        //                     <br><span id="clock${firstClockNum}Speed">Speed</span>: ... (...)
-        //                     <br><span id="clock${firstClockNum}Bonus">Bonus</span>: ... (...)
-        //                 </span>
-        //             </div>
-        //             <div class="clockDiv">
-        //                 <canvas id="clock2" width="200" height="200"></canvas>
-        //             </div>
-        //             <div class="clockDiv">
-        //                 <canvas id="clock3" width="200" height="200"></canvas>
-        //             </div>
-        //         </div><br>`
-        
         ret += `<div class = "clockCanvasContainer">`
         for (let j = 3 * i + 1; j <= 3 * i + 3; j++) {
-            if (!tmp.tm.sluggish.clocks["clock" + j].unlocked) break
+            let clock = "clock" + j
+            if (!tmp.tm.sluggish.clocks[clock].unlocked) break
 
             let clockNumText;
             switch (j) {
@@ -230,26 +419,72 @@ function sluggishDisplay() {
                 case 3: clockNumText = "3rd"; break;
                 default: clockNumText = j + "th"
             }
-            ret += `<div class="clockDiv">
+            player.tm.sluggish.clocks[clock].focus == true
+            ret += `<div class="clockDiv" background-color="${colors[options.theme || "default"]["background"]}">
                         ${clockNumText} Clock, A0
-                        <canvas id="clock${j}" width="200" height="200"></canvas>
+                        <br><span id="${clock}Energy">...</span> Clock Energy
+                        <canvas id="${clock}" width="200" height="200"></canvas>
                         <span height="100">
-                            Selected: <select name="selected" id="clock${j}Menu">
-                                <option value="production" selected="selected">Production</option>
+                            Selected: <select name="selected" id="${clock}Menu">
+                                <option value="prod">Production</option>
                                 <option value="speed">Speed</option>
                                 <option value="bonus">Bonus</option>
                             </select><br>
-                            <br><span id="clock${j}Prod">Prod</span>: <span id = "clock${j}ProdEff">...</span> (<span id="clock${j}ProdVal">...</span>)
-                            <br><span id="clock${j}Speed">Speed</span>: <span id = "clock${j}SpeedEff">...</span> (<span id="clock${j}SpeedVal">...</span>)
-                            <br><span id="clock${j}Bonus">Bonus</span>: <span id = "clock${j}BonusEff">...</span> (<span id="clock${j}BonusVal">...</span>)
+                            <br><span id="${clock}Prod">Prod</span>: <span id = "${clock}ProdEff">...</span> (<span id="${clock}ProdVal">...</span>)
+                            <br><span id="${clock}Speed">Speed</span>: <span id = "${clock}SpeedEff">...</span> (<span id="${clock}SpeedVal">...</span>)
+                            <br><span id="${clock}Bonus">Bonus</span>: <span id = "${clock}BonusEff">...</span> (<span id="${clock}BonusVal">...</span>)
                         </span>
                     </div>`
         }
         ret += `</div>`
     }
-    return ret
+    return ret + `</span>`
 }
 
-function inSluggishChallenge(challNumber) {
-    return
+function inSluggishLayer(challNumber) {
+    return player.tm.sluggish.layer >= challNumber
+}
+
+function availableTMUpgrades() {
+    let ret = []
+    if (true) ret.push("Breakdown")
+    switch (player.tm.sluggish.layer) {
+        case 7:
+        case 6:
+        case 5:
+        case 4:
+        case 3:
+        case 2:
+        case 1: ret.push("Expansion", "Point/Penny")
+        default: ret.push("Temporal Energy")
+    }
+    return ret.toReversed()
+}
+
+function displayTMUpgrades() {
+    if (player.tm.upgradeMenu == "Breakdown") {
+        if (!tmp.tm.sluggish.breakdown.unlocked) return ["display-text", "Enter Sluggish at layer 2 or higher to unlock the Breakdown feature!"]
+        
+        let upgrades = [
+            ["11", "12", "13"],
+            ["21", "22", "23", "24", "25"],
+
+        ]
+        return ["column", 
+            [
+                ["display-text", `You have ${0} Breakdown points`],
+                "blank",
+                ["upgrade-tree", upgrades]
+            ]
+        ]
+    }
+
+    let hundreds;
+    switch (player.tm.upgradeMenu) {
+        case "Temporal Energy": hundreds = 1; break;
+        case "Point/Penny": hundreds = 2; break;
+        case "Expansion": hundreds = 3; break;
+    }
+    hundreds *= 10
+    return ["upgrades", [hundreds + 1, hundreds + 2, hundreds + 3, hundreds + 4, hundreds + 5]]
 }

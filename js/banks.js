@@ -375,7 +375,7 @@ addLayer("banks", {
 
                 return `<h3>${title}</h3><br>${des}<br><br>${req}`
             },
-            req: 2,
+            req: 1,
             canAfford() { return player.banks.points.gte(this.req) },
             buy() { tmp.banks.onPrestige(); player.banks.points = player.banks.points.sub(1) },
             unlocked:() => true || hasMilestone("banks", 1),
@@ -645,6 +645,9 @@ addLayer("banks", {
             content: [
                 "main-display",
                 "prestige-button",
+                "blank",
+                ["display-text", "Upgrades currently cost 1 Bank, increases by 1"],
+                "blank",
                 ["upgrades", [10, 11]]
             ]
         },

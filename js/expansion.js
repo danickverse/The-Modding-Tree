@@ -244,6 +244,38 @@ addLayer("e", {
         //     return ret
         // }
     },
+    milestones: {
+        0: {
+            requirementDescription: "1 Expansion",
+            effectDescription: "Time Flux multiplies Expansion gain",
+            effect:() => timeFlux(),
+            done() { return false }
+        },
+        1: {
+            requirementDescription: "10 Expansion",
+            effectDescription() { return `Multiply Point/Penny gain by 1.1x/1.01x per digit in Expansion/Penny Expansion per milestone<br>Currently: 
+                ${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
+            effect() {
+                let e = player.e.points.max(1).log10().floor().mul(player.e.milestones)
+                let p = player.e.penny_expansion.points.max(1).log10().floor().mul(player.e.milestones)
+                return [e.pow_base(1.1), p.pow_base(1.01)]
+            },
+            done() { return false },
+            unlocked:() => true || hasAchievement("a", 33)
+        },
+        2: {
+            requirementDescription: "x Expansion and y Penny Expansion",
+            effectDescription: "Time Flux multiplies Point gain",
+            effect:() => timeFlux(),
+            done() { return false }
+        },
+        3: {
+            requirementDescription: "x Expansion",
+            effectDescription: "Time Flux multiplies Penny gain and Reset Time",
+            effect:() => timeFlux(),
+            done() { return false }
+        },
+    },
     upgrades: {
         11: {
             title: "It's Only Reasonable",
@@ -899,7 +931,8 @@ addLayer("e", {
                         and losing ${tmp.e.lossRate * 100}% of your current Expansion per second<br><br>`
                     }
                 ],
-                ["microtabs", "info"]
+                ["microtabs", "info"],
+                "blank", () => true || hasAchievement("a", 33) ? "milestones" : "", "blank"
             ]
         },
         "Penny Expansion": {

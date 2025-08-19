@@ -519,7 +519,8 @@ addLayer("quests", {
         }
     },
     grid: {
-        rows: 1, // If these are dynamic make sure to have a max value as well!
+        rows:() => shopRowsAvailable(), // If these are dynamic make sure to have a max value as well!
+        maxRows: 5,
         cols: 6,
         getStartData(id) {
             if (id === undefined) return 
@@ -542,14 +543,14 @@ addLayer("quests", {
         },
         getEffect(data, id) {
             if (data === undefined) return
-            switch (getShopData(id).type) {
+            switch (getShopData(id).effectType) {
                 case "compounding": 
                 case "compoundingExp": return getShopData(id).effect ** data
                 case "additive": return getShopData(id).effect * data
                 case "unlock": return 0
                 case "other":
                     //if (id == ...) return thing
-                default: throw Error("Invalid shop effect type: " + getShopData(id).type)
+                default: throw Error("Invalid shop effect type: " + id + " " + getShopData(id).type)
             }
         },
         getTitle(data, id) {
@@ -611,8 +612,8 @@ addLayer("quests", {
                 speckData.tsls += diff
                 if (speckData.timer >= tmpSpeckData.maxTimer) {
                     if (tmpSpeckData.spawnChance >= Math.random()) {
-                        console.log(`Spawn chance: ${format(tmpSpeckData.spawnChance * 100, 3)}%`)
-                        console.log(`TSLS: ${speckData.tsls}`)
+                        // console.log(`Spawn chance: ${format(tmpSpeckData.spawnChance * 100, 3)}%`)
+                        // console.log(`TSLS: ${speckData.tsls}`)
                         makeShinies(speckParticle)
                         if (player.quests.specks.showPopup) 
                             doPopup("quest", "A Speck Has Spawned", " ", 3, tmp.quests.color)
