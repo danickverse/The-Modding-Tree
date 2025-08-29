@@ -125,7 +125,6 @@ function setupDropdowns(clock) {
     changeDropdowns()
 
     clockSel.onchange = changeDropdowns
-    console.log("wtf")
 
     function changeDropdowns() {
         let x = clockSel.value
@@ -163,7 +162,7 @@ function setupDropdowns(clock) {
     }
 }
 
-function setupClockButton(clock, radius, canvas, ctx) {
+function setupClockButton(clock, radius, canvas) {
     function getMousePos(event) {
         var bound = canvas.getBoundingClientRect();
         return {
@@ -188,12 +187,8 @@ function setupClockButton(clock, radius, canvas, ctx) {
 
         if (isInside(mousePos, button)) {
             console.log('clicked inside button');
-            // ctx.beginPath();
-            // ctx.arc(0, 0, radius*0.1, 0, 2*Math.PI);
-            // ctx.fillStyle = '#111';
             player.tm.sluggish.clocks[clock].breakdownStep += 1
             player.tm.sluggish.clocks[clock].breakdownStep %= 21
-            // ctx.fill();
         } else {
             console.log('clicked outside button');
         }
@@ -223,21 +218,12 @@ function setupWindupButton(radius, canvas, ctx) {
     // click, mousedown
     canvas.addEventListener('mousemove', function(event) {
         var mousePos = getMousePos(event);
-
         player.tm.sluggish.windup.cursorInside = isInside(mousePos, button)
-
-        // if (isInside(mousePos, button)) {
-        //     console.log('clicked inside button');
-        //     // ctx.beginPath();
-        //     // ctx.arc(0, 0, radius*0.1, 0, 2*Math.PI);
-        //     // ctx.fillStyle = '#111';
-        //     player.tm.sluggish.windup.position += 2*Math.PI/50
-        //     player.tm.sluggish.windup.position %= 2*Math.PI
-        //     // ctx.fill();
-        // } else {
-        //     console.log('clicked outside button');
-        // }
     }, false);
+
+    canvas.addEventListener('contextmenu', function(event) {
+        event.preventDefault(); // disables right-click menu on canvas
+    });
 }
 
 function updateClockStatDisplay(clock) {
@@ -253,8 +239,10 @@ function updateClockStatDisplay(clock) {
 }
 
 function updateWindupStatDisplay() {
+    document.getElementById("windupEnergy").textContent = `${format(player.tm.sluggish.windup.energy, 3)} => ${format(tmp.tm.sluggish.windup.gain, 3)} WP/s`
     document.getElementById("windupPoints").textContent = `${format(player.tm.sluggish.windup.points)}/${format(tmp.tm.sluggish.windup.cap)}`
-
+    document.getElementById("windupEffPoints").textContent = format(tmp.tm.sluggish.windup.effects.points, 3)
+    document.getElementById("windupEffClockSpeed").textContent = format(tmp.tm.sluggish.windup.effects.clockSpeed, 3)
 }
 
 
@@ -265,7 +253,7 @@ function setupClock(clock) {
     let radius = canvas.height / 2;
     if (!player.tm.sluggish.clockMade) {
         setupDropdowns(clock)
-        setupClockButton(clock, radius, canvas, ctx)
+        setupClockButton(clock, radius, canvas)
         ctx.translate(radius, radius);
         radius = radius * 0.90
     }
@@ -336,7 +324,7 @@ function setupWindup() {
     const canvas = document.getElementById("windupCanvas");
     const ctx = canvas.getContext("2d");
     let radius = canvas.height / 2;
-    let ballPosition = player.tm.sluggish.windup.position
+    let ballPosition = player.tm.sluggish.windup.points.div(tmp.tm.sluggish.windup.cap) * 2 * Math.PI
     if (!player.tm.sluggish.clockMade) {
         setupWindupButton(radius, canvas, ctx)
         ctx.translate(radius, radius);
@@ -353,18 +341,18 @@ function setupWindup() {
     function drawActivityRegion(ctx, radius) {
         const gradOuter = ctx.createRadialGradient(0,0,radius*0.85, 0,0,radius*0.95);
         gradOuter.addColorStop(0, '#333');
-        gradOuter.addColorStop(0.5, 'white');
+        gradOuter.addColorStop(0.5, 'magenta');
         gradOuter.addColorStop(1, '#333');
         ctx.beginPath();
         ctx.arc(0, 0, radius*.9, 0, 2*Math.PI);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = '#b148b1ff';
         ctx.fill();
         ctx.strokeStyle = gradOuter;
         ctx.lineWidth = radius*0.1;
         ctx.stroke();
         const gradInner = ctx.createRadialGradient(0,0,radius*0.55, 0,0,radius*0.65);
         gradInner.addColorStop(0, '#333');
-        gradInner.addColorStop(0.5, 'white');
+        gradInner.addColorStop(0.5, 'magenta');
         gradInner.addColorStop(1, '#333');
         ctx.beginPath();
         ctx.arc(0, 0, radius*.6, 0, 2*Math.PI);
@@ -384,10 +372,43 @@ function setupWindup() {
         ctx.arc(x,y,radius*.1,0,2*Math.PI);
         ctx.fillStyle = '#fa4';
         ctx.fill();
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = player.tm.sluggish.windup.points.lt(tmp.tm.sluggish.windup.cap) 
+            ? "black" : "red";
         ctx.lineWidth = radius*0.01;
         ctx.stroke();
     }
+}
+
+function updateWindupPoints(diff) {
+    let windup = player.tm.sluggish.windup
+    let tWindup = tmp.tm.sluggish.windup
+
+    if (windup.cursorInside) {
+        windup.energy = windup.energy.add(tWindup.energyGain * diff).min(1)
+    } else {
+        windup.energy = windup.energy.sub(tWindup.energyLoss * diff).max(0)
+    }
+
+    let windupGain = tWindup.gain.mul(diff)
+    windup.points = windup.points.add(windupGain).min(tWindup.cap).max(0)
+
+    // if (windup.energy.eq(0)) {
+    //     let lossRate = tWindup.pointLossRate
+    //     windup.points = getLogisticAmount(windup.points, decimalZero, lossRate, diff)
+    //                         .min(tWindup.cap)
+    // } else {
+    //     let windupGain = tWindup.gain.mul(diff)
+    //     windup.points = windup.points.add(windupGain).min(tWindup.cap).max(0)
+    // }
+
+        // if (windup.cursorInside) {
+    //     let windupGain = tmp.tm.sluggish.windup.gain.mul(diff)
+    //     windup.points = windup.points.add(windupGain).min(tmp.tm.sluggish.windup.cap)
+    // } else {
+    //     let lossRate = tmp.tm.sluggish.windup.lossRate
+    //     windup.points = getLogisticAmount(windup.points, decimalZero, lossRate, diff)
+    //                         .min(tmp.tm.sluggish.windup.cap)
+    // }
 }
 
 function sluggishClocksDisplay() {
@@ -400,8 +421,11 @@ function sluggishClocksDisplay() {
                         <canvas id="windupCanvas" width="150" height="150"></canvas>
                     </div>
                     <div>
-                        Windup Points:&ensp;<span id="windupPoints">...</span>
-                        <p>Hello World!</p>
+                        Energy:&ensp;<span id="windupEnergy">...</span><br>
+                        Windup Points:&ensp;<span id="windupPoints">...</span><br>
+                        ----------------------------<br>
+                        Points: ^<span id="windupEffPoints">...</span><br>
+                        Clock Speed: x<span id="windupEffClockSpeed">...</span>
                     </div>
                 </div><br>`
     }
@@ -419,7 +443,7 @@ function sluggishClocksDisplay() {
                 case 3: clockNumText = "3rd"; break;
                 default: clockNumText = j + "th"
             }
-            player.tm.sluggish.clocks[clock].focus == true
+
             ret += `<div class="clockDiv" background-color="${colors[options.theme || "default"]["background"]}">
                         ${clockNumText} Clock, A0
                         <br><span id="${clock}Energy">...</span> Clock Energy

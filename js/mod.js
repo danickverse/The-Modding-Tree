@@ -282,7 +282,7 @@ function getPointGen() {
 
 	if (hasUpg("tm", 112)) gainMult = gainMult.mul(upgEff("tm", 112))
 	if (hasUpg("tm", 211)) gainMult = gainMult.mul(upgEff("tm", 211)[0])
-	if (hasAchievement('a', 35) && (!hasAchievement('a', 81) || hasAchievement("a", 94))) baseGain = baseGain.add(1)
+	if (hasAchievement('a', 35) && (!tmp.a.achievements[35].effLocked)) baseGain = baseGain.add(1)
 	if (hasUpg("sys", 23)) baseGain = baseGain.add(upgEff("sys", 23))
 
 	if (hasUpg("sys", 11)) gainExp = gainExp.mul(upgEff("sys", 11))
@@ -290,6 +290,7 @@ function getPointGen() {
 	if (inChallenge("s", 12)) gainExp = gainExp.div(4)
 
 	if (hasUpg("tm", 113)) gainExp = gainExp.mul(upgEff("tm", 113))
+	if (tmp.tm.sluggish.windup.unlocked) gainExp = gainExp.mul(tmp.tm.sluggish.windup.effects.points)
 
 	// direct effects to gain
 

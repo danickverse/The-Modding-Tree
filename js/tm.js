@@ -21,6 +21,7 @@ addLayer("tm", {
                 inChallenge: false,
                 inSluggishTab: false,
                 clockMade: false,
+                layer: 0,
                 clocks: {
                     "clock1": {times: 0, timer:0, cenergy:decimalOne, breakdownStep:0, focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
                     "clock2": {times: 0, timer:0, cenergy:decimalOne, breakdownStep:0, focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
@@ -31,9 +32,9 @@ addLayer("tm", {
                     "clock7": {times: 0, timer:0, cenergy:decimalOne, breakdownStep:0, focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
                 },
                 windup: {
-                    points:decimalZero,
+                    points: decimalZero,
                     cursorInside: false,
-                    position: 0
+                    energy: decimalZero
                 }
             }
         }
@@ -82,6 +83,7 @@ addLayer("tm", {
             globalClockSpeedMult() {
                 let ret = decimalOne
                 if (hasUpg("tm", 212)) ret = ret.mul(upgEff("tm", 212))
+                if (tmp.tm.sluggish.windup.unlocked) ret = ret.mul(tmp.tm.sluggish.windup.effects.clockSpeed)
                 return ret
             },
             clock1: {
@@ -104,7 +106,7 @@ addLayer("tm", {
                     return player.tm.sluggish.clocks["clock2"].prod.div(12).add(1).root(1/3).div(10**2)
                 },
                 speed() { 
-                    let base = 1/22
+                    let base = 1/50
                     let pointEff = player.tm.sluggish.clocks["clock2"].speed.div(120).add(2).log(2).mul(base)
                     return pointEff.mul(base).mul(tmp.tm.sluggish.clocks.globalClockSpeedMult)
                 },
@@ -118,7 +120,7 @@ addLayer("tm", {
                     return player.tm.sluggish.clocks["clock3"].prod.div(12).add(1).root(1/4).div(10**4)
                 },
                 speed() { 
-                    let base = 1/48
+                    let base = 1/144
                     let pointEff = player.tm.sluggish.clocks["clock3"].speed.div(120).add(2).log(2).mul(base)
                     return pointEff.mul(base).mul(tmp.tm.sluggish.clocks.globalClockSpeedMult)
                 },
@@ -132,7 +134,7 @@ addLayer("tm", {
                     return player.tm.sluggish.clocks["clock4"].prod.div(12).add(1).root(1/5).div(10**6)
                 },
                 speed() { 
-                    let base = 1/111
+                    let base = 1/350
                     let pointEff = player.tm.sluggish.clocks["clock4"].speed.div(120).add(2).log(2).mul(base)
                     return pointEff.mul(base).mul(tmp.tm.sluggish.clocks.globalClockSpeedMult)
                 },
@@ -146,7 +148,7 @@ addLayer("tm", {
                     return player.tm.sluggish.clocks["clock5"].prod.div(12).add(1).root(1/6).div(10**8)
                 },
                 speed() { 
-                    let base = 1/250
+                    let base = 1/666
                     let pointEff = player.tm.sluggish.clocks["clock5"].speed.div(120).add(2).log(2).mul(base)
                     return pointEff.mul(base).mul(tmp.tm.sluggish.clocks.globalClockSpeedMult)
                 },
@@ -160,7 +162,7 @@ addLayer("tm", {
                     return player.tm.sluggish.clocks["clock6"].prod.div(12).add(1).root(1/7).div(10**10)
                 },
                 speed() { 
-                    let base = 1/666
+                    let base = 1/1500
                     let pointEff = player.tm.sluggish.clocks["clock6"].speed.div(120).add(2).log(2).mul(base)
                     return pointEff.mul(base).mul(tmp.tm.sluggish.clocks.globalClockSpeedMult)
                 },
@@ -174,7 +176,7 @@ addLayer("tm", {
                     return player.tm.sluggish.clocks["clock7"].prod.div(12).add(1).root(1/8).div(10**12)
                 },
                 speed() { 
-                    let base = 1/1000
+                    let base = 1/7500
                     let pointEff = player.tm.sluggish.clocks["clock7"].speed.div(120).add(2).log(2).mul(base)
                     return pointEff.mul(base).mul(tmp.tm.sluggish.clocks.globalClockSpeedMult)
                 },
@@ -189,6 +191,8 @@ addLayer("tm", {
             },
             gain() {
                 let ret = new Decimal(0.01)
+                if (player.tm.sluggish.windup.energy.neq(0)) ret = ret.mul(player.tm.sluggish.windup.energy)
+                else ret = ret.mul(-1)
                 return ret
             },
             cap() {
@@ -196,6 +200,26 @@ addLayer("tm", {
                 if (hasUpg("tm", 214)) ret = ret.add(upgEff("tm", 214))
 
                 return ret
+            },
+            pointLossRate() {
+                let ret = 0.04
+                return ret
+            },
+            energyGain() {
+                let ret = .1
+                return ret
+            },
+            energyLoss() {
+                let ret = tmp.tm.sluggish.windup.energyGain
+                return ret
+            },
+            effects: {
+                points() {
+                    return player.tm.sluggish.windup.points.div(20).add(1)
+                },
+                clockSpeed() {
+                    return player.tm.sluggish.windup.points.add(1).root(3)
+                }
             }
         },
         breakdown: {
@@ -225,18 +249,11 @@ addLayer("tm", {
             for (let clock in tmp.tm.sluggish.clocks) {
                 if (!tmp.tm.sluggish.clocks[clock].unlocked) continue
                 updateClock(clock, diff)
+                if (tmp.tm.sluggish.windup.unlocked) updateWindupPoints(diff)
                 if (!player.tm.sluggish.inSluggishTab) continue
 
                 if (tmp.tm.sluggish.windup.unlocked) {
                     setupWindup()
-                        if (player.tm.sluggish.windup.cursorInside) {
-                            player.tm.sluggish.windup.position += 2*Math.PI/500
-                            player.tm.sluggish.windup.position %= 2*Math.PI
-                            let windupGain = tmp.tm.sluggish.windup.gain.mul(diff)
-                            player.tm.sluggish.windup.points = player.tm.sluggish.windup.points.add(windupGain)
-                        } else {
-                            player.tm.sluggish.windup.points = getLogisticAmount(player.tm.sluggish.windup.points, decimalZero, .05, diff)
-                        }
                     updateWindupStatDisplay()
                 }
                 updateClockStatDisplay(clock)
@@ -709,9 +726,9 @@ addLayer("tm", {
         },
         113: {
             title: "Back Up to Speed",
-            description: "Raise point gain to the power of 1 + log10(log10(Temporal Energy + 10))",
+            description: "Raise point gain to the power of (1 + log10(log10(Temporal Energy + 10)))<sup>.5</sup>",
             cost: 50,
-            effect:() => player.tm.sluggish.points.add(10).log10().log10().add(1),
+            effect:() => player.tm.sluggish.points.add(10).log10().log10().add(1).pow(.5),
             effectDisplay() { return `^${format(upgEff(this.layer, this.id))}x` },
             unlocked:() => player.tm.sluggish.inChallenge,
             currencyDisplayName: "temporal energy",
@@ -762,6 +779,18 @@ addLayer("tm", {
             effect:() => player.best.max(1000).log(1000).pow(.25),
             effectDisplay() { return !hasUpg("tm", 214) ? "Does nothing" : `+${format(this.effect())}` },
             unlocked:() => player.tm.sluggish.inChallenge,
+            currencyDisplayName: "points",
+            currencyInternalName: "points",
+            currencyLocation:() => player
+        },
+        215: {
+            title: "Rise and Grind",
+            description:() => !hasUpg("tm", 214) ? "Purchase this upgrade to unlock the Windup mechanic" 
+                : "Increase the Windup cap by log1000(Best Points)<sup>.25</sup>",
+            cost: 100000,
+            effect:() => player.best.max(1000).log(1000).pow(.25),
+            effectDisplay() { return !hasUpg("tm", 214) ? "Does nothing" : `+${format(this.effect())}` },
+            unlocked:() => hasUpg("tm", 214),
             currencyDisplayName: "points",
             currencyInternalName: "points",
             currencyLocation:() => player
