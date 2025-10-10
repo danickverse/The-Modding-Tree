@@ -44,7 +44,6 @@ addLayer("effects", {
                         }
                         if (hasAchievement("a", 44)) investmentBoost *= 1.2
                         if (hasAchievement("a", 85)) allInvestmentBoost *= 1.2
-                        if (hasAchievement("a", 32)) expansionBoost *= 1.1
                         if (hasAchievement("a", 82)) conversionRateBaseBoost += .01
                         if (hasAchievement("a", 83)) conversionRateBaseBoost += .01
                         if (hasAchievement("a", 84)) conversionRateBaseBoost += .01
@@ -55,13 +54,14 @@ addLayer("effects", {
                         if (expansionBoost > 1) ret += "<br>Multiplying expansion gain by " + format(expansionBoost) + "x"
                         if (pennyBoost > 1) ret += "<br>Multiplying penny gain by " + format(pennyBoost) + "x"
 
-                        if (hasAchievement("a", 35) && !hasAchievement("a", 81)) ret += ",<br>Increase base point gain by 1 and WNBP exponent by .01"
-                        if (hasAchievement("a", 51)) ret += "<br>Increasing the Where Did These Come From??? exponent by .02"
-                        if (hasAchievement("a", 55)) ret += "<br>Reducing the Lucky Penny logarithm from ln to log2, effectively multiplying its effect by ~1.44x"
-                        if (hasAchievement("a", 64)) ret += "<br>Removing the divisor from Still Can't Afford Water"
-                        if (conversionRateBaseBoost > 0) ret += "<br>Increasing the conversion base rate by " + (conversionRateBaseBoost * 100) + "%"
-                        if (hasAchievement("a", 92)) ret += "<br>Granting you an additional effective Apple Tree"
-                        ret += "<br>and unlocking various things"
+                        if (hasAchievement("a", 32)) ret += ",<br>Generating " + achievementEffect("a", 32) * 100 + "% of pennies on reset per second"
+                        if (hasAchievement("a", 35) && !hasAchievement("a", 81)) ret += ",<br>Multiple Time Flux by 1.02 and increase WNBP exponent by .01"
+                        if (hasAchievement("a", 51)) ret += ",<br>Increasing the Where Did These Come From??? exponent by .02"
+                        if (hasAchievement("a", 55)) ret += ",<br>Reducing the Lucky Penny logarithm from ln to log2, effectively multiplying its effect by ~1.44x"
+                        if (hasAchievement("a", 64)) ret += ",<br>Removing the divisor from Still Can't Afford Water"
+                        if (conversionRateBaseBoost > 0) ret += ",<br>Increasing the conversion base rate by " + (conversionRateBaseBoost * 100) + "%"
+                        if (hasAchievement("a", 92)) ret += ",<br>Granting you an additional effective Apple Tree"
+                        ret += ",<br>and unlocking various things"
                     }
                     if (player.a.milestones.length > 0) {
                         ret += "<br><br>You have also unlocked achievement milestones, which provide boosts as shown in Achievements layer."

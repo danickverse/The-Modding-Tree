@@ -247,9 +247,15 @@ addLayer("s", {
             currencyLocation:() => player.s.stored_expansion,
         },
         13: {
-            title: "Small Price To Pay",
-            description: "Gain 5% of pennies on reset per second regardless of current Stored Investment",
-            cost: new Decimal("0.5"),
+            fullDisplay() {
+                let title = "<b><h3>Small Price To Pay</b></h3>"
+                let description = "Gain 5% of pennies on reset per second regardless of current Stored Investment"
+                let requirement = "Requires: 0.5 Stored Dollars"
+                return title + "<br>" + description() + "<br><br>" + requirement
+            },
+            // title: "Small Price To Pay",
+            // description: "Gain 5% of pennies on reset per second regardless of current Stored Investment",
+            // cost: new Decimal("0.5"),
             unlocked:() => hasMilestone("sys", 1),
             effect() { return .05 },
             onPurchase() { 
@@ -257,9 +263,10 @@ addLayer("s", {
                 player.sys.resetCount -= 1
                 tmp.s.clickables[13].onClick() 
             },
-            currencyDisplayName:() => "Stored Dollars",
-            currencyInternalName:() => "points",
-            currencyLocation:() => player.s.stored_dollars
+            canAfford() { return player.s.stored_dollars.points.gte(0.5) }
+            // currencyDisplayName:() => "Stored Dollars",
+            // currencyInternalName:() => "points",
+            // currencyLocation:() => player.s.stored_dollars
         },
         14: {
             title: "Spread Evenly",

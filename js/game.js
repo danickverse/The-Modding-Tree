@@ -216,7 +216,7 @@ function doReset(layer, force=false) {
 	}
 
 	player.points = (row == 0 ? decimalZero : getStartPoints())
-	player.best = player.points
+	//player.best = player.points
 
 	for (let x = row; x >= 0; x--) rowReset(x, layer)
 	for (r in OTHER_LAYERS){
@@ -342,7 +342,7 @@ function gameLoop(diff) {
 
 
 	player.points = player.points.add(tmp.pointGen.times(diff)).max(0)
-	player.best = player.best.max(player.points)
+	if (player.tm.sluggish.inChallenge) player.best = player.best.max(player.points)
 
 	let hasWNBP = hasUpgrade("p", 23)
 	if (hasWNBP && player.points.gt(upgrade23Limit())) player.points = upgrade23Limit()

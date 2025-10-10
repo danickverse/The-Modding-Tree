@@ -72,7 +72,8 @@ addLayer("e", {
         if (hasUpg("e", 24)) ret = ret.mul(upgEff("e", 24))
         if (hasUpg("p", 42)) ret = ret.mul(upgEff("p", 42))
 
-        if (hasAchievement("a", 32)) ret = ret.mul(1.1)
+        if (hasMilestone("e", 0)) ret = ret.mul(milestoneEffect("e", 0))
+
         if (hasAchievement("a", 34)) ret = ret.mul(1.1)
         if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
 
@@ -159,7 +160,7 @@ addLayer("e", {
         gainMult() {
             let ret = decimalOne
             if (hasUpg("e", 24)) ret = ret.times(upgEff("e", 24))
-            if (hasMilestone("a", 1)) ret = ret.times(1.05**player.a.milestones.length)
+            if (hasMilestone("a", 1)) ret = ret.times(1.05**(player.a.milestones.length-1))
             if (tmp.s.challenges[12].unlocked) ret = ret.mul(challengeEffect("s", 12)[0])
             if (inChallenge("s", 12) && hasMilestone("s", 5)) ret = ret.mul(upgEff("p", 14))
             ret = ret.mul(1.25**player.sys.milestones.length)
@@ -182,7 +183,11 @@ addLayer("e", {
             return ret
         },
         staticMult() {
-            return tmp.e.upgrades[51].unlocked ? 100 : !hasUpg("e", 35) ? 2 : (!hasMilestone("a", 6) ? 5 : 8)
+            if (tmp.e.upgrades[51].unlocked) return 100
+            if (hasUpg("e", 35)) return 8
+            if (hasUpg("e", 25)) return 3
+            if (hasUpg("e", 15)) return 2.2
+            return 2
         }
     },
     system_expansion: {
@@ -249,31 +254,33 @@ addLayer("e", {
             requirementDescription: "1 Expansion",
             effectDescription: "Time Flux multiplies Expansion gain",
             effect:() => timeFlux(),
-            done() { return false }
+            done() { return player.e.points.gte(1) }
         },
         1: {
-            requirementDescription: "10 Expansion",
-            effectDescription() { return `Multiply Point/Penny gain by 1.1x/1.01x per digit in Expansion/Penny Expansion per milestone<br>Currently: 
+            requirementDescription: "25 Expansion",
+            effectDescription() { return `Multiply Point/Penny gain by 1.1x/1.05x per digit in Expansion/Penny Expansion per milestone<br>Currently: 
                 ${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
             effect() {
-                let e = player.e.points.max(1).log10().floor().mul(player.e.milestones)
-                let p = player.e.penny_expansion.points.max(1).log10().floor().mul(player.e.milestones)
-                return [e.pow_base(1.1), p.pow_base(1.01)]
+                let e = player.e.points.max(1).log10().floor().mul(player.e.milestones.length)
+                let p = player.e.penny_expansion.points.max(1).log10().floor().mul(player.e.milestones.length)
+                return [e.pow_base(1.1), p.pow_base(1.05)]
             },
-            done() { return false },
-            unlocked:() => true || hasAchievement("a", 33)
+            done() { return player.e.points.gte(25) },
+            unlocked:() => hasAchievement("a", 33)
         },
         2: {
-            requirementDescription: "x Expansion and y Penny Expansion",
+            requirementDescription: "100 Expansion and 100 Penny Expansion",
             effectDescription: "Time Flux multiplies Point gain",
             effect:() => timeFlux(),
-            done() { return false }
+            done() { return player.e.points.gte(100) && player.e.penny_expansion.points.gte(100) },
+            unlocked:() => hasAchievement("a", 33)
         },
         3: {
             requirementDescription: "x Expansion",
             effectDescription: "Time Flux multiplies Penny gain and Reset Time",
             effect:() => timeFlux(),
-            done() { return false }
+            done() { return false },
+            unlocked:() => hasAchievement("a", 33)
         },
     },
     upgrades: {
@@ -288,7 +295,7 @@ addLayer("e", {
                     let ret = "Increases base penny expansion gain by "
                     if (!hasUpg("e", 21)) ret = ret +  "log4(4 + Upgrades<sup>*</sup>) / 50"
                     else if (!hasUpg("e", 31)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 10"
-                    else if (!hasUpg("e", 41)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 4"
+                    else if (!hasUpg("e", 41)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 2"
                     else ret = ret + "log2(4 + Upgrades<sup>*</sup>) * 5"
                     return ret
                 }
@@ -311,9 +318,8 @@ addLayer("e", {
                     let upgCount = 4 + player.e.upgrades.length
                     if (hasMilestone("sys", 2)) upgCount += tmp.sys.getMainUpgCount ** 2
 
-                    if (hasUpg("e", 51)) ret = Decimal.log(upgCount, 1.5).mul(5)
-                    else if (hasUpg("e", 41)) ret = Decimal.log2(upgCount).mul(5)
-                    else if (hasUpg("e", 31)) ret = Decimal.ln(upgCount).div(4)
+                    if (hasUpg("e", 41)) ret = Decimal.log2(upgCount).mul(10)
+                    else if (hasUpg("e", 31)) ret = Decimal.ln(upgCount).div(2)
                     else if (hasUpg("e", 21)) ret = Decimal.ln(upgCount).div(10)
                     else ret = Decimal.log(upgCount, 4).div(50)
                 }
@@ -382,7 +388,7 @@ addLayer("e", {
         15: {
             fullDisplay() {
                 let title = "<h3></b>QOL 1</h3></b>"
-                let description = "Autobuy One Man's Trash, reduce its investment requirement to 1, autobuy 1 Education buyable every 2.5 seconds"
+                let description = "Autobuy One Man's Trash, reduce its investment requirement to 1, autobuy 1 Education buyable every 2 seconds"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                 if (!this.requirement()) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -473,7 +479,7 @@ addLayer("e", {
         25: {
             fullDisplay() {
                 let title = "<h3></b>QOL 2</h3></b>"
-                let description = "Autobuy two penny upgrades from the first three rows per second<sup>*</sup>"
+                let description = "Autobuy two penny upgrades up to IITU per second<sup>*</sup>"
                 if (player.shiftDown) description = "Does not autobuy WNBP"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                 if (!this.requirement()) requirement = requirement + ", 4 upgrades in this row"
@@ -497,7 +503,7 @@ addLayer("e", {
         },
         31: {
             title: "It's So Beautiful",
-            description: "Reduce divisor of upgrade two rows above this one to 4",
+            description: "Remove divisor of upgrade two rows above this one",
             cost() { return expansionUpgradeCost(this.id) },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
@@ -541,7 +547,7 @@ addLayer("e", {
         35: {
             fullDisplay() {
                 let title = "<h3></b>QOL 3</h3></b>"
-                let description = "Reduces investment cooldown by 3 seconds and autobuy Education buyables 2.5x faster"
+                let description = "Reduces investment cooldown by 3 seconds and autobuy Education buyables 2x faster"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                 if (!this.requirement()) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -608,8 +614,8 @@ addLayer("e", {
         45: {
             fullDisplay() {
                 let title = "<h3></b>QOL 4</h3></b>"
-                let description = !hasMilestone("sys", 5) ? `Double all Focused Production buffs, autobuy one more penny upgrade 
-                    & 8x more buyables per second, autobuy from row 4` 
+                let description = !hasMilestone("sys", 5) ? `Double Focused Production buffs, autobuy 1 more penny upgrade 
+                    & 8x more buyables per second, autobuy the rest of row 4` 
                     : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 1 second"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                     

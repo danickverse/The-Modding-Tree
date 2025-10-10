@@ -11,7 +11,7 @@ addLayer("tm", {
             unlocked: false,
             points: decimalZero,
             best: decimalZero,
-            minTickLength: 0,
+            minTickLength: 10,
             upgradeMenu: "Temporal Energy",
             sluggish: {
                 points: decimalZero,
@@ -73,16 +73,33 @@ addLayer("tm", {
     },
     sluggish: {
         gain() {
+            let pClocks = player.tm.sluggish.clocks
+            let tClocks = tmp.tm.sluggish.clocks
+            
             let bonusTotal = decimalOne
-            for (let clock in player.tm.sluggish.clocks) {
-                bonusTotal = bonusTotal.mul(tmp.tm.sluggish.clocks[clock].bonus)
+            for (let clock in pClocks) {
+                bonusTotal = bonusTotal.mul(tClocks[clock].bonus)
             }
-            return player.tm.sluggish.clocks["clock1"].cenergy.mul(tmp.tm.sluggish.clocks["clock1"].prod).mul(bonusTotal)
+            let ret = pClocks["clock1"].cenergy
+            ret = ret.mul(tClocks["clock1"].prod)
+            ret = ret.mul(bonusTotal)
+            
+            if (hasAchievement("tm", 12)) ret = ret.mul(achievementEffect("tm", 12))
+        
+            return ret
+        },
+        perSecond() {
+            let tSlug = tmp.tm.sluggish
+            return tSlug.clocks["clock1"].speed.div(12).mul(tSlug.gain)
+        },
+        completions() {
+            return Object.values(player.tm.challenges).reduce((a,b)=>a+b)
         },
         clocks: {
             globalClockSpeedMult() {
                 let ret = decimalOne
                 if (hasUpg("tm", 212)) ret = ret.mul(upgEff("tm", 212))
+                if (hasUpg("tm", 114)) ret = ret.mul(upgEff("tm", 114))
                 if (tmp.tm.sluggish.windup.unlocked) ret = ret.mul(tmp.tm.sluggish.windup.effects.clockSpeed)
                 return ret
             },
@@ -191,13 +208,13 @@ addLayer("tm", {
             },
             gain() {
                 let ret = new Decimal(0.01)
-                if (player.tm.sluggish.windup.energy.neq(0)) ret = ret.mul(player.tm.sluggish.windup.energy)
-                else ret = ret.mul(-1)
+                ret = ret.mul(player.tm.sluggish.windup.energy)
                 return ret
             },
             cap() {
                 let ret = decimalZero
                 if (hasUpg("tm", 214)) ret = ret.add(upgEff("tm", 214))
+                if (hasUpg("tm", 215)) ret = ret.add(upgEff("tm", 215))
 
                 return ret
             },
@@ -206,11 +223,22 @@ addLayer("tm", {
                 return ret
             },
             energyGain() {
-                let ret = .1
+                let ret = new Decimal(.1)
+                
+                //if (hasUpg("tm", 215)) ret = ret.mul(upgEff("tm", 215)[1])
                 return ret
             },
             energyLoss() {
                 let ret = tmp.tm.sluggish.windup.energyGain
+                return ret
+            },
+            energyCap() {
+                let ret = decimalOne
+                
+                return ret
+            },
+            energyMin() {
+                let ret = tmp.tm.sluggish.windup.energyCap.neg().mul(2)
                 return ret
             },
             effects: {
@@ -218,7 +246,7 @@ addLayer("tm", {
                     return player.tm.sluggish.windup.points.div(20).add(1)
                 },
                 clockSpeed() {
-                    return player.tm.sluggish.windup.points.add(1).root(3)
+                    return player.tm.sluggish.windup.points.add(1).root(5)
                 }
             }
         },
@@ -232,7 +260,7 @@ addLayer("tm", {
         if (player.tm.isWarping || !player.tm.unlocked) return
 
         if (player.offTime !== undefined) {
-            let gain = tmp.tm.perSecond.mul(3).mul(diff)
+            let gain = tmp.tm.perSecond.mul(buyableEffect("tm", 23)).mul(diff)
             player.tm.points = player.tm.points.add(gain).min(this.stoTimeLimit())
             player.tm.best = player.tm.best.max(player.tm.points)
             return
@@ -270,11 +298,12 @@ addLayer("tm", {
                 else if (x.eq(1)) return 1e13
                 else return x.pow(1.5).add(1).pow_base(1e4)
             },
-            maxLevels() { return 25 },
+            maxLevels() { return 50 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
-                        x / 100`
+                        x / 50 
+                        &#8658; 2 * x %`
                     let costForm = `<b><h3>Cost Formula:</h3></b>
                         If x >= 2, 1e4<sup>x^1.5 + 1</sup> `
                     return effForm + "<br><br>" + costForm
@@ -292,7 +321,7 @@ addLayer("tm", {
                 return levels + "<br>" + eff + "<br><br>" + cost
             },
             effect(x) {
-                return x.pow(.8).div(100).toNumber()
+                return x.mul(2).div(100).toNumber()
             },
             canAfford() {
                 return player.p.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
@@ -342,16 +371,17 @@ addLayer("tm", {
         13: {
             title: "Time Machine C",
             cost(x) {
-                return x.pow_base(1.1).mul(20)
+                return x.pow_base(1.1).mul(x.pow(2).pow_base(1.004)).mul(20)
             },
             maxLevels() { return 25 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
                         (1 + Completions / 100)<sup>x</sup>
+                        &#8658; ${1 + tmp.tm.sluggish.completions / 100}<sup>x</sup>
                         (Caps at 12 Completions)`
                     let costForm = `<b><h3>Cost Formula:</h3></b>
-                        20 * 1.1<sup>x</sup>`
+                        20 * 1.1<sup>x</sup> * 1.004<sup>x^2</sup>`
                     return effForm + "<br><br>" + costForm
                 }
 
@@ -367,7 +397,7 @@ addLayer("tm", {
                 return levels + "<br>" + eff + "<br><br>" + cost
             },
             effect(x) {
-                return x.pow_base(sumValues(player.tm.challenges).div(100).add(1))
+                return x.pow_base(1 + tmp.tm.sluggish.completions / 100)
             },
             canAfford() {
                 return player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
@@ -392,8 +422,8 @@ addLayer("tm", {
                 
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
-                        (1 + Temporal Power / 1000)<sup>.03x</sup>
-                        ${format(player.tm.points.div(1000).add(1))}<sup>.03x</sup>`
+                        (1 + Temporal Power / 1000)<sup>.04x</sup>
+                        ${format(player.tm.points.div(1000).add(1))}<sup>.04x</sup>`
                     let costForm = `<b><h3>Cost Formula:</h3></b>
                         100 * 1.1<sup>x</sup>`
                     return effForm + "<br><br>" + costForm
@@ -410,7 +440,7 @@ addLayer("tm", {
                 return levels + "<br>" + eff + "<br><br>" + cost
             },
             effect(x) {
-                let exp = x.mul(.03)
+                let exp = x.mul(.04)
                 return player.tm.points.div(1000).add(1).pow(exp)
             },
             canAfford() {
@@ -480,7 +510,7 @@ addLayer("tm", {
                 
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
-                        1 + .04x`
+                        1 + .02x + .05 * floor(x / 5)`
                     let costForm = `<b><h3>Cost Formula:</h3></b>
                         100 * 1.1<sup>x</sup>`
                     return effForm + "<br><br>" + costForm
@@ -497,7 +527,8 @@ addLayer("tm", {
                 return levels + "<br>" + eff + "<br><br>" + cost
             },
             effect(x) {
-                return x.mul(.04).add(1)
+                x = x.toNumber()
+                return 1 + .02 * x + .05 * Math.floor(x / 5)
             },
             canAfford() {
                 return !this.locked() && player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
@@ -544,7 +575,7 @@ addLayer("tm", {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            unlocked:() => shopEffect(106) >= 1 || true
+            unlocked:() => shopEffect(106) >= 1
         },
         32: {
             title: "Flux Capacitor B",
@@ -582,12 +613,12 @@ addLayer("tm", {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            unlocked:() => shopEffect(106) >= 1 || true
+            unlocked:() => shopEffect(106) >= 1
         },
         33: {
             title: "Flux Capacitor C",
             cost(x) {
-                return x.pow_base(1.1).mul(x)
+                return x.pow_base(1.1).mul(x.add(1))
             },
             maxLevels() { return 120 },
             display() {
@@ -622,7 +653,7 @@ addLayer("tm", {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            unlocked:() => shopEffect(106) >= 1 || true
+            unlocked:() => shopEffect(106) >= 1
         },
         // 33: {
         //     title: "Flux Capacitor C",
@@ -729,8 +760,30 @@ addLayer("tm", {
             description: "Raise point gain to the power of (1 + log10(log10(Temporal Energy + 10)))<sup>.5</sup>",
             cost: 50,
             effect:() => player.tm.sluggish.points.add(10).log10().log10().add(1).pow(.5),
-            effectDisplay() { return `^${format(upgEff(this.layer, this.id))}x` },
+            effectDisplay() { return `^${format(upgEff(this.layer, this.id))}` },
             unlocked:() => player.tm.sluggish.inChallenge,
+            currencyDisplayName: "temporal energy",
+            currencyInternalName: "points",
+            currencyLocation:() => player.tm.sluggish
+        },
+        114: {
+            title: "Back Up to Speed",
+            description: "Multiply clock speed by 1 + log10(1 + Points) / 100",
+            cost: 1000,
+            effect:() => player.points.add(10).log10().div(100).add(1),
+            effectDisplay() { return `${format(upgEff(this.layer, this.id))}x` },
+            unlocked:() => player.tm.sluggish.inChallenge,
+            currencyDisplayName: "temporal energy",
+            currencyInternalName: "points",
+            currencyLocation:() => player.tm.sluggish
+        },
+        115: {
+            title: "Back Up to Speed",
+            description: "Increase the Energy max and min values by 0.05 per TM achievement up to 20",
+            cost: 25000,
+            effect:() => Math.min(20, player.tm.achievements.length) * 0.05,
+            effectDisplay() { return `${format(upgEff(this.layer, this.id))}x` },
+            unlocked:() => player.tm.sluggish.inChallenge && inSluggishLayer(2),
             currencyDisplayName: "temporal energy",
             currencyInternalName: "points",
             currencyLocation:() => player.tm.sluggish
@@ -785,15 +838,14 @@ addLayer("tm", {
         },
         215: {
             title: "Rise and Grind",
-            description:() => !hasUpg("tm", 214) ? "Purchase this upgrade to unlock the Windup mechanic" 
-                : "Increase the Windup cap by log1000(Best Points)<sup>.25</sup>",
-            cost: 100000,
-            effect:() => player.best.max(1000).log(1000).pow(.25),
-            effectDisplay() { return !hasUpg("tm", 214) ? "Does nothing" : `+${format(this.effect())}` },
+            description: "Increase Windup cap by .02 per Sluggish upgrade",
+            cost: 5,
+            effect:() => player.tm.upgrades.length / 50,
+            effectDisplay:() => `+${format(upgEff("tm", 215))}`,
             unlocked:() => hasUpg("tm", 214),
-            currencyDisplayName: "points",
+            currencyDisplayName: "investment",
             currencyInternalName: "points",
-            currencyLocation:() => player
+            currencyLocation:() => player.p.investment
         },
         311: {
             title: "Temporal Expansion",
@@ -804,6 +856,34 @@ addLayer("tm", {
             currencyInternalName: "points",
             currencyLocation:() => player.e
         }
+    },
+    achievements: {
+        11: {
+            name: "1",
+            done() {
+                return player.tm.sluggish.clocks["clock1"].prod.gte(12)
+                    && player.tm.sluggish.clocks["clock1"].speed.gte(12)
+                    && player.tm.sluggish.clocks["clock1"].bonus.gte(12)
+            },
+            tooltip: `Gain 12 stat points in each of Production, Speed, and Bonus for the first clock
+                <br><br>Multiply Point/Penny gain by 1.2x`,
+            style: achTMStyle,
+            effect() {
+                return player.tm.sluggish.inChallenge ? 1.2 : 1
+            }
+        },
+        12: {
+            name: "2",
+            done() {
+                return tmp.tm.sluggish.windup.unlocked
+            },
+            tooltip: `Unlock the Windup feature
+                <br><br>Gain 2x Temporal Energy`,
+            style: achTMStyle,
+            effect() {
+                return player.tm.sluggish.inChallenge ? 2 : 1
+            }
+        },
     },
     challenges: {
         11: {
@@ -825,17 +905,13 @@ addLayer("tm", {
             canComplete() {
                 return player.tm.sluggish.points.gte(this.requirement)
             },
-            onComplete() {
-                resetSluggish(on=false)
-            },
             onEnter() {
                 resetSluggish(on=true, layer=1, max=this.requirement)
             },
             onExit() {
-                resetSluggish(on=false)
+                resetSluggish(on=false, layer=1)
             },
-            completionLimit: 100,
-            requirement: new Decimal(1e6)
+            requirement: new Decimal(1e5)
         },
         12: {
             name: "Sluggish 2",
@@ -845,7 +921,8 @@ addLayer("tm", {
             rewardDescription:() => `Multiply Expansion gain by 1.25, unlock more Time Machine buyables
                 and double offline time limit (15m --> 30m)`,
             rewardEffect() {
-                return challengeCompletions("tm", this.id) == 0 ? 1 : 1.25
+                // return challengeCompletions("tm", this.id) == 0 ? 1 : 1.25
+                return 1.25
             },
             rewardDisplay() { 
                 return format(challengeEffect("tm", this.id), 2) + "x"
@@ -853,18 +930,14 @@ addLayer("tm", {
             canComplete() {
                 return player.tm.sluggish.points.gte(this.requirement)
             },
-            onComplete() {
-                resetSluggish(on=False)
-            },
             onEnter() {
                 resetSluggish(on=True, layer=2, max=this.requirement)
             },
             onExit() {
-                resetSluggish(on=False)
+                resetSluggish(on=False, layer=2)
             },
-            completionLimit: 100,
             requirement: new Decimal(1e9),
-            unlocked:() => player.tm.challenges[11] != 0 && hasMilestone("s", 1)
+            unlocked:() => player.tm.challenges[11] != 0 && hasAchievement("a", 51)
         }
         // 13: `Perform a Dollar reset, and Global Speed is divided by 2 per Sluggish challenge layer`
         // `Increase the base conversion rate by 1% per Sluggish challenge completed,
@@ -880,7 +953,7 @@ addLayer("tm", {
                 "clickables", "blank", 
                 ["row", [
                     ["display-text", "Set minimum simulated tick length (250 = 250ms):&ensp;"],
-                    ["slider", ["minTickLength", 0, 250]]
+                    ["slider", ["minTickLength", 10, 250]]
                 ]],
                 "blank",
                 ["buyables", [1, 2, 3]]
@@ -894,7 +967,7 @@ addLayer("tm", {
                 ], 
                 "blank",
                 ["display-text", function() { 
-                    let x = Object.values(player.tm.challenges).reduce((a,b)=>a+b)
+                    let x = tmp.tm.sluggish.completions
                     return `Each completed challenge increases Time Flux by 5%<br>
                         ${x} challenge completions = ${1 + 5 * x/100}x Time Flux` }
                 ], "blank",
@@ -907,7 +980,7 @@ addLayer("tm", {
             content: [
                 ["display-text", () => 
                     `You have <h2 style="color: purple; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
-                    ${format(player.tm.sluggish.points)}</h2> temporal energy`
+                    ${format(player.tm.sluggish.points)}</h2> temporal energy (+${format(tmp.tm.sluggish.perSecond)}/s)`
                 ], "blank",
                 ["microtabs", "sluggish"]
             ],
@@ -951,7 +1024,7 @@ addLayer("tm", {
                         Each clock has exactly 3 stats: Speed, Production, and Bonus. Speed boosts the rate at which a clock's hand moves.
                         Production multiplies the currency produced by the clock.
                         Bonus provides an overall boost to Temporal Energy gain.
-                        <br><br>Therefore, the total Temporal Energy gained when the 1st Clock reaches 12 is equal to:
+                        <br><br>Therefore, the total Temporal Energy gained when the 1st Clock reaches the 12th hour is based on to:
                         <br><br>(<b>Clock Power</b> of <b>Clock 1</b>) * (<b>Production</b> of <b>Clock 1</b>) * (Product of all <b>Bonus</b>)
                         <br><br>When a Clock reaches its max speed (12 hours on the clock / second), you can perform a Clock Ascension.
                         Clock Ascensions reset the Clock's Production/Speed stats (Bonus is kept) and divide the Clock's base speed by 5,
@@ -986,6 +1059,15 @@ addLayer("tm", {
                         "padding-right":"20px"
                     }
                 }
+            },
+            "Achievements": {
+                content: [
+                    "blank",
+                    ["display-text", "TM (Sluggish) achievements are permanently kept, but their effects only apply inside of the Sluggish challenge"],
+                    "blank",
+                    "achievements",
+                    "blank"
+                ]
             }
         }
     }

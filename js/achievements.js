@@ -18,6 +18,11 @@ const achRedStyle = {
     "border-width": "5px"
 }
 
+const achTMStyle = {
+    "border-color": "magenta",
+    "border-width": "5px"
+}
+
 addLayer("a", {
     symbol: "A",
     position: 0,
@@ -44,9 +49,11 @@ addLayer("a", {
                 //console.log(keptAchs)
             }
             function achFilter(id) {
-                return id > 80 || keptAchs.has(Number(id))
+                return id > 80// || keptAchs.has(Number(id))
             }
             player.a.achievements = player.a.achievements.filter(achFilter)
+            // new line below!
+            player.a.achievements = player.a.achievements.concat([...keptAchs])
 
             // handle milestones
             function milestoneFilter(index) {
@@ -153,13 +160,17 @@ addLayer("a", {
         32: {
             name: "12",
             done() {
-                if (this.unlocked() && player.p.investment.points.gte(100) && player.tm.challenges[11] == 1) return true
+                if (this.unlocked() && player.tm.challenges[11] == 1 && player.p.investment.points.gte(100)) return true
             },
-            tooltip: "Reach 100 Investment and complete Sluggish 1<br><br>Multiply expansion gain by 1.1 and generate .1% of Pennies on reset per second per achievement in this row",
+            tooltip: "Complete Sluggish 1 and reach 100 Investment<br><br>Generate 1% of Pennies on reset per second per achievement in this row and the next",
             unlocked:() => hasAchievement("a", 31),
             style: achBlueStyle,
             effect() {
-                return .1/100 * (hasAchievement("a", 31) + 1 + hasAchievement("a", 33) + hasAchievement("a", 34) + hasAchievement("a", 35))
+                let achComplete = 1 + [31,33,34,35,41,42,43,44,45].filter(
+                    (value) => hasAchievement("a", value)
+                ).length
+                return 1/100 * achComplete
+                // return 1/100 * (hasAchievement("a", 31) + 1 + hasAchievement("a", 33) + hasAchievement("a", 34) + hasAchievement("a", 35))
             }
         },
         33: {
@@ -167,7 +178,7 @@ addLayer("a", {
             done() {
                 if (this.unlocked() && tmp.e.getResetGain.gte(.106)) return true
             },
-            tooltip: "Reach a rate of .106 Expansions per second<br>Unlock Expansion milestones",
+            tooltip: "Reach a rate of .106 Expansions per second<br><br>Unlock more Expansion milestones",
             unlocked:() => hasAchievement("a", 31),
             style: achBlueStyle
         },
@@ -183,11 +194,11 @@ addLayer("a", {
         35: {
             name: "15",
             done() {
-                if (this.unlocked() && player.e.upgrades.length < 2 && player.p.points.gte("1.35e9")) return true
+                if (this.unlocked() && player.e.upgrades.length < 2 && player.p.points.gte("21e9")) return true
             },
             tooltip() {
-                let ret = `Reach 1.35 billion pennies with at most 1 expansion upgrade. How did you manage that?`
-                let eff = "<br><br>Increase base point gain by 1 and WNBP exponent by .01"
+                let ret = `Reach 21 billion pennies with at most 1 expansion upgrade. How did you manage that?`
+                let eff = "<br><br>Multiply Time Flux by 1.02x and increase WNBP exponent by .01"
                 if (this.effLocked()) return ret + "<s>" + eff + "</s>"
                 return ret + eff
             },
@@ -208,10 +219,12 @@ addLayer("a", {
         42: {
             name: "17",
             done() {
-                if (this.unlocked() && player.p.points.gte(3e10) && tmp.pointGen.lt(upgrade23Limit())) return true
+                return player.highestPointsEver.gte(1e17)
+                // if (this.unlocked() && player.p.points.gte(3e10) && tmp.pointGen.lt(upgrade23Limit())) return true
             },
-            tooltip: "Gain less points in a single second than you are allowed to have... wait, what?<br>Requires 3e10 Pennies",
-            unlocked:() => hasUpg("e", 23) || player.s.unlocked || player.sys.unlocked
+            tooltip: "Reach a Highest Points Ever of 1e17<br><br>Increase WNBP effect base by 2 (10 --> 12)",
+            unlocked:() => hasUpg("e", 23) || player.s.unlocked || player.sys.unlocked,
+            style: achBlueStyle
         },
         43: {
             name: "18",
@@ -233,9 +246,9 @@ addLayer("a", {
         45: {
             name: "20",
             done() {
-                if (this.unlocked() && tmp.p.buyables[11].gain.gte(2000)) return true
+                return false
             },
-            tooltip: "Reach 2000 investment earned in a single investment reset",
+            tooltip: "Gain over 1337 investment in a single investment reset",
             unlocked:() => hasUpg("e", 23) || player.s.unlocked || player.sys.unlocked
         },
         51: {
@@ -243,8 +256,8 @@ addLayer("a", {
             done() {
                 if (player.s.unlocked || player.sys.unlocked && player.a.achievements.length >= 20) return true
             },
-            tooltip: `Unlock the Storage feature and complete 20 achievements<br><br>Unlock more achievements
-                and increase the Where Did These Come From??? exponent by .02`,
+            tooltip: `Unlock the Storage feature and complete 20 achievements<br><br>Unlock more achievements,
+                unlock Sluggish 2, and increase the Where Did These Come From??? exponent by .02`,
             unlocked:() => hasUpg("e", 23) || player.s.unlocked || player.sys.unlocked,
             style: achBlueStyle
         },
@@ -491,7 +504,7 @@ addLayer("a", {
                 return this.unlocked() && player.p.points.gte(1e90)
             },
             tooltip: `Reach 1e90 Pennies
-                <br><br>Increase the WNBP effect base by +9 (11 -> 20)`,
+                <br><br>Increase the WNBP effect base by 10 (15 -> 25)`,
             unlocked:() => hasMilestone("a", 10),
             style: achBlueStyle
         },
@@ -535,22 +548,28 @@ addLayer("a", {
         115: {
             name: "55",
             done() { return false },
-            tooltip: "Gain 10 Recharge at once",
+            tooltip: "Gain 20 Recharge at once",
             unlocked:() => hasMilestone("a", 10)
         }
     },
     milestones: {
         0: {
             requirementDescription: "10 Achievements Finished",
-            effectDescription() { return `Multiply WNBP limit based on how far away it is from 1e10 points<br>Currently: ${format(this.effect())}x` },
+            effectDescription() { return player.shiftDown ? "Caps at 4e104 base limit"
+                : `Multiply WNBP limit based on how far away it is from 1e10 points<sup>*</sup><br>Currently: ${format(this.effect())}x` },
             done() { return player.a.achievements.length >= 10 },
-            effect:() => upgrade23LimitBase().lte(1e10) ? upgrade23LimitBase().log10().neg().add(11).pow(2.6)
-                : upgrade23LimitBase().div(1e10).log10().add(1).pow(.5)
+            effect() {
+                let base = upgrade23LimitBase().min(4.2e104)
+                if (base.lte(1e10)) return base.log10().neg().add(11).pow(2.6)
+                
+                let exp = base.div(1e10).log10().add(10).log10().mul(.5)
+                return base.div(1e10).log10().add(1).pow(exp)
+            }
         },
         1: {
             requirementDescription: "15 Achievements Finished",
             effectDescription:() => {
-                return "Multiply Penny Expansion gain by 1.05<sup>milestones</sup><br>Currently: " + format(1.05**player.a.milestones.length, 4)
+                return "Multiply Penny Expansion gain by 1.05<sup>milestones-1</sup><br>Currently: " + format(1.05**(player.a.milestones.length-1), 4)
             },
             done() { return player.a.achievements.length >= 15 },
             unlocked:() => player.e.unlocked
@@ -586,8 +605,7 @@ addLayer("a", {
         6: {
             requirementDescription: "28 Achievements Finished",
             effectDescription:() => {
-                let ret = "Multiply expansion investment gain by 1.01<sup>achievements - 21</sup> "
-                    + "but multiply the Penny Expansion row 4 static multiplier by 1.6x<br>Currently: "
+                let ret = "Multiply expansion investment gain by 1.01<sup>achievements - 21</sup><br>Currently: "
                 ret = ret + format(1.01**(player.a.achievements.length-21), 4)
                 return ret
             },
@@ -596,7 +614,7 @@ addLayer("a", {
         },
         7: {
             requirementDescription: "32 Achievements Finished",
-            effectDescription: "We Need Bigger Pockets base point effect is increased by 1 (initially 10)",
+            effectDescription: "We Need Bigger Pockets base point effect is increased by 3 (12 --> 15)",
             done() { return this.unlocked && player.a.achievements.length >= 32 },
             unlocked:() => hasAchievement("a", 71) || player.sys.unlocked
         },

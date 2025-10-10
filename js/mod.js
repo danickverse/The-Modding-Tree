@@ -17,7 +17,7 @@ let modInfo = {
 	initialStartPoints: new Decimal (0), // Used for hard resets and new players
 	offlineLimit:() => {
 		let ret = 0.125
-		if (player.tm.challenges[12] == 1) ret *= 2
+		if (player.tm.challenges[11] == 1) ret *= 2
 		return ret
 	},  // In hours
 }
@@ -36,12 +36,13 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added Sluggish, a minigame included in the Time Machine that is unlocked by entering challenges<br>
 		- Adjusted Shop values/effects and added more Shop items<br>
 		- Expanded the Banks layer to include more upgrades, milestones, and more<br>
+		- Rebalanced and revamped early game features, notably buffing the first achievement milestone's effect,
+			modifying the cost for Penny Upgrades 13/14/23/24, buffing Achievement 14's reward, adding the Time Machine,
+			updating expansion upgrade costs/effects, adding expansion milestones, changing some achievement requirements/effects,
+			and more, to craft a smoother experience up to and including the first System reset<br>
 		- A lot more stuff here and there that I've just forgotten about, to be honest<br>
-		- Rebalanced and revamped a few early game features, notably buffing the first achievement milestone's effect,
-			modifying cost scaling for Penny Upgrades 13/14, buffing Achievement 14's reward, adding the Time Machine,
-			and much more, to craft a smoother experience up to and including the first System reset<br>
 		- A lot of bug fixes :D<br>
-		- <br><br>
+		- Just a lot.<br><br>
 
 	<h3>v0.2.3.2</h3><br>
 		- Emergency patch for endgame bug<br><br>
@@ -263,6 +264,9 @@ function getPointGen() {
 	if (hasMilestone('s', 3)) gainMult = gainMult.mul(tmp.s.stored_investment.effects[5])
 	if (hasUpg("p", 52)) gainExp = gainExp.add(upgEff("p", 52))
 
+	if (hasMilestone("e", 1)) gainMult = gainMult.mul(milestoneEffect("e", 1)[0])
+	if (hasMilestone("e", 2)) gainMult = gainMult.mul(milestoneEffect("e", 2))
+
 	if (inChallenge("s", 11) && hasUpg("s", 11)) directMult = directMult.mul(5)
 
 	if (getClickableState("e", 21)) directMult = directMult.div(tmp.e.clickables[21].negEffect)
@@ -280,9 +284,9 @@ function getPointGen() {
 		directMult = directMult.pow(.5)
 	}
 
+	if (hasAchievement("tm", 11)) gainMult = gainMult.mul(achievementEffect("tm", 11))
 	if (hasUpg("tm", 112)) gainMult = gainMult.mul(upgEff("tm", 112))
 	if (hasUpg("tm", 211)) gainMult = gainMult.mul(upgEff("tm", 211)[0])
-	if (hasAchievement('a', 35) && (!tmp.a.achievements[35].effLocked)) baseGain = baseGain.add(1)
 	if (hasUpg("sys", 23)) baseGain = baseGain.add(upgEff("sys", 23))
 
 	if (hasUpg("sys", 11)) gainExp = gainExp.mul(upgEff("sys", 11))

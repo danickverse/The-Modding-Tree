@@ -56,25 +56,27 @@ function resetSluggish(on, layer, max) {
 
     if (on) {
         player.tm.sluggish.maxPoints = max
+        player.best = decimalZero
         doPopup("tm", "Sluggish Entered", "A clock has appeared...", 3, tmp.tm.color)
-        switch (layer) {
-            // higher layers come at the top to ensure that lower layers are also on
-            case 2:
-            case 1:
-                investmentReset(true, true)
-                respecExpansionUpgrades(["PE", "SE"])
-                let keptEUpgrades = player.e.upgrades
-                player.highestPointsEver = decimalZero
-                layerDataReset("e")
-                player.e.upgrades = keptEUpgrades
-                player.p.upgrades = [25]
-                updateTempData(layers.e, tmp.e, funcs.e)
-                break
-            default: throw Error(`Invalid sluggish layer: ${layer}`)
-        }
     } else {
         player.tm.sluggish.maxPoints = decimalZero
         doPopup("tm", "The clocks have disappeared...", "Sluggish Exited", 3, tmp.tm.color)
+    }
+
+    switch (layer) {
+        // higher layers come at the top to ensure that lower layers are also on
+        case 2:
+        case 1:
+            investmentReset(true, true)
+            respecExpansionUpgrades(["PE", "SE"])
+            let keptEUpgrades = player.e.upgrades
+            player.highestPointsEver = decimalZero
+            layerDataReset("e")
+            player.e.upgrades = keptEUpgrades
+            player.p.upgrades = [25]
+            updateTempData(layers.e, tmp.e, funcs.e)
+            break
+        default: throw Error(`Invalid sluggish layer: ${layer}`)
     }
 }
 
@@ -384,9 +386,9 @@ function updateWindupPoints(diff) {
     let tWindup = tmp.tm.sluggish.windup
 
     if (windup.cursorInside) {
-        windup.energy = windup.energy.add(tWindup.energyGain * diff).min(1)
+        windup.energy = windup.energy.add(tWindup.energyGain.mul(diff)).min(tWindup.energyCap)
     } else {
-        windup.energy = windup.energy.sub(tWindup.energyLoss * diff).max(0)
+        windup.energy = windup.energy.sub(tWindup.energyLoss.mul(diff)).max(tWindup.energyMin)
     }
 
     let windupGain = tWindup.gain.mul(diff)

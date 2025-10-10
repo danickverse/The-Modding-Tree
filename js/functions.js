@@ -107,8 +107,9 @@ function upgrade23LimitExp() {
 
 function upgrade23EffBase() {
     let base = new Decimal("10")
-    if (hasMilestone("a", 7)) base = base.add(1)
-    if (hasAchievement("a", 104)) base = base.add(9)
+    if (hasAchievement("a", 42)) base = base.add(2)
+    if (hasMilestone("a", 7)) base = base.add(3)
+    if (hasAchievement("a", 104)) base = base.add(10)
 
     return base
 }
@@ -151,7 +152,7 @@ function pennyTaxStart() {
     if (hasUpg("p", 45)) ret = ret.mul(upgEff("p", 42))
     if (hasMilestone("s", 2)) ret = ret.mul(tmp.s.stored_expansion.effects[4])
     if (inChallenge("s", 11)) ret = ret.div(1e4)
-    ret = ret.div(10 ** player.tm.sluggish.layer)
+    ret = ret.div(5 ** player.tm.sluggish.layer)
     return ret.max(1)
 }
 
@@ -217,16 +218,15 @@ function expansionUpgradeCost(id) {
             (index) => index < 100 && Math.floor(index / 10) >= row
         ).length
         let upgBoughtScaling = Math.pow(staticMultPE, boughtAfterInclRowPE)
-
         switch (row) {
             case 1:
                 return Math.min(upgBoughtScaling, 16)
             case 2:
-                return Math.min(upgBoughtScaling * 16, 256)
+                return Math.min(upgBoughtScaling * 16, 374.8)
             case 3:
-                return Math.min(upgBoughtScaling * 256, 4096)
+                return Math.min(upgBoughtScaling * 500, 40500)
             case 4:
-                return Math.min(upgBoughtScaling * 20000, 81920000)
+                return Math.min(upgBoughtScaling * 100000, 409600000)
             case 5:
                 let base = new Decimal(1e16)
                 return base.mul(upgBoughtScaling).min(1e24)
@@ -262,6 +262,7 @@ function expansionUpgradeCost(id) {
 
 function timeFlux() {
     let ret = 1
+    if (hasAchievement('a', 35) && !tmp.a.achievements[35].effLocked) ret *= 1.02
     if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**1.5)/1000)
     ret *= tmp.quests.bars.dollarResetBar.reward
     ret *= tmp.quests.bars.zoneBar.reward

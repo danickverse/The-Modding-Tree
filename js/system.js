@@ -130,7 +130,7 @@ addLayer("sys", {
             player.sys.businesses.land.recharge = player.sys.businesses.land.recharge.add(recharge)
             setBuyableAmount("sys", 21, decimalZero)
 
-            if (tmp.a.achievements[115].unlocked && !player.a.achievements.includes("115") && recharge.gte(10)) {
+            if (tmp.a.achievements[115].unlocked && !player.a.achievements.includes("115") && recharge.gte(20)) {
                 player.a.achievements.push("115")
                 doPopup("achievement", tmp.a.achievements[115].name, "Achievement Gotten!", 3, tmp.a.color)
             }
@@ -484,14 +484,17 @@ addLayer("sys", {
         124: {
             title: "Battery Pack",
             description:() => player.shiftDown ? "Requires 5 Used Charges for conversion"
-                : "When performing a System Reset, Used Charges convert to Recharge<sup>*</sup>",
+                : "When performing a System Reset, Used Charges and Land Revitalizers convert to Recharge<sup>*</sup>",
             cost: 30,
             effect() {
                 let ret = new Decimal(1.1)
                 if (hasUpg("sys", 201)) ret = ret.add(upgEff("sys", 201))
                 return ret
             },
-            effectDisplay() { return `${format(this.effect(), 3)}<sup>x - 5</sup>`},
+            effectDisplay() { 
+                let eff = format(this.effect(), 3)
+                return `${eff}<sup>UC - 5</sup> * ${eff}<sup>2 * LR</sup>`
+            },
             unlocked:() => hasUpg("sys", 123),
             currencyDisplayName: "Land",
             currencyInternalName: "points",
@@ -844,6 +847,7 @@ addLayer("sys", {
             effectiveStr() {
                 let ret = decimalOne
                 if (hasUpg(this.layer, 123)) ret = ret.mul(upgEff(this.layer, 123))
+                if (hasUpg(this.layer, 125)) ret = ret.mul(upgEff(this.layer, 125))
                 ret = ret.mul(buyableEffect("sys", 22)[0])
 
                 //ret = ret.mul(buyableEffect("sys", 121))
@@ -1232,7 +1236,6 @@ addLayer("sys", {
                 let ret = new Decimal(0.1)
                 ret = ret.mul(tmp.sys.buyables[21].effectiveStr)
                 ret = ret.mul(tmp.sys.businesses.acceleratorPower.effect)
-                if (hasUpg("sys", 125)) ret = ret.mul(upgEff("sys", 125))
                 
                 return ret
             },
@@ -1258,8 +1261,13 @@ addLayer("sys", {
             recharge: {
                 gain() {
                     let usedCharges = getBuyableAmount("sys", 21).sub(5).max(0)
+                    let revitalizers = getBuyableAmount("sys", 22)
                     if (usedCharges.eq(0)) return decimalZero
-                    return usedCharges.pow_base(upgEff("sys", 124)).mul(buyableEffect("sys", 201))
+                    
+                    let ret = usedCharges.pow_base(upgEff("sys", 124))
+                    ret = ret.mul(revitalizers.mul(2).pow_base(upgEff("sys", 124)))
+                    ret = ret.mul(buyableEffect("sys", 201))
+                    return ret
                 }
             }
         },
@@ -1412,7 +1420,7 @@ addLayer("sys", {
                     ["buyables", [20]], "blank",
                     ["upgrades", [20]], "blank"
                 ],
-                unlocked:() => true || hasUpg("sys", 124)
+                unlocked:() => hasUpg("sys", 124)
             }
         },
         info: {

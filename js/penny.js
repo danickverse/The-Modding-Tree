@@ -39,9 +39,13 @@ addLayer("p", {
         if (hasUpg("p", 54)) mult = mult.times(upgEff("p", 54))
         mult = mult.times(buyableEffect("p", 21))
         if (hasUpg("p", 61)) mult = mult.mul(upgEff('p', 61))
+
+        if (hasMilestone("e", 1)) mult = mult.mul(milestoneEffect("e", 1)[1])
+        if (hasMilestone("e", 2)) mult = mult.mul(milestoneEffect("e", 3))
         
         if (inSluggishLayer(1)) mult = mult.pow(.5)
 
+        if (hasAchievement("tm", 11)) mult = mult.mul(achievementEffect("tm", 11))
         if (hasUpg("tm", 111)) mult = mult.mul(upgEff("tm", 111))
         if (hasUpg("tm", 211)) mult = mult.mul(upgEff("tm", 211)[1])
 
@@ -508,7 +512,7 @@ addLayer("p", {
                 return ret
             },
             cost() {
-                let ret = new Decimal("5e10")
+                let ret = new Decimal("5e11")
                 if (hasUpg("p", 44)) ret = ret.mul(12)
                 if (inAnyChallenge()) ret = ret.mul(1.1)
                 return ret
@@ -524,7 +528,7 @@ addLayer("p", {
                 return ret
             },
             cost() {
-                let ret = new Decimal("5e10")
+                let ret = new Decimal("5e11")
                 if (hasUpg("p", 43)) ret = ret.mul(12)
                 return ret
             },
@@ -587,7 +591,7 @@ addLayer("p", {
         },
         54: {
             title: "Who Wants To Be A Decillionaire?",
-            description: "Multiply penny gain by (1 + Penny Expansions)<sup>.25</sup>",
+            description: "Multiply penny gain by (1 + Penny Expansions)<sup>.1</sup>",
             cost: new Decimal("1e33"),
             effect:() => player.e.penny_expansion.points.add(1).pow(.1),
             effectDisplay:() => format(upgEff("p", 54)) + "x",
@@ -723,7 +727,8 @@ addLayer("p", {
                 return ret
             },
             buy() {
-                let nextInvVal = player.p.investment.points.add(tmp.p.buyables[11].gain)
+                let gain = tmp.p.buyables[11].gain
+                let nextInvVal = player.p.investment.points.add(gain)
                 if ((!hasAchievement("a", 24) || !hasAchievement("a", 25)) && nextInvVal.gte(2)) {
                     let check = confirm("Are you sure you want to perform an investment reset? You will not be able to complete the 9th/10th achievements until you perform another penny buyable respec, halting your progression!")
                     if (!check) return
@@ -734,6 +739,11 @@ addLayer("p", {
                 if (hasUpg("e", 35)) player.p.investmentCooldown -= 3
                 if (hasMilestone("s", 2)) player.p.investmentCooldown -= 2
                 if (hasMilestone("sys", 5) && hasUpg("e", 45)) player.p.investmentCooldown -= 2
+
+                if (tmp.a.achievements[45].unlocked && player.a.achievements.indexOf("45") == -1 && gain.gte(1337)) {
+                    player.a.achievements.push("45")
+                    doPopup("achievement", tmp.a.achievements[45].name, "Achievement Unlocked!", 3, tmp.a.color)
+                }
 
                 // reset data, keep investment and investment2
                 investmentReset(false, false)
@@ -1008,12 +1018,12 @@ addLayer("p", {
             player.p.autoBuyableCooldown += diff
 
             let divisor = 1
-            if (hasUpg("e", 35)) divisor *= 2.5
+            if (hasUpg("e", 35)) divisor *= 2
             if (hasUpg("e", 45)) divisor *= !hasMilestone("sys", 5) ? 8 : 10
             if (hasMilestone("sys", 1)) divisor *= 2
             if (hasMilestone("sys", 4)) divisor *= 2
             if (hasMilestone("sys", 9)) divisor *= 4
-            let cooldown = 2.5 / divisor
+            let cooldown = 2 / divisor
 
             while (player.p.autoBuyableCooldown >= cooldown) {
                 if (canBuyBuyable("p", 21)) {
@@ -1064,8 +1074,8 @@ addLayer("p", {
         } else if (hasUpg("e", 25) || hasMilestone("sys", 0) && player.p.autoUpgCooldown == 0) {
             let upgIndices = [11, 12, 13, 14, 15, 21, 22]
             if (hasMilestone("sys", 4) && player.sys.autoWNBP) upgIndices.push(23)
-            upgIndices = upgIndices.concat([24, 25, 31, 32, 33, 34, 35])
-            if (hasUpg("e", 45)) upgIndices.push(41, 42, 43, 44, 45)
+            upgIndices = upgIndices.concat([24, 25, 31, 32, 33, 34, 35, 41])
+            if (hasUpg("e", 45)) upgIndices.push(42, 43, 44, 45)
             function findUpg(index) {
                 return !hasUpg("p", index)
             }
