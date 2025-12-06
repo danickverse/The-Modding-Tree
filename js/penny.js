@@ -47,6 +47,7 @@ addLayer("p", {
 
         if (hasAchievement("tm", 11)) mult = mult.mul(achievementEffect("tm", 11))
         if (hasUpg("tm", 111)) mult = mult.mul(upgEff("tm", 111))
+        if (hasUpg("tm", 121)) mult = mult.mul(upgEff("tm", 121))
         if (hasUpg("tm", 211)) mult = mult.mul(upgEff("tm", 211)[1])
 
         if (challengeCompletions("tm", 11) == 1) mult = mult.times(challengeEffect("tm", 11))
@@ -113,6 +114,7 @@ addLayer("p", {
         if (hasAchievement("a", 32)) ret += achievementEffect("a", 32)
         if (hasMilestone("s", 0)) ret += Number(tmp.s.stored_investment.effects[2])
         if (hasUpg("s", 13)) ret += upgEff("s", 13)
+        if (hasUpg("tm", 122)) ret += upgEff("tm", 122)
         return ret
     },
     row: 0, // Row the layer is in on the tree (0 is the first row)
@@ -538,7 +540,7 @@ addLayer("p", {
         },
         45: {
             title: "I Want To Break Free!",
-            cost: new Decimal("1e13"),
+            cost: new Decimal("1e14"),
             description: "Multiply PTS (base penny value used for Tax) by IITU effect",
             effectDisplay:() => format(upgEff("p", 42)) + "x",
             unlocked:() => hasUpg("e", 23)
@@ -736,6 +738,7 @@ addLayer("p", {
 
                 player.p.investment.points = nextInvVal
                 player.p.investmentCooldown = 10
+                if (hasUpg("e", 25)) player.p.investmentCooldown -= 2
                 if (hasUpg("e", 35)) player.p.investmentCooldown -= 3
                 if (hasMilestone("s", 2)) player.p.investmentCooldown -= 2
                 if (hasMilestone("sys", 5) && hasUpg("e", 45)) player.p.investmentCooldown -= 2

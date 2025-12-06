@@ -152,7 +152,7 @@ function pennyTaxStart() {
     if (hasUpg("p", 45)) ret = ret.mul(upgEff("p", 42))
     if (hasMilestone("s", 2)) ret = ret.mul(tmp.s.stored_expansion.effects[4])
     if (inChallenge("s", 11)) ret = ret.div(1e4)
-    ret = ret.div(5 ** player.tm.sluggish.layer)
+    ret = ret.div(5 ** (player.tm.sluggish.layer ** 0.5))
     return ret.max(1)
 }
 

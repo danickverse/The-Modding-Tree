@@ -479,7 +479,7 @@ addLayer("e", {
         25: {
             fullDisplay() {
                 let title = "<h3></b>QOL 2</h3></b>"
-                let description = "Autobuy two penny upgrades up to IITU per second<sup>*</sup>"
+                let description = "Autobuy two penny upgrades up to IITU per second<sup>*</sup> and reduce investment cooldown by 2 seconds"
                 if (player.shiftDown) description = "Does not autobuy WNBP"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                 if (!this.requirement()) requirement = requirement + ", 4 upgrades in this row"
@@ -547,7 +547,7 @@ addLayer("e", {
         35: {
             fullDisplay() {
                 let title = "<h3></b>QOL 3</h3></b>"
-                let description = "Reduces investment cooldown by 3 seconds and autobuy Education buyables 2x faster"
+                let description = "Reduce investment cooldown by 3 seconds and autobuy Education buyables 2x faster"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                 if (!this.requirement()) requirement = requirement + ", 4 upgrades in this row"
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -616,7 +616,7 @@ addLayer("e", {
                 let title = "<h3></b>QOL 4</h3></b>"
                 let description = !hasMilestone("sys", 5) ? `Double Focused Production buffs, autobuy 1 more penny upgrade 
                     & 8x more buyables per second, autobuy the rest of row 4` 
-                    : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 1 second"
+                    : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 2 seconds"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                     
                 return title + "<br>" + description + "<br><br>" + requirement
@@ -645,7 +645,7 @@ addLayer("e", {
                 let title = "<h3></b>QOL 4</h3></b>"
                 let description = !hasMilestone("sys", 5) ? `Double all Focused Production buffs, autobuy one more penny upgrade 
                     & 8x more buyables per second, autobuy from row 4` 
-                    : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 2.5 seconds"
+                    : "Triple all Focused Production buffs, autobuy 10x more buyables, and reduce investment cooldown by 2 seconds"
                 let requirement = "Requires: " + formatWhole(expansionUpgradeCost(this.id)) + " Penny Expansion"
                     
                 return title + "<br>" + description + "<br><br>" + requirement

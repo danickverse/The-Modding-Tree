@@ -203,7 +203,7 @@ addLayer("a", {
                 return ret + eff
             },
             unlocked:() => hasAchievement("a", 31),
-            effLocked:() => hasAchievement("a", 81) && hasAchievement("a", 94),
+            effLocked:() => hasAchievement("a", 81) && !hasAchievement("a", 94),
             style() {
                 return this.effLocked() ? achRedStyle : achBlueStyle
             }
@@ -280,9 +280,10 @@ addLayer("a", {
         54: {
             name: "24",
             done() {
-                if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansion.points.gte(13)) return true
+                return player.tm.challenges[12] > 0 && (false && player.e.upgrades.length <= 2)
+                //if (this.unlocked() && player.highestPointsEver.lt(5e10) && player.e.penny_expansion.points.gte(13)) return true
             },
-            tooltip: "Gain 13 penny expansions with a highest points ever (reset to 0 by storing expansions) that is less than 5e10",
+            tooltip: "Complete Sluggish 2 and reach x Pennies/y Expansion with at most 2 Expansion upgrades",
             unlocked:() => hasAchievement("a", 51) || player.sys.unlocked
         },
         55: {

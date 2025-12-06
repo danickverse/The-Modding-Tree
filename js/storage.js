@@ -177,9 +177,9 @@ addLayer("s", {
             done() { return player.s.stored_investment.points.gte(30000) }
         },
         1: {
-            requirementDescription: "100,000 Stored Investment and 1,250 Stored Expansion",
+            requirementDescription: "100,000 Stored Investment and 3000 Stored Expansion",
             effectDescription: "Multiply Penny Expansion loss rate by 9/10",
-            done() { return player.s.stored_investment.points.gte(1e5) && player.s.stored_expansion.points.gte(1250) }
+            done() { return player.s.stored_investment.points.gte(1e5) && player.s.stored_expansion.points.gte(3000) }
         },
         2: {
             requirementDescription: "500,000 Stored Investment and 12,000 Stored Expansion",
@@ -251,7 +251,7 @@ addLayer("s", {
                 let title = "<b><h3>Small Price To Pay</b></h3>"
                 let description = "Gain 5% of pennies on reset per second regardless of current Stored Investment"
                 let requirement = "Requires: 0.5 Stored Dollars"
-                return title + "<br>" + description() + "<br><br>" + requirement
+                return title + "<br>" + description + "<br><br>" + requirement
             },
             // title: "Small Price To Pay",
             // description: "Gain 5% of pennies on reset per second regardless of current Stored Investment",

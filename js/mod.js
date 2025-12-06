@@ -286,6 +286,7 @@ function getPointGen() {
 
 	if (hasAchievement("tm", 11)) gainMult = gainMult.mul(achievementEffect("tm", 11))
 	if (hasUpg("tm", 112)) gainMult = gainMult.mul(upgEff("tm", 112))
+	if (hasUpg("tm", 121)) gainMult = gainMult.mul(upgEff("tm", 121))
 	if (hasUpg("tm", 211)) gainMult = gainMult.mul(upgEff("tm", 211)[0])
 	if (hasUpg("sys", 23)) baseGain = baseGain.add(upgEff("sys", 23))
 
@@ -295,7 +296,6 @@ function getPointGen() {
 
 	if (hasUpg("tm", 113)) gainExp = gainExp.mul(upgEff("tm", 113))
 	if (tmp.tm.sluggish.windup.unlocked) gainExp = gainExp.mul(tmp.tm.sluggish.windup.effects.points)
-
 	// direct effects to gain
 
 	//if (player.factory.unlocked) directMult = directMult.mul(tmp.factory.effect)

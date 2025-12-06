@@ -47,6 +47,7 @@ function resetSluggish(on, layer, max) {
     player.tm.sluggish.total = decimalZero
     player.tm.upgrades = []
     player.tm.upgradeMenu = "Temporal Energy"
+    player.tm.resetTime = 0
 
     // If on, then enter challenge and set sluggish layer. Else, exit
     player.tm.sluggish.inChallenge = on
@@ -66,12 +67,15 @@ function resetSluggish(on, layer, max) {
     switch (layer) {
         // higher layers come at the top to ensure that lower layers are also on
         case 2:
+            expansionKeep = []
+            expansionKeep.push("milestones")
+            layerDataReset("s")
         case 1:
             investmentReset(true, true)
             respecExpansionUpgrades(["PE", "SE"])
             let keptEUpgrades = player.e.upgrades
             player.highestPointsEver = decimalZero
-            layerDataReset("e")
+            layerDataReset("e", expansionKeep)
             player.e.upgrades = keptEUpgrades
             player.p.upgrades = [25]
             updateTempData(layers.e, tmp.e, funcs.e)
@@ -97,6 +101,7 @@ function updateClock(clock, diff) {
     let pclocks = player.tm.sluggish.clocks
     let tclocks = tmp.tm.sluggish.clocks
     let prevTime = pclocks[clock].timer
+
     pclocks[clock].timer += diff * tclocks[clock].speed
 
     if (prevTime < Math.trunc(pclocks[clock].timer)) {
@@ -118,6 +123,11 @@ function updateClock(clock, diff) {
             pclocks[prevClock].cenergy = pclocks[prevClock].cenergy.add(x)
         }
         pclocks[clock].timer %= 12
+    }
+
+    if (tmp.tm.sluggish.breakdown.unlocked) {
+        pclocks[clock].breakdownStep += tclocks[clock].breakdownRate * diff
+        pclocks[clock].breakdownStep = Math.min(pclocks[clock].breakdownStep, 1)
     }
 }
 
@@ -189,8 +199,8 @@ function setupClockButton(clock, radius, canvas) {
 
         if (isInside(mousePos, button)) {
             console.log('clicked inside button');
-            player.tm.sluggish.clocks[clock].breakdownStep += 1
-            player.tm.sluggish.clocks[clock].breakdownStep %= 21
+            if (player.tm.sluggish.clocks[clock].breakdownStep == 1) 
+                player.tm.sluggish.clocks[clock].breakdownStep = 0
         } else {
             console.log('clicked outside button');
         }
@@ -301,7 +311,7 @@ function setupClock(clock) {
     }
 
     function drawHand(ctx, pos, length, width) {
-        let index = player.tm.sluggish.clocks[clock].breakdownStep
+        let index = Math.floor(player.tm.sluggish.clocks[clock].breakdownStep * 20)
         ctx.fillStyle = interpolatedClockButtonColors[index];
         ctx.strokeStyle = interpolatedClockButtonColors[index];
         
@@ -472,8 +482,7 @@ function inSluggishLayer(challNumber) {
 }
 
 function availableTMUpgrades() {
-    let ret = []
-    if (true) ret.push("Breakdown")
+    let ret = ["Breakdown"]
     switch (player.tm.sluggish.layer) {
         case 7:
         case 6:
@@ -489,7 +498,7 @@ function availableTMUpgrades() {
 
 function displayTMUpgrades() {
     if (player.tm.upgradeMenu == "Breakdown") {
-        if (!tmp.tm.sluggish.breakdown.unlocked) return ["display-text", "Enter Sluggish at layer 2 or higher to unlock the Breakdown feature!"]
+        if (!tmp.tm.sluggish.breakdown.unlocked) return ["display-text", "Enter Sluggish at layer 2 or higher and complete TM Achievement 3 to unlock the Breakdown feature!"]
         
         let upgrades = [
             ["11", "12", "13"],
