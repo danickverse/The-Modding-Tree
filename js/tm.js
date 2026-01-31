@@ -832,11 +832,23 @@ addLayer("tm", {
         },
         122: {
             title: "I Feel Badly That You Feel Badly",
-            description: "Every OoM of Temporal Energy increases Penny generation by 2%, up to 100",
+            description:() => player.shiftDown ? "Caps at 100%"
+                : "Every OoM of Temporal Energy adds 2% Penny generation<sup>*</sup>",
             cost: 5000,
             effect:() => player.tm.sluggish.points.add(1).log10().floor().mul(.02).toNumber(),
             effectDisplay() { return `${upgEff(this.layer, this.id) * 100}%` },
             unlocked:() => tmp.tm.upgrades[121].unlocked,
+            currencyDisplayName: "temporal energy",
+            currencyInternalName: "points",
+            currencyLocation:() => player.tm.sluggish
+        },
+        123: {
+            title: "This Is Fine.",
+            description: "Increase Investment Rate Exponent by SL/100",
+            cost: 150000,
+            effect:() => player.tm.sluggish.layer/100,
+            effectDisplay() { return `+${upgEff(this.layer, this.id)}` },
+            unlocked:() => tmp.tm.upgrades[122].unlocked,
             currencyDisplayName: "temporal energy",
             currencyInternalName: "points",
             currencyLocation:() => player.tm.sluggish
@@ -902,9 +914,14 @@ addLayer("tm", {
         },
         221: {
             title: "Prime Time",
-            description: "Every Education I/II level increases Windup Cap by .023",
+            description:() => player.shiftDown ? "Softcap at 50 levels<br>Excess &#8658; Excess<sup>.5</sup>"
+                : "Every Education I/II level<sup>*</sup> increases Windup Cap by .023",
             cost: 2005001,
-            effect:() => getBuyableAmount("p", 21).add(getBuyableAmount("p", 22)).mul(.023),
+            effect() {
+                let x = getBuyableAmount("p", 21).add(getBuyableAmount("p", 22))
+                if (x.gt(50)) x = x.sub(50).pow(.5).add(50)
+                return x.mul(.023)
+            },
             effectDisplay:() => `+${format(upgEff("tm", 221))}`,
             unlocked:() => tmp.tm.upgrades[215].unlocked,
             currencyDisplayName: "pennies",
