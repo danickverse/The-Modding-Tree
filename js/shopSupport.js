@@ -1,4 +1,5 @@
 function getQuestShopData(id) {
+    console.log("TODO: CREATE IN-MEMORY SHOP ITEMS, ACCESS OBJECTS INSTEAD OF CREATING OVER AND OVER")
     let max; let title; let display; let cost; let type; let effect
     switch (id) {
         case 101:
@@ -186,7 +187,7 @@ function updateShopDisplay(layer, id, exit=false) {
     let desc = shopData.shopDisplay
 
     let effVal = toPlaces(gridEffect(layer, id), 2)
-    let eff = buildShopEffect(layerid, shopData.effectType, effVal, levels)
+    let eff = buildShopEffectDisplay(layerid, shopData.effectType, effVal, levels)
 
     displayLocation.shopDisplay = 
         `<h3>${title}</h3><br><br>${cost}<br><br>${desc}<br><br>${eff}`

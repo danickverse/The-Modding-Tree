@@ -38,6 +38,9 @@ addLayer("tm", {
                     cursorInside: false,
                     energy: decimalZero,
                     passiveStep: 0
+                },
+                achievements: {
+                    points: decimalZero
                 }
             }
         }
@@ -733,7 +736,7 @@ addLayer("tm", {
         //     return true
         // },
         getCanClick(data, id) {
-            return player.tm.sluggish.achievements.points.gte(this.getCost(data, id)) && data < getShopData(id).maxLevels
+            return player.tm.sluggish.achievements.points.gte(this.getCost(data, id)) && data < getShopData(this.layer, id).maxLevels
         },
         onClick(data, id) {
             player.tm.sluggish.achievements.points = player.tm.sluggish.achievements.points.sub(this.getCost(data, id))
@@ -754,18 +757,18 @@ addLayer("tm", {
             }
         },
         getTitle(data, id) {
-            return getShopData(id).title
+            return getShopData(this.layer, id).title
         },
         getDisplay(data, id) {
-            return `${data}/${getShopData(id).maxLevels}`
+            return `${data}/${getShopData(this.layer, id).maxLevels}`
         },
         getCost(data, id) {
             switch (id) {
                 // case used for special cases (scaling cost)
                 // should probably use identifiers like w/ effect --> generic formulas
-                case 101: return factorial(getShopData(id).cost + data * 2)
-                case 104: return getShopData(id).cost * (data + 1)
-                default: return getShopData(id).cost
+                case 101: return factorial(getShopData(this.layer, id).cost + data * 2)
+                case 104: return getShopData(this.layer, id).cost * (data + 1)
+                default: return getShopData(this.layer, id).cost
             }
         }
         // getUnlocked(data, id) {
