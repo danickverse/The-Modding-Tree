@@ -22,6 +22,7 @@ addLayer("tm", {
                 inChallenge: false,
                 inSluggishTab: false,
                 clockMade: false,
+                shopDisplay: "Hover over a shop item for more information",
                 layer: 0,
                 clocks: {
                     "clock1": {times: 0, timer:0, cenergy:decimalOne, breakdownStep:0, focus:"prod", prod: decimalZero, speed: decimalZero, bonus:decimalZero},
@@ -610,7 +611,7 @@ addLayer("tm", {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            unlocked:() => shopEffect(106) >= 1
+            unlocked:() => gridEffect("quests", 106) >= 1
         },
         32: {
             title: "Flux Capacitor B",
@@ -648,7 +649,7 @@ addLayer("tm", {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            unlocked:() => shopEffect(106) >= 1
+            unlocked:() => gridEffect("quests", 106) >= 1
         },
         33: {
             title: "Flux Capacitor C",
@@ -688,7 +689,7 @@ addLayer("tm", {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            unlocked:() => shopEffect(106) >= 1
+            unlocked:() => gridEffect("quests", 106) >= 1
         },
         // 33: {
         //     title: "Flux Capacitor C",
@@ -718,6 +719,62 @@ addLayer("tm", {
                 player.tm.isWarping = false
             }
         }
+    },
+    grid: {
+        resource: "AP",
+        rows:() => shopRowsAvailable(this.layer), // If these are dynamic make sure to have a max value as well!
+        maxRows: 5,
+        cols: 6,
+        getStartData(id) {
+            if (id === undefined) return 
+            return 0
+        },
+        // getUnlocked(id) { // Default
+        //     return true
+        // },
+        getCanClick(data, id) {
+            return player.tm.sluggish.achievements.points.gte(this.getCost(data, id)) && data < getShopData(id).maxLevels
+        },
+        onClick(data, id) {
+            player.tm.sluggish.achievements.points = player.tm.sluggish.achievements.points.sub(this.getCost(data, id))
+            player.quests.grid[id]++
+            updateShopDisplay(this.layer, id)
+        },
+        getEffect(data, id) {
+            if (data === undefined) return
+            let shopData = getShopData(this.layer, id)
+            switch (shopData.effectType) {
+                case "compounding": 
+                case "compoundingExp": return shopData.effect ** data
+                case "additive": return shopData.effect * data
+                case "unlock": return 0
+                case "other":
+                    //if (id == ...) return thing
+                default: throw Error("Invalid shop effect type: " + id + " " + shopData.type)
+            }
+        },
+        getTitle(data, id) {
+            return getShopData(id).title
+        },
+        getDisplay(data, id) {
+            return `${data}/${getShopData(id).maxLevels}`
+        },
+        getCost(data, id) {
+            switch (id) {
+                // case used for special cases (scaling cost)
+                // should probably use identifiers like w/ effect --> generic formulas
+                case 101: return factorial(getShopData(id).cost + data * 2)
+                case 104: return getShopData(id).cost * (data + 1)
+                default: return getShopData(id).cost
+            }
+        }
+        // getUnlocked(data, id) {
+        //     switch (id) {
+        //         case 101: case 102: case 103: case 104: return true
+        //         case 105: return 
+        //         default: throw Error("Invalid shop ")
+        //     }
+        // }
     },
     upgrades: {
         11: {

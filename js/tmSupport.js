@@ -553,5 +553,5 @@ function displayTMUpgrades() {
 function displayAchTab() {
     if (player.tm.achievementMenu == "Achievements") return "achievements"
 
-    return ["display-text", "wtf you were gonna add a grid dumbass"]
+    return ["column", ["grid", "blank", ["display-text", player.tm.sluggish.shopDisplay], "blank"]]
 }

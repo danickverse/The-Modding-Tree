@@ -86,7 +86,7 @@ addLayer("e", {
 
         if (hasUpg("bills", 23)) ret = ret.mul(upgEff("bills", 23))
             
-        ret = ret.mul(shopEffect(101))
+        ret = ret.mul(gridEffect("quests", 101))
         return ret
     },
     gainExp() {

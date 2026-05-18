@@ -128,7 +128,7 @@ addLayer("quests", {
                 fastCollected: 0, // used for Specks Quest
                 tsls: 0, // increases every tick, measure of time since last spawn, tsls/maxTsls = base spawn chance
                 timer: 0, // maxes at 30, which is when it resets down to 0. used to try to spawn particles every 5 seconds
-                shopDisplay: "",
+                shopDisplay: "Hover over a shop item for more information",
                 showPopup: true,
                 totalPurchases: 0
             }
@@ -490,7 +490,7 @@ addLayer("quests", {
         unlocked:() => hasMilestone("quests", 0),
         gain:() => {
             let ret = decimalOne
-            ret = ret.mul(shopEffect(105))
+            ret = ret.mul(gridEffect("quests", 105))
             return ret
         },
         maxSpecks:() => {
@@ -519,7 +519,8 @@ addLayer("quests", {
         }
     },
     grid: {
-        rows:() => shopRowsAvailable(), // If these are dynamic make sure to have a max value as well!
+        resource: "Specks",
+        rows:() => shopRowsAvailable(this.layer), // If these are dynamic make sure to have a max value as well!
         maxRows: 5,
         cols: 6,
         getStartData(id) {
@@ -543,14 +544,15 @@ addLayer("quests", {
         },
         getEffect(data, id) {
             if (data === undefined) return
-            switch (getShopData(id).effectType) {
+            let shopData = getShopData(this.layer, id)
+            switch (shopData.effectType) {
                 case "compounding": 
-                case "compoundingExp": return getShopData(id).effect ** data
-                case "additive": return getShopData(id).effect * data
+                case "compoundingExp": return shopData.effect ** data
+                case "additive": return shopData.effect * data
                 case "unlock": return 0
                 case "other":
                     //if (id == ...) return thing
-                default: throw Error("Invalid shop effect type: " + id + " " + getShopData(id).type)
+                default: throw Error("Invalid shop effect type: " + id + " " + shopData.type)
             }
         },
         getTitle(data, id) {

@@ -69,7 +69,7 @@ addLayer("s", {
         },
         softcapExp() {
             let ret = .2
-            ret += shopEffect(102)
+            ret += gridEffect("quests", 102)
             return ret
         },
         gain() {
@@ -98,7 +98,7 @@ addLayer("s", {
         },
         softcapExp() {
             let ret = .5
-            ret += shopEffect(102)
+            ret += gridEffect("quests", 102)
             return ret
         },
         gain() {

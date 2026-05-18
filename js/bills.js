@@ -806,7 +806,7 @@ addLayer("bills", {
         if (hasMilestone("banks", 0)) ret = ret.mul(1.5)
         if (hasUpg("banks", 12)) ret = ret.mul(upgEff("banks", 12)[1])
         
-        ret = ret.mul(shopEffect(101))
+        ret = ret.mul(gridEffect("quests", 101))
 
         ret = ret.pow(tmp.banks.bars.tierBar.effect[1])
         return ret

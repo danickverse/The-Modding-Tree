@@ -78,7 +78,7 @@ addLayer("p", {
         if (getClickableState("e", 31)) ret = ret.div(tmp.e.clickables[31].negEffect)
         ret = ret.mul(tmp.sys.businesses.apples.effect)
         ret = ret.mul(tmp.quests.bars.pointsBar.reward)
-        ret = ret.mul(shopEffect(101))
+        ret = ret.mul(gridEffect("quests", 101))
         return ret
     },
     softcap: new Decimal("1e9"),
@@ -842,7 +842,7 @@ addLayer("p", {
                 ret = ret.mul(tmp.quests.bars.dollarGainBar.reward)
                 if (hasAchievement("a", 102)) ret = ret.mul(1.1)
 
-                ret = ret.pow(shopEffect(103))
+                ret = ret.pow(gridEffect("quests", 103))
 
                 return ret
             }

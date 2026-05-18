@@ -586,7 +586,7 @@ addLayer("sys", {
                 if (hasAchievement("a", 92)) ret = ret.add(1)
 
                 if (hasUpg("sys", 111)) ret = ret.mul(upgEff("sys", 111)[0])
-                ret = ret.mul(shopEffect(101))
+                ret = ret.mul(gridEffect("quests", 101))
 
                 ret = ret.mul(buyableEffect("sys", 111))
 
@@ -1202,7 +1202,7 @@ addLayer("sys", {
         if (hasUpg("sys", 14)) mul *= upgEff("sys", 14)
         if (hasUpg("sys", 114)) mul *= upgEff("sys", 114)
         mul *= tmp.quests.bars.penniesBar.reward
-        mul *= shopEffect(104)
+        mul *= gridEffect("quests", 104)
     
         return (base * mul) / 100
     },

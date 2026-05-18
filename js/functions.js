@@ -267,7 +267,7 @@ function timeFlux() {
     ret *= tmp.quests.bars.dollarResetBar.reward
     ret *= tmp.quests.bars.zoneBar.reward
     if (hasUpg("bills", 21)) ret *= upgEff("bills", 21)
-    ret *= shopEffect(101)
+    ret *= gridEffect("quests", 101)
     ret *= buyableEffect("sys", 203).toNumber()
     ret *= buyableEffect("tm", 21).toNumber()
     ret *= buyableEffect("tm", 32).toNumber()
