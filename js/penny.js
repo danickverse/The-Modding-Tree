@@ -689,7 +689,7 @@ addLayer("p", {
             display() {
                 let gain = tmp.p.buyables[11].gain
                 if (!player.shiftDown) {
-                    let investmentRate = !inAnyChallenge() ? `<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/1e6)<sup>${this.rateExp()}</sup>!`
+                    let investmentRate = !inAnyChallenge() ? `<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/1e6)<sup>${format(this.rateExp(), 3)}</sup>!`
                         : `<b><h3>Rate:</h3></b> Invest your current pennies to gain ${format(gain)} investment!`
                     let cooldown = "<b><h3>Cooldown:</h3></b> " + format(player.p.investmentCooldown) + " seconds."
                     let req = "<b><h3>Requires:</h3></b> " + format(this.cost()) + " pennies"
@@ -698,7 +698,13 @@ addLayer("p", {
                 return `Investing your pennies will earn you ${format(gain)} investment.`
             },
             canAfford() {return player.p.points.gte(this.cost()) & player.p.investmentCooldown == 0},
-            rateExp() { return !inSluggishLayer(1) ? 0.5 : 0.1 },
+            rateExp() { 
+                if (!inSluggishLayer(1)) return 0.5 
+
+                let ret = 0.1
+                if (hasUpg("tm", 123)) ret += upgEff("tm", 123)
+                return ret
+            },
             gain() {
                 let ret;
                 if (inChallenge("s", 11) || inChallenge("s", 12)) {

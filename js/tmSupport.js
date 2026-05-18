@@ -8,8 +8,13 @@ let interpolatedClockButtonColors =
     'rgb(244, 3, 3)', 'rgb(255, 0, 0)',
     'rgba(145, 116, 116, 1)'] // final step --> broken down, designated with distinct color
 
-/* Array was given by the following code 
-    with the call interpolateColors("rgb(51, 51, 51)", "rgb(255, 0, 0)", 20):
+
+let interpolatedWindupColors = 
+['rgb(33, 33, 33)', 'rgb(41, 35, 41)', 'rgb(48, 37, 48)', 'rgb(56, 39, 56)', 'rgb(63, 41, 63)', 'rgb(71, 43, 71)', 'rgb(78, 45, 78)', 'rgb(86, 47, 86)', 'rgb(94, 49, 94)', 'rgb(101, 51, 101)', 'rgb(109, 54, 109)', 'rgb(116, 56, 116)', 'rgb(124, 58, 124)', 'rgb(132, 60, 132)', 'rgb(139, 62, 139)', 'rgb(147, 64, 147)', 'rgb(154, 66, 154)', 'rgb(162, 68, 162)', 'rgb(169, 70, 169)', 'rgb(177, 72, 177)']
+    
+/* Arrays were given by the following code with the calls:
+    interpolateColors("rgb(51, 51, 51)", "rgb(255, 0, 0)", 20)
+    interpolateColors("rgb(33, 33, 33)", "rgb(177, 72, 177)", 20)
     
 function interpolateColor(color1, color2, factor) {
     if (arguments.length < 3) { 
@@ -235,6 +240,7 @@ function setupWindupButton(radius, canvas, ctx) {
 
     canvas.addEventListener('contextmenu', function(event) {
         event.preventDefault(); // disables right-click menu on canvas
+        console.log("sorry buddy, get more creative")
     });
 }
 
@@ -251,10 +257,18 @@ function updateClockStatDisplay(clock) {
 }
 
 function updateWindupStatDisplay() {
-    document.getElementById("windupEnergy").textContent = `${format(player.tm.sluggish.windup.energy, 3)} => ${format(tmp.tm.sluggish.windup.gain, 3)} WP/s`
+    document.getElementById("windupGeneration").textContent = 
+        player.tm.sluggish.windup.cursorInside 
+            ? `+${format(tmp.tm.sluggish.windup.energyGain)}`
+            : `-${format(tmp.tm.sluggish.windup.energyLoss)}`
+    document.getElementById("windupEnergy").textContent = `${format(player.tm.sluggish.windup.energy, 3)} => ${format(tmp.tm.sluggish.windup.gain, 3)}`
     document.getElementById("windupPoints").textContent = `${format(player.tm.sluggish.windup.points)}/${format(tmp.tm.sluggish.windup.cap)}`
-    document.getElementById("windupEffPoints").textContent = format(tmp.tm.sluggish.windup.effects.points, 3)
-    document.getElementById("windupEffClockSpeed").textContent = format(tmp.tm.sluggish.windup.effects.clockSpeed, 3)
+    document.getElementById("windupEffPoints").textContent = `^${format(tmp.tm.sluggish.windup.effects.points, 3)} Points`
+    document.getElementById("windupEffClockSpeed").textContent = `x${format(tmp.tm.sluggish.windup.effects.clockSpeed, 3)} Clock Speed`
+    document.getElementById("windupPlaceholder3").textContent = "?"
+    document.getElementById("windupPlaceholder4").textContent = "?"
+    document.getElementById("windupPlaceholder5").textContent = "?"
+    document.getElementById("windupPlaceholder6").textContent = "?"
 }
 
 
@@ -275,7 +289,9 @@ function setupClock(clock) {
     function drawClock() {
         drawFace(ctx, radius);
         drawNumbers(ctx, radius)
-        drawHand(ctx, player.tm.sluggish.clocks[clock].timer * Math.PI / 6, radius * 0.6, radius * 0.08)
+        let pos = player.tm.sluggish.clocks[clock].timer * Math.PI / 6
+        let index = Math.floor(player.tm.sluggish.clocks[clock].breakdownStep * 20)
+        drawHand(ctx, pos, index, radius * 0.6, radius * 0.08)
     }
 
     function drawFace(ctx, radius) {
@@ -310,8 +326,7 @@ function setupClock(clock) {
         }
     }
 
-    function drawHand(ctx, pos, length, width) {
-        let index = Math.floor(player.tm.sluggish.clocks[clock].breakdownStep * 20)
+    function drawHand(ctx, pos, index, length, width) {
         ctx.fillStyle = interpolatedClockButtonColors[index];
         ctx.strokeStyle = interpolatedClockButtonColors[index];
         
@@ -346,11 +361,12 @@ function setupWindup() {
     drawWindupCanvas();
 
     function drawWindupCanvas() {
-        drawActivityRegion(ctx, radius);
+        let index = Math.ceil(player.tm.sluggish.windup.passiveStep)
+        drawActivityRegion(ctx, radius, index);
         drawBall(ctx, radius, ballPosition)
     }
 
-    function drawActivityRegion(ctx, radius) {
+    function drawActivityRegion(ctx, radius, index) {
         const gradOuter = ctx.createRadialGradient(0,0,radius*0.85, 0,0,radius*0.95);
         gradOuter.addColorStop(0, '#333');
         gradOuter.addColorStop(0.5, 'magenta');
@@ -368,7 +384,7 @@ function setupWindup() {
         gradInner.addColorStop(1, '#333');
         ctx.beginPath();
         ctx.arc(0, 0, radius*.6, 0, 2*Math.PI);
-        ctx.fillStyle = '#333';
+        ctx.fillStyle = interpolatedWindupColors[index];
         ctx.fill();
         ctx.strokeStyle = gradInner;
         ctx.lineWidth = radius*0.1;
@@ -396,9 +412,13 @@ function updateWindupPoints(diff) {
     let tWindup = tmp.tm.sluggish.windup
 
     if (windup.cursorInside) {
-        windup.energy = windup.energy.add(tWindup.energyGain.mul(diff)).min(tWindup.energyCap)
+        let gain = tWindup.energyGain.mul(diff)
+        windup.energy = windup.energy.add(gain).min(tWindup.energyCap)
+        windup.passiveStep = 20
     } else {
-        windup.energy = windup.energy.sub(tWindup.energyLoss.mul(diff)).max(tWindup.energyMin)
+        let loss = tWindup.energyLoss.mul(diff)
+        windup.energy = windup.energy.sub(loss).max(tWindup.energyMin)
+        windup.passiveStep = Math.max(0, windup.passiveStep - diff)
     }
 
     let windupGain = tWindup.gain.mul(diff)
@@ -432,13 +452,18 @@ function sluggishClocksDisplay() {
                     <div class = "windupDiv">
                         <canvas id="windupCanvas" width="150" height="150"></canvas>
                     </div>
-                    <div>
-                        Energy:&ensp;<span id="windupEnergy">...</span><br>
+                    <span style="text-align:left">
+                        Generation:&ensp;<span id="windupGeneration">...</span> Energy/s<br>
+                        Energy:&ensp;<span id="windupEnergy">...</span> WP/s<br>
                         Windup Points:&ensp;<span id="windupPoints">...</span><br>
                         ----------------------------<br>
-                        Points: ^<span id="windupEffPoints">...</span><br>
-                        Clock Speed: x<span id="windupEffClockSpeed">...</span>
-                    </div>
+                        1. <span id="windupEffPoints">...</span><br>
+                        2. <span id="windupEffClockSpeed">...</span><br>
+                        3. <span id="windupPlaceholder3">...</span><br>
+                        4. <span id="windupPlaceholder4">...</span><br>
+                        5. <span id="windupPlaceholder5">...</span><br>
+                        6. <span id="windupPlaceholder6">...</span><br>
+                    </span>
                 </div><br>`
     }
 
@@ -519,7 +544,14 @@ function displayTMUpgrades() {
         case "Temporal Energy": hundreds = 1; break;
         case "Point/Penny": hundreds = 2; break;
         case "Expansion": hundreds = 3; break;
+        default: console.error("Missing case for sluggish upg menu: ", player.tm.upgradeMenu)
     }
     hundreds *= 10
     return ["upgrades", [hundreds + 1, hundreds + 2, hundreds + 3, hundreds + 4, hundreds + 5]]
+}
+
+function displayAchTab() {
+    if (player.tm.achievementMenu == "Achievements") return "achievements"
+
+    return ["display-text", "wtf you were gonna add a grid dumbass"]
 }

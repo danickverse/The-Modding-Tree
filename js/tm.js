@@ -13,6 +13,7 @@ addLayer("tm", {
             best: decimalZero,
             minTickLength: 10,
             upgradeMenu: "Temporal Energy",
+            achievementMenu: "Achievements",
             sluggish: {
                 points: decimalZero,
                 best: decimalZero,
@@ -34,7 +35,8 @@ addLayer("tm", {
                 windup: {
                     points: decimalZero,
                     cursorInside: false,
-                    energy: decimalZero
+                    energy: decimalZero,
+                    passiveStep: 0
                 }
             }
         }
@@ -257,7 +259,9 @@ addLayer("tm", {
                 return ret
             },
             energyLoss() {
-                let ret = tmp.tm.sluggish.windup.energyGain
+                let loss = tmp.tm.sluggish.windup.energyGain
+                let passiveGain = loss.mul(player.tm.sluggish.windup.passiveStep / 20).neg()
+                let ret = loss.add(passiveGain)
                 return ret
             },
             energyCap() {
@@ -844,10 +848,10 @@ addLayer("tm", {
         },
         123: {
             title: "This Is Fine.",
-            description: "Increase Investment Rate Exponent by SL/100",
+            description: "Increase Investment Rate Exponent by log2(SL) / 30",
             cost: 150000,
-            effect:() => player.tm.sluggish.layer/100,
-            effectDisplay() { return `+${upgEff(this.layer, this.id)}` },
+            effect:() => Math.log2(player.tm.sluggish.layer)/30,
+            effectDisplay() { return `+${format(upgEff(this.layer, this.id))}` },
             unlocked:() => tmp.tm.upgrades[122].unlocked,
             currencyDisplayName: "temporal energy",
             currencyInternalName: "points",
@@ -1040,7 +1044,7 @@ addLayer("tm", {
                 "main-display",
                 ["display-text", () => `The Temporal Converter is currently working at ${format(tmp.tm.efficiency * 100)}% efficiency`],
                 "blank",
-                "clickables", "blank", 
+                ["clickable", 11], "blank", 
                 ["row", [
                     ["display-text", "Set minimum simulated tick length (250 = 250ms):&ensp;"],
                     ["slider", ["minTickLength", 10, 250]]
@@ -1158,9 +1162,11 @@ addLayer("tm", {
             "Achievements": {
                 content: [
                     "blank",
-                    ["display-text", "TM (Sluggish) achievements are permanently kept, but their effects only apply inside of the Sluggish challenge"],
+                    ["display-text", "TM (Sluggish) achievements/achievement upgrades (AUs) are permanently kept, but their effects only apply inside of the Sluggish challenge"],
                     "blank",
-                    "achievements",
+                    ["drop-down", ["achievementMenu", ["Achievements", "Achievement Upgrades"]]],
+                    "blank",
+                    () => displayAchTab(),
                     "blank"
                 ]
             }
