@@ -544,32 +544,18 @@ addLayer("quests", {
         },
         getEffect(data, id) {
             if (data === undefined) return
-            let shopData = getShopData(this.layer, id)
-            switch (shopData.effectType) {
-                case "compounding": 
-                case "compoundingExp": return shopData.effect ** data
-                case "additive": return shopData.effect * data
-                case "unlock": return 0
-                case "other":
-                    //if (id == ...) return thing
-                default: throw Error("Invalid shop effect type: " + id + " " + shopData.type)
-            }
+            return getShopItemEffect(this.layer, id, data)
         },
         getTitle(data, id) {
             return getShopData(this.layer, id).title
         },
         getDisplay(data, id) {
-            return `${data}/${getShopData(this.layer, id).maxLevels}`
+            return getShopItemDisplay(this.layer, id, data)
         },
         getCost(data, id) {
-            switch (id) {
-                // case used for special cases (scaling cost)
-                // should probably use identifiers like w/ effect --> generic formulas
-                case 101: return factorial(getShopData(this.layer, id).cost + data * 2)
-                case 104: return getShopData(this.layer, id).cost * (data + 1)
-                default: return getShopData(this.layer, id).cost
-            }
-        }
+            if (data === undefined) return
+            return getShopItemCost(this.layer, id, data)
+        },
         // getUnlocked(data, id) {
         //     switch (id) {
         //         case 101: case 102: case 103: case 104: return true

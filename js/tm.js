@@ -745,39 +745,25 @@ addLayer("tm", {
         },
         getEffect(data, id) {
             if (data === undefined) return
-            let shopData = getShopData(this.layer, id)
-            switch (shopData.effectType) {
-                case "compounding": 
-                case "compoundingExp": return shopData.effect ** data
-                case "additive": return shopData.effect * data
-                case "unlock": return 0
-                case "other":
-                    //if (id == ...) return thing
-                default: throw Error("Invalid shop effect type: " + id + " " + shopData.type)
-            }
+            return getShopItemEffect(this.layer, id, data)
         },
         getTitle(data, id) {
             return getShopData(this.layer, id).title
         },
         getDisplay(data, id) {
-            return `${data}/${getShopData(this.layer, id).maxLevels}`
+            return getShopItemDisplay(this.layer, id, data)
         },
         getCost(data, id) {
+            if (data === undefined) return
+            return getShopItemCost(this.layer, id, data)
+        },
+        getUnlocked(id) {
             switch (id) {
-                // case used for special cases (scaling cost)
-                // should probably use identifiers like w/ effect --> generic formulas
-                case 101: return factorial(getShopData(this.layer, id).cost + data * 2)
-                case 104: return getShopData(this.layer, id).cost * (data + 1)
-                default: return getShopData(this.layer, id).cost
+                case 101: return true
+                case 102: case 103: case 104: case 105: case 106: return false
+                default: throw Error("Invalid shop ")
             }
         }
-        // getUnlocked(data, id) {
-        //     switch (id) {
-        //         case 101: case 102: case 103: case 104: return true
-        //         case 105: return 
-        //         default: throw Error("Invalid shop ")
-        //     }
-        // }
     },
     upgrades: {
         11: {
@@ -1188,6 +1174,15 @@ addLayer("tm", {
                         <br><br>C1 Energy * C1 Prod * C1 Revolutions/s * Bonuses
                         <br>&#8658; ${format(player.tm.sluggish.clocks["clock1"].cenergy)} * ${format(tmp.tm.sluggish.clocks.clock1.prod)} * ${format(tmp.tm.sluggish.clocks.clock1.speed.div(12))} * ${format(tmp.tm.sluggish.bonus)}
                         <br>&#8658; +${format(tmp.tm.sluggish.perSecond)}/s`
+                    ],
+                    "blank"
+                ]
+            },
+            "Windup": {
+                content: [
+                    "blank",
+                    ["display-text", 
+                        `The Windup feature is used to buff various stats across the game`
                     ],
                     "blank"
                 ]
