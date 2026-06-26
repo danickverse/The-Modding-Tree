@@ -50,7 +50,7 @@ addLayer("p", {
         if (hasUpg("tm", 121)) mult = mult.mul(upgEff("tm", 121))
         if (hasUpg("tm", 211)) mult = mult.mul(upgEff("tm", 211)[1])
 
-        if (challengeCompletions("tm", 11) == 1) mult = mult.times(challengeEffect("tm", 11))
+        if (challengeCompletions("tm", 11) >= 1) mult = mult.times(challengeEffect("tm", 11))
         if (hasAchievement("a", 34)) mult = mult.times(1.337)
         if (hasUpg("p", 35)) mult = mult.times(upgEff("p", 35))
         mult = mult.times(tmp.sys.effect)
@@ -139,6 +139,14 @@ addLayer("p", {
     ],
     layerShown(){return true},
     doReset(layer) {
+        if (!player.oneTimeEvents & OneTimeEvents.FIRST_PENNY_RESET) {
+            let response = confirm("To perform a reset, you can also press a hotkey!"
+                + " Check out the list of hotkeys in the *General Information* tab (left side of tree)."
+                + " You may also be able to press Enter (after clicking on the prestige button first) to perform a reset."
+                + " To ignore (informative) notifications like this after the first time, click OK.")
+            if (response) player.oneTimeEvents |= OneTimeEvents.FIRST_PENNY_RESET
+        }
+
         if (layer == "sys") {
             let tempBuyable23 = getBuyableAmount("p", 23)
             let keptUpgrades = [25, 42, 51, 53, 54, 55, 61, 62, 63, 64, 65].filter(
@@ -737,7 +745,7 @@ addLayer("p", {
             buy() {
                 let gain = tmp.p.buyables[11].gain
                 let nextInvVal = player.p.investment.points.add(gain)
-                if ((!hasAchievement("a", 24) || !hasAchievement("a", 25)) && nextInvVal.gte(2)) {
+                if (hasAchievement("a", 21) && (!hasAchievement("a", 24) || !hasAchievement("a", 25)) && nextInvVal.gte(2)) {
                     let check = confirm("Are you sure you want to perform an investment reset? You will not be able to complete the 9th/10th achievements until you perform another penny buyable respec, halting your progression!")
                     if (!check) return
                 }

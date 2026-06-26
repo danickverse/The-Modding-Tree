@@ -19,6 +19,13 @@ addLayer("effects", {
         return visible
     },
     tabFormat: {
+        "Info": {
+            content: [
+                ["display-text", 
+                    `Unfortunately, the information presented in this node`
+                    + ` is <i>very</i> likely outdated. I will try and update it... occasionally.`]
+            ]
+        },
         "Achievements": {
             content: [
                 ["display-text", function() {

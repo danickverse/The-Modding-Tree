@@ -29,17 +29,20 @@ let VERSION = {
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
-	<h3>v0.3</h3><br>
+	<div style="text-align:left !important; margin-left:20px; margin-right:20px"><h3>v0.3</h3><br>
 		- Added the Time Machine, a side feature unlocked by the 11th Achievement<br>
 		- Added 9 buyables to the Time Machine feature, 3 of which are available immediately<br>
 		- Added Time Warps to the Time Machine feature<br>
 		- Added Sluggish, a minigame included in the Time Machine that is unlocked by entering challenges<br>
+		- Added Expansion milestones to help smoothen out earlier balancing and involve Time Flux<br>
 		- Adjusted Shop values/effects and added more Shop items<br>
 		- Expanded the Banks layer to include more upgrades, milestones, and more<br>
 		- Rebalanced and revamped early game features, notably buffing the first achievement milestone's effect,
 			modifying the cost for Penny Upgrades 13/14/23/24, buffing Achievement 14's reward, adding the Time Machine,
 			updating expansion upgrade costs/effects, adding expansion milestones, changing some achievement requirements/effects,
 			and more, to craft a smoother experience up to and including the first System reset<br>
+		- Added support for "One Time Events" and some implementation (QoL notifications, and such)<br>
+		- Made the changelog look cleaner :3<br>
 		- A lot more stuff here and there that I've just forgotten about, to be honest<br>
 		- A lot of bug fixes :D<br>
 		- Just a lot.<br><br>
@@ -224,7 +227,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		- Added a few various little things<br>
 		(like two or three various little things)<br>
 		(they are really little)
-	`
+	</div>`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
@@ -284,6 +287,7 @@ function getPointGen() {
 		directMult = directMult.pow(.5)
 	}
 
+	if (challengeCompletions("tm", 11) >= 1) mult = mult.times(challengeEffect("tm", 11))
 	if (hasAchievement("tm", 11)) gainMult = gainMult.mul(achievementEffect("tm", 11))
 	if (hasUpg("tm", 112)) gainMult = gainMult.mul(upgEff("tm", 112))
 	if (hasUpg("tm", 121)) gainMult = gainMult.mul(upgEff("tm", 121))
@@ -308,6 +312,7 @@ function addedPlayerData() { return {
 	highestPointsEver: new Decimal("0"),
 	best: decimalZero,
 	resetTime: 0,
+	oneTimeEvents: 0,
 	shiftDown: false,
 	particles: {},
 	particleID: 0
@@ -344,6 +349,18 @@ var backgroundStyle = {
 function maxTickLength() {
 	return(3600) // Default is 1 hour which is just arbitrarily large
 	return(1)
+}
+
+// Implementation of *one time events* using a bitmask in player.oneTimeEvents
+// Check if an event has been encountered using bitwise AND (&)
+// When an event is encountered, add to player.oneTimeEvents (|=)
+const OneTimeEvents = {
+  FIRST_PENNY_RESET: 1 << 0,
+  EVENT_2: 1 << 1,
+  EVENT_3: 1 << 2
+  // For nth event, left shift by n+1
+  // If have >= 32 events, use BigInt... shouldnt happen for us!
+  //	let flags = 0n; const EVENT_40 = 1n << 39n; flags |= EVENT_40;
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
@@ -430,6 +447,9 @@ function fixOldSave(oldVersion){
 	}
 	if (oldVersion < "0.3") {
 		if (player.a.achievements.includes('31')) player.tm.unlocked = true
-		//alert("It is recommended, although not required by any means that you start a new game to experience the new content.")
+		alert(
+			"It is *highly* recommended, although not required by any means, that you start a new game to experience the new content."
+		  	+ " Additionally, there is a high likelyhood that your save will break upon reloading. Be warned."
+		)
 	}
 }

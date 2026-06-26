@@ -19,6 +19,7 @@ addLayer("tm", {
                 best: decimalZero,
                 total: decimalZero,
                 maxPoints: decimalZero,
+                maxLayer: 0,
                 inChallenge: false,
                 inSluggishTab: false,
                 clockMade: false,
@@ -37,10 +38,12 @@ addLayer("tm", {
                     points: decimalZero,
                     cursorInside: false,
                     energy: decimalZero,
-                    passiveStep: 0
+                    passiveStep: 0,
+                    everHovered: false
                 },
                 achievements: {
-                    points: decimalZero
+                    points: decimalZero,
+                    totalPurchases: 0
                 }
             }
         }
@@ -91,6 +94,10 @@ addLayer("tm", {
                 ret = ret.mul(tmp.tm.sluggish.clocks[clock].bonus)
             }
             if (hasAchievement("tm", 12)) ret = ret.mul(achievementEffect("tm", 12))
+            if (player.tm.sluggish.inChallenge) {
+                ret = ret.mul(gridEffect("tm", 101))
+                ret = ret.mul(gridEffect("tm", 102)[0])
+            }
             return ret
         },
         perSecond() {
@@ -99,6 +106,9 @@ addLayer("tm", {
         },
         completions() {
             return Object.values(player.tm.challenges).reduce((a,b)=>a+b)
+        },
+        achievementPointGain() {
+            return new Decimal(player.tm.achievements.length).pow(1.5)
         },
         clocks: {
             globalClockSpeedMult() {
@@ -307,27 +317,35 @@ addLayer("tm", {
         
         player.tm.points = player.tm.points.add(tmp.tm.perSecond.mul(diff)).min(this.stoTimeLimit())
         player.tm.best = player.tm.best.max(player.tm.points)
+        player.tm.sluggish.achievements.points = 
+            player.tm.sluggish.achievements.points.add(tmp.tm.sluggish.achievementPointGain.mul(diff))
 
-        if (player.tm.sluggish.inChallenge) {
-            player.tm.sluggish.inSluggishTab = player.tab == "tm" 
-                && player.subtabs.tm.mainTabs == "Sluggish"
-                && player.subtabs.tm.sluggish == "Clocks"
-            
-            for (let clock in tmp.tm.sluggish.clocks) {
-                if (!tmp.tm.sluggish.clocks[clock].unlocked) continue
-                updateClock(clock, diff)
-                if (tmp.tm.sluggish.windup.unlocked) updateWindupPoints(diff)
-                if (!player.tm.sluggish.inSluggishTab) continue
-
-                if (tmp.tm.sluggish.windup.unlocked) {
-                    setupWindup()
-                    updateWindupStatDisplay()
-                }
-                updateClockStatDisplay(clock)
-                setupClock(clock)
+        if (!player.tm.sluggish.inChallenge) return
+        
+        player.tm.sluggish.inSluggishTab = player.tab == "tm" 
+            && player.subtabs.tm.mainTabs == "Sluggish"
+            && player.subtabs.tm.sluggish == "Clocks"
+        
+        if (tmp.tm.sluggish.windup.unlocked) {
+            updateWindupPoints(diff)
+            if (player.tm.sluggish.inSluggishTab) {
+                setupWindup()
+                updateWindupStatDisplay()
             }
-            player.tm.sluggish.clockMade = player.tm.sluggish.inSluggishTab
         }
+        
+        for (let clock in tmp.tm.sluggish.clocks) {
+            if (!tmp.tm.sluggish.clocks[clock].unlocked) continue
+            
+            updateClock(clock, diff)
+            
+            if (!player.tm.sluggish.inSluggishTab) continue
+
+            updateClockStatDisplay(clock)
+            setupClock(clock)
+        }
+        player.tm.sluggish.clockMade = player.tm.sluggish.inSluggishTab
+        
     },
     buyables: {
         11: {
@@ -736,11 +754,14 @@ addLayer("tm", {
         //     return true
         // },
         getCanClick(data, id) {
-            return player.tm.sluggish.achievements.points.gte(this.getCost(data, id)) && data < getShopData(this.layer, id).maxLevels
+            return player.tm.sluggish.achievements.points.gte(getShopItemCost(this.layer, id, data)) 
+                    && data < getShopData(this.layer, id).maxLevels
         },
+        onHold(data, id) { this.onClick(data, id) },
         onClick(data, id) {
             player.tm.sluggish.achievements.points = player.tm.sluggish.achievements.points.sub(this.getCost(data, id))
-            player.quests.grid[id]++
+            player.tm.sluggish.achievements.totalPurchases++
+            player.tm.grid[id]++
             updateShopDisplay(this.layer, id)
         },
         getEffect(data, id) {
@@ -758,11 +779,15 @@ addLayer("tm", {
             return getShopItemCost(this.layer, id, data)
         },
         getUnlocked(id) {
-            switch (id) {
-                case 101: return true
-                case 102: case 103: case 104: case 105: case 106: return false
-                default: throw Error("Invalid shop ")
-            }
+            if (id <= 102) return true
+            else if (id <= 104) return false && inSluggishLayer(2)
+            else if (id <= 106) return false && inSluggishLayer(3)
+            throw Error("Invalid id:", id)
+            // switch (id) {
+            //     case 101: return true
+            //     case 102: case 103: case 104: case 105: case 106: return false
+            //     default: throw Error("Invalid shop ")
+            // }
         }
     },
     upgrades: {
@@ -1006,9 +1031,9 @@ addLayer("tm", {
         12: {
             name: "2",
             done() {
-                return tmp.tm.sluggish.windup.unlocked
+                return player.tm.sluggish.inChallenge && player.p.investment.points.gt(0)
             },
-            tooltip: `Unlock the Windup feature
+            tooltip: `Gain any amount of investment
                 <br><br>Gain 2x Temporal Energy`,
             style: achTMStyle,
             effect() {
@@ -1022,6 +1047,7 @@ addLayer("tm", {
             },
             tooltip: `Reach 2 or more Clock 1 Energy
                 <br><br>Unlock the Breakdown feature if SL >= 2`,
+            unlocked: () => inSluggishLayer(2),
             style: achTMStyle
         }
     },
@@ -1032,7 +1058,7 @@ addLayer("tm", {
             challengeDescription:() => `Raise all row 1 point/penny boosts ^0.5,
                 investment rate exponent is 5x less, Tax starts 5x earlier per SL<sup>0.5</sup>, perform a penny buyable respec, and reset Penny/Expansion`,
             goalDescription() { return format(this.requirement) + " temporal energy" },
-            rewardDescription:() => `Multiply penny gain based on total time played,
+            rewardDescription:() => `Multiply point/penny gain based on total time played,
                 and double offline time limit (7.5m --> 15m)`,
             rewardEffect() { 
                 let ret = (player.timePlayed ** 0.03) * Math.log10(player.timePlayed + 1) ** .25
@@ -1111,7 +1137,7 @@ addLayer("tm", {
                     return `Each completed challenge increases Time Flux by 5%<br>
                         ${x} challenge completions = ${1 + 5 * x/100}x Time Flux` }
                 ], "blank",
-                ["display-text", "Entering a challenge grants access to the Sluggish tab, but activates nerfs including those from all previous challenges; Sluggish progress is reset when exiting a challenge"],
+                ["display-text", "Entering a challenge grants access to the Sluggish layer, but activates nerfs including those from all previous challenges; Sluggish progress is reset when exiting a challenge"],
                 "blank",
                 "challenges"
             ]
@@ -1217,6 +1243,10 @@ addLayer("tm", {
             "Achievements": {
                 content: [
                     "blank",
+                    ["display-text", () => 
+                    `You have <h2 style="color: magenta; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
+                    ${format(player.tm.sluggish.achievements.points)}</h2> achievement points (+${format(tmp.tm.sluggish.achievementPointGain)}/s)<br>`
+                    ], "blank",
                     ["display-text", "TM (Sluggish) achievements/achievement upgrades (AUs) are permanently kept, but their effects only apply inside of the Sluggish challenge"],
                     "blank",
                     ["drop-down", ["achievementMenu", ["Achievements", "Achievement Upgrades"]]],

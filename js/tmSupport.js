@@ -58,9 +58,12 @@ function resetSluggish(on, layer, max) {
     player.tm.sluggish.inChallenge = on
     player.tm.sluggish.layer = on ? layer : 0
 
-    player.tm.sluggish.clocks = tmp.tm.startData().sluggish.clocks
+    let startData = tmp.tm.startData()
+    player.tm.sluggish.clocks = startData.sluggish.clocks
+    player.tm.sluggish.windup = startData.sluggish.windup
 
     if (on) {
+        player.tm.sluggish.maxLayer = Math.max(player.tm.sluggish.maxLayer, layer)
         player.tm.sluggish.maxPoints = max
         player.best = decimalZero
         doPopup("tm", "Sluggish Entered", "A clock has appeared...", 3, tmp.tm.color)
@@ -69,10 +72,10 @@ function resetSluggish(on, layer, max) {
         doPopup("tm", "The clocks have disappeared...", "Sluggish Exited", 3, tmp.tm.color)
     }
 
+    let expansionKeep = []
     switch (layer) {
         // higher layers come at the top to ensure that lower layers are also on
         case 2:
-            expansionKeep = []
             expansionKeep.push("milestones")
             layerDataReset("s")
         case 1:
@@ -448,23 +451,26 @@ function sluggishClocksDisplay() {
     let rowsOfClocks = 2
 
     if (tmp.tm.sluggish.windup.unlocked) {
-        ret += `<div class = "windupContainer">
-                    <div class = "windupDiv">
-                        <canvas id="windupCanvas" width="150" height="150"></canvas>
-                    </div>
-                    <span style="text-align:left">
-                        Generation:&ensp;<span id="windupGeneration">...</span> Energy/s<br>
-                        Energy:&ensp;<span id="windupEnergy">...</span> WP/s<br>
-                        Windup Points:&ensp;<span id="windupPoints">...</span><br>
-                        ----------------------------<br>
-                        1. <span id="windupEffPoints">...</span><br>
-                        2. <span id="windupEffClockSpeed">...</span><br>
-                        3. <span id="windupPlaceholder3">...</span><br>
-                        4. <span id="windupPlaceholder4">...</span><br>
-                        5. <span id="windupPlaceholder5">...</span><br>
-                        6. <span id="windupPlaceholder6">...</span><br>
-                    </span>
-                </div><br>`
+        // if (player.tm.sluggish.windup.everHovered) {
+        // }
+        ret += 
+        `<div class = "windupContainer">
+            <div class = "windupDiv">
+                <canvas id="windupCanvas" width="150" height="150"></canvas>
+            </div>
+            <span style="text-align:left">
+                Generation:&ensp;<span id="windupGeneration">...</span> Energy/s<br>
+                Energy:&ensp;<span id="windupEnergy">...</span> WP/s<br>
+                Windup Points:&ensp;<span id="windupPoints">...</span><br>
+                ----------------------------<br>
+                1. <span id="windupEffPoints">...</span><br>
+                2. <span id="windupEffClockSpeed">...</span><br>
+                3. <span id="windupPlaceholder3">...</span><br>
+                4. <span id="windupPlaceholder4">...</span><br>
+                5. <span id="windupPlaceholder5">...</span><br>
+                6. <span id="windupPlaceholder6">...</span><br>
+            </span>
+        </div><br>`
     }
 
     for (let i = 0; i < rowsOfClocks; i++) {
@@ -502,7 +508,7 @@ function sluggishClocksDisplay() {
     return ret + `</span>`
 }
 
-function inSluggishLayer(challNumber) {
+function inSluggishLayer(challNumber = 0) {
     return player.tm.sluggish.layer >= challNumber
 }
 
