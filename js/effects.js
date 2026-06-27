@@ -1,7 +1,7 @@
 addLayer("effects", {
     symbol: "EF",
     row: "side",
-    position: 3,
+    position: 4,
     type: "none",
     color: "white",
     startData() { 

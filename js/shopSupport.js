@@ -34,7 +34,7 @@ const questShopItems = {
         effect: 1.25, effectType: "compounding"
     },
     106: {
-        maxLevels: 2, title: "TM ADV", 
+        maxLevels: 2, title: "SL ADV", 
         cost: 10, costType: "static",
         shopDisplay: `Level 1: Unlock Flux Capacitors in the Time Machine<br>
                     Level 2: Unlock a new Quest and the Sluggish 4 challenge`, 
@@ -77,7 +77,7 @@ const sluggishShopItems = {
         ],
         unlocks: [
             (levels) => levels >= 1,
-            (levels) => levels >= 5 && player.tm.sluggish.maxLayer >= 2
+            (levels) => levels >= 5 && player.sl.maxLayer >= 2
         ]
     }
 }
@@ -87,7 +87,7 @@ const ecstaticUpg = sluggishShopItems[102]
 function getShopData(layer, id) {
     switch (layer) {
         case "quests": return questShopItems[id]
-        case "tm": return sluggishShopItems[id] 
+        case "sl": return sluggishShopItems[id] 
     }
 }
 
@@ -104,7 +104,7 @@ function getShopItemEffect(layer, id, data) {
         case "unlock": return 0
 
         case "other":
-            if (layerid == "tm|102") {
+            if (layerid == "sl|102") {
                 // let forms = ecstaticUpg.formulas
                 // return [forms[0](data), forms[1](data)]
                 return ecstaticUpg.formulas.map(formula => formula(data))
@@ -140,7 +140,7 @@ function shopRowsAvailable(layer) {
         case "quests":
             if (player.tm.challenges[22] >= 1) return 2
             return 1
-        case "tm": 
+        case "sl": 
             return 1
     }
 }
@@ -159,7 +159,7 @@ const unlockOverrides = {
 function buildShopEffectDisplay(layerid, effType, effVal, levels) {
     if (effType == "other") {
         switch (layerid) {
-            case "tm|102": 
+            case "sl|102": 
                 let ret = `Current Effects<br><span style="color:pink">`
                 // for (let i = 0; i < 1 + Math.floor(levels / 5); i++) {
                 for (let i = 0; i < ecstaticUpg.maxLevels / 5; i++) {
@@ -199,7 +199,7 @@ function buildShopEffectDisplay(layerid, effType, effVal, levels) {
 function updateShopDisplay(layer, id, exit=false) {
     let displayLocation = {
         quests: player.quests.specks,
-        tm: player.tm.sluggish
+        sl: player.sl
     }[layer]
 
     if (exit) { 

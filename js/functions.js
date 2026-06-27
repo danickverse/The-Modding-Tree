@@ -152,7 +152,7 @@ function pennyTaxStart() {
     if (hasUpg("p", 45)) ret = ret.mul(upgEff("p", 42))
     if (hasMilestone("s", 2)) ret = ret.mul(tmp.s.stored_expansion.effects[4])
     if (inChallenge("s", 11)) ret = ret.div(1e4)
-    ret = ret.div(5 ** (player.tm.sluggish.layer ** 0.5))
+    ret = ret.div(5 ** (player.sluggish.layer ** 0.5))
     return ret.max(1)
 }
 
@@ -273,7 +273,7 @@ function timeFlux() {
     ret *= buyableEffect("tm", 32).toNumber()
     ret *= (1 + 5 * Object.values(player.tm.challenges).reduce((a,b)=>a+b)/100)
 
-    if (inSluggishLayer(2)) ret = (ret ** 0.5) / (1.5 ** player.tm.sluggish.layer) 
+    if (inSluggishLayer(2)) ret = (ret ** 0.5) / (1.5 ** player.sluggish.layer) 
     return ret
 }
 

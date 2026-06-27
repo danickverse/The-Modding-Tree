@@ -99,7 +99,7 @@ function questTabFormat() {
 addLayer("quests", {
     symbol: "Q",
     row: "side",
-    position: 2,
+    position: 3,
     type: "none",
     color: "blue",
     startData() { 

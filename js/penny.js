@@ -45,10 +45,10 @@ addLayer("p", {
         
         if (inSluggishLayer(1)) mult = mult.pow(.5)
 
-        if (hasAchievement("tm", 11)) mult = mult.mul(achievementEffect("tm", 11))
-        if (hasUpg("tm", 111)) mult = mult.mul(upgEff("tm", 111))
-        if (hasUpg("tm", 121)) mult = mult.mul(upgEff("tm", 121))
-        if (hasUpg("tm", 211)) mult = mult.mul(upgEff("tm", 211)[1])
+        if (hasAchievement("sl", 11)) mult = mult.mul(achievementEffect("sl", 11))
+        if (hasUpg("sl", 111)) mult = mult.mul(upgEff("sl", 111))
+        if (hasUpg("sl", 121)) mult = mult.mul(upgEff("sl", 121))
+        if (hasUpg("sl", 211)) mult = mult.mul(upgEff("sl", 211)[1])
 
         if (challengeCompletions("tm", 11) >= 1) mult = mult.times(challengeEffect("tm", 11))
         if (hasAchievement("a", 34)) mult = mult.times(1.337)
@@ -114,7 +114,7 @@ addLayer("p", {
         if (hasAchievement("a", 32)) ret += achievementEffect("a", 32)
         if (hasMilestone("s", 0)) ret += Number(tmp.s.stored_investment.effects[2])
         if (hasUpg("s", 13)) ret += upgEff("s", 13)
-        if (hasUpg("tm", 122)) ret += upgEff("tm", 122)
+        if (hasUpg("sl", 122)) ret += upgEff("sl", 122)
         return ret
     },
     row: 0, // Row the layer is in on the tree (0 is the first row)
@@ -710,7 +710,7 @@ addLayer("p", {
                 if (!inSluggishLayer(1)) return 0.5 
 
                 let ret = 0.1
-                if (hasUpg("tm", 123)) ret += upgEff("tm", 123)
+                if (hasUpg("sl", 123)) ret += upgEff("sl", 123)
                 return ret
             },
             gain() {

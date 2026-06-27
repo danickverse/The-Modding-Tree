@@ -47,29 +47,29 @@ function resetSluggish(on, layer, max) {
     player.subtabs.tm.mainTabs = "Challenges"
 
     // Reset sluggish data regardless of "on"
-    player.tm.sluggish.points = decimalZero
-    player.tm.sluggish.best = decimalZero
-    player.tm.sluggish.total = decimalZero
-    player.tm.upgrades = []
-    player.tm.upgradeMenu = "Temporal Energy"
-    player.tm.resetTime = 0
+    player.sl.points = decimalZero
+    player.sl.best = decimalZero
+    player.sl.total = decimalZero
+    player.sl.upgrades = []
+    player.sl.upgradeMenu = "Temporal Energy"
+    player.sl.resetTime = 0
 
     // If on, then enter challenge and set sluggish layer. Else, exit
-    player.tm.sluggish.inChallenge = on
-    player.tm.sluggish.layer = on ? layer : 0
+    player.sl.inChallenge = on
+    player.sl.layer = on ? layer : 0
 
-    let startData = tmp.tm.startData()
-    player.tm.sluggish.clocks = startData.sluggish.clocks
-    player.tm.sluggish.windup = startData.sluggish.windup
+    let startData = tmp.sl.startData()
+    player.sl.clocks = startData.clocks
+    player.sl.windup = startData.windup
 
     if (on) {
-        player.tm.sluggish.maxLayer = Math.max(player.tm.sluggish.maxLayer, layer)
-        player.tm.sluggish.maxPoints = max
+        player.sl.maxLayer = Math.max(player.sl.maxLayer, layer)
+        player.sl.maxPoints = max
         player.best = decimalZero
-        doPopup("tm", "Sluggish Entered", "A clock has appeared...", 3, tmp.tm.color)
+        doPopup("sl", "Sluggish Entered", "A clock has appeared...", 3, tmp.sl.color)
     } else {
-        player.tm.sluggish.maxPoints = decimalZero
-        doPopup("tm", "The clocks have disappeared...", "Sluggish Exited", 3, tmp.tm.color)
+        player.sl.maxPoints = decimalZero
+        doPopup("sl", "The clocks have disappeared...", "Sluggish Exited", 3, tmp.sl.color)
     }
 
     let expansionKeep = []
@@ -106,8 +106,8 @@ WHEN FIXED, GAIN 1 BREAKDOWN POINT AND THEN RANDOM BONUS TO 1 OF THE FOLLOWING:
 
 
 function updateClock(clock, diff) {
-    let pclocks = player.tm.sluggish.clocks
-    let tclocks = tmp.tm.sluggish.clocks
+    let pclocks = player.sl.clocks
+    let tclocks = tmp.sl.challenge.clocks
     let prevTime = pclocks[clock].timer
 
     pclocks[clock].timer += diff * tclocks[clock].speed
@@ -120,12 +120,12 @@ function updateClock(clock, diff) {
 
     if (pclocks[clock].timer >= 12) {
         if (clock == "clock1") {
-            let x = tmp.tm.sluggish.gain.mul(Math.trunc(pclocks[clock].timer / 12))
-            player.tm.sluggish.points = player.tm.sluggish.points.add(x)
-            player.tm.sluggish.total = player.tm.sluggish.total.add(x)
-            player.tm.sluggish.best = player.tm.sluggish.best.max(player.tm.sluggish.points)
+            let x = tmp.sl.challenge.gain.mul(Math.trunc(pclocks[clock].timer / 12))
+            player.sl.points = player.sl.points.add(x)
+            player.sl.total = player.sl.total.add(x)
+            player.sl.best = player.sl.best.max(player.sl.points)
         } else {
-            let x = tmp.tm.sluggish.clocks[clock].prod.mul(pclocks[clock].cenergy).mul(Math.trunc(pclocks[clock].timer / 12))
+            let x = tmp.sl.challenge.clocks[clock].prod.mul(pclocks[clock].cenergy).mul(Math.trunc(pclocks[clock].timer / 12))
             
             let prevClock = "clock" + (clock.charAt(5) - 1)
             pclocks[prevClock].cenergy = pclocks[prevClock].cenergy.add(x)
@@ -133,7 +133,7 @@ function updateClock(clock, diff) {
         pclocks[clock].timer %= 12
     }
 
-    if (tmp.tm.sluggish.breakdown.unlocked) {
+    if (tmp.sl.challenge.breakdown.unlocked) {
         pclocks[clock].breakdownStep += tclocks[clock].breakdownRate * diff
         pclocks[clock].breakdownStep = Math.min(pclocks[clock].breakdownStep, 1)
     }
@@ -141,7 +141,7 @@ function updateClock(clock, diff) {
 
 function setupDropdowns(clock) {
     var clockSel = document.getElementById(clock + "Menu");
-    clockSel.value = player.tm.sluggish.clocks[clock].focus
+    clockSel.value = player.sl.clocks[clock].focus
     changeDropdowns()
 
     clockSel.onchange = changeDropdowns
@@ -153,7 +153,7 @@ function setupDropdowns(clock) {
         let bonusText = document.getElementById(clock + "Bonus")
         if (x == "prod") {
             // set focus to production
-            player.tm.sluggish.clocks[clock].focus = "prod"
+            player.sl.clocks[clock].focus = "prod"
             prodText.style.fontWeight = "bold"
             prodText.style.color = "purple"
             speedText.style.fontWeight = "normal"
@@ -163,7 +163,7 @@ function setupDropdowns(clock) {
         } else if (x == "speed") {
             // set focus to speed
             prodText.style.fontWeight = "normal"
-            player.tm.sluggish.clocks[clock].focus = "speed"
+            player.sl.clocks[clock].focus = "speed"
             prodText.style.color = "#dfdfdf"
             speedText.style.fontWeight = "bold"
             speedText.style.color = "purple"
@@ -171,7 +171,7 @@ function setupDropdowns(clock) {
             bonusText.style.color = "#dfdfdf"
         } else if (x == "bonus") {
             // set focus to bonus
-            player.tm.sluggish.clocks[clock].focus = "bonus"
+            player.sl.clocks[clock].focus = "bonus"
             prodText.style.fontWeight = "normal"
             prodText.style.color = "#dfdfdf"
             speedText.style.fontWeight = "normal"
@@ -207,8 +207,8 @@ function setupClockButton(clock, radius, canvas) {
 
         if (isInside(mousePos, button)) {
             console.log('clicked inside button');
-            if (player.tm.sluggish.clocks[clock].breakdownStep == 1) 
-                player.tm.sluggish.clocks[clock].breakdownStep = 0
+            if (player.sl.clocks[clock].breakdownStep == 1) 
+                player.sl.clocks[clock].breakdownStep = 0
         } else {
             console.log('clicked outside button');
         }
@@ -238,7 +238,7 @@ function setupWindupButton(radius, canvas, ctx) {
     // click, mousedown
     canvas.addEventListener('mousemove', function(event) {
         var mousePos = getMousePos(event);
-        player.tm.sluggish.windup.cursorInside = isInside(mousePos, button)
+        player.sl.windup.cursorInside = isInside(mousePos, button)
     }, false);
 
     canvas.addEventListener('contextmenu', function(event) {
@@ -248,8 +248,8 @@ function setupWindupButton(radius, canvas, ctx) {
 }
 
 function updateClockStatDisplay(clock) {
-    let pclock = player.tm.sluggish.clocks[clock]
-    let tclock = tmp.tm.sluggish.clocks[clock]
+    let pclock = player.sl.clocks[clock]
+    let tclock = tmp.sl.challenge.clocks[clock]
     document.getElementById(clock + "Energy").textContent = format(pclock.cenergy)
     document.getElementById(clock + "ProdEff").textContent = format(tclock.prod)
     document.getElementById(clock + "ProdVal").textContent = format(pclock.prod, 1)
@@ -261,13 +261,13 @@ function updateClockStatDisplay(clock) {
 
 function updateWindupStatDisplay() {
     document.getElementById("windupGeneration").textContent = 
-        player.tm.sluggish.windup.cursorInside 
-            ? `+${format(tmp.tm.sluggish.windup.energyGain)}`
-            : `-${format(tmp.tm.sluggish.windup.energyLoss)}`
-    document.getElementById("windupEnergy").textContent = `${format(player.tm.sluggish.windup.energy, 3)} => ${format(tmp.tm.sluggish.windup.gain, 3)}`
-    document.getElementById("windupPoints").textContent = `${format(player.tm.sluggish.windup.points)}/${format(tmp.tm.sluggish.windup.cap)}`
-    document.getElementById("windupEffPoints").textContent = `^${format(tmp.tm.sluggish.windup.effects.points, 3)} Points`
-    document.getElementById("windupEffClockSpeed").textContent = `x${format(tmp.tm.sluggish.windup.effects.clockSpeed, 3)} Clock Speed`
+        player.sl.windup.cursorInside 
+            ? `+${format(tmp.sl.challenge.windup.energyGain)}`
+            : `-${format(tmp.sl.challenge.windup.energyLoss)}`
+    document.getElementById("windupEnergy").textContent = `${format(player.sl.windup.energy, 3)} => ${format(tmp.sl.challenge.windup.gain, 3)}`
+    document.getElementById("windupPoints").textContent = `${format(player.sl.windup.points)}/${format(tmp.sl.challenge.windup.cap)}`
+    document.getElementById("windupEffPoints").textContent = `^${format(tmp.sl.challenge.windup.effects.points, 3)} Points`
+    document.getElementById("windupEffClockSpeed").textContent = `x${format(tmp.sl.challenge.windup.effects.clockSpeed, 3)} Clock Speed`
     document.getElementById("windupPlaceholder3").textContent = "?"
     document.getElementById("windupPlaceholder4").textContent = "?"
     document.getElementById("windupPlaceholder5").textContent = "?"
@@ -280,7 +280,7 @@ function setupClock(clock) {
     const canvas = document.getElementById(clock);
     const ctx = canvas.getContext("2d");
     let radius = canvas.height / 2;
-    if (!player.tm.sluggish.clockMade) {
+    if (!player.sl.clockMade) {
         setupDropdowns(clock)
         setupClockButton(clock, radius, canvas)
         ctx.translate(radius, radius);
@@ -292,8 +292,8 @@ function setupClock(clock) {
     function drawClock() {
         drawFace(ctx, radius);
         drawNumbers(ctx, radius)
-        let pos = player.tm.sluggish.clocks[clock].timer * Math.PI / 6
-        let index = Math.floor(player.tm.sluggish.clocks[clock].breakdownStep * 20)
+        let pos = player.sl.clocks[clock].timer * Math.PI / 6
+        let index = Math.floor(player.sl.clocks[clock].breakdownStep * 20)
         drawHand(ctx, pos, index, radius * 0.6, radius * 0.08)
     }
 
@@ -354,8 +354,8 @@ function setupWindup() {
     const canvas = document.getElementById("windupCanvas");
     const ctx = canvas.getContext("2d");
     let radius = canvas.height / 2;
-    let ballPosition = player.tm.sluggish.windup.points.div(tmp.tm.sluggish.windup.cap) * 2 * Math.PI
-    if (!player.tm.sluggish.clockMade) {
+    let ballPosition = player.sl.windup.points.div(tmp.sl.challenge.windup.cap) * 2 * Math.PI
+    if (!player.sl.clockMade) {
         setupWindupButton(radius, canvas, ctx)
         ctx.translate(radius, radius);
         radius = radius * 0.90
@@ -364,7 +364,7 @@ function setupWindup() {
     drawWindupCanvas();
 
     function drawWindupCanvas() {
-        let index = Math.ceil(player.tm.sluggish.windup.passiveStep)
+        let index = Math.ceil(player.sl.windup.passiveStep)
         drawActivityRegion(ctx, radius, index);
         drawBall(ctx, radius, ballPosition)
     }
@@ -403,7 +403,7 @@ function setupWindup() {
         ctx.arc(x,y,radius*.1,0,2*Math.PI);
         ctx.fillStyle = '#fa4';
         ctx.fill();
-        ctx.strokeStyle = player.tm.sluggish.windup.points.lt(tmp.tm.sluggish.windup.cap) 
+        ctx.strokeStyle = player.sl.windup.points.lt(tmp.sl.challenge.windup.cap) 
             ? "black" : "red";
         ctx.lineWidth = radius*0.01;
         ctx.stroke();
@@ -411,8 +411,8 @@ function setupWindup() {
 }
 
 function updateWindupPoints(diff) {
-    let windup = player.tm.sluggish.windup
-    let tWindup = tmp.tm.sluggish.windup
+    let windup = player.sl.windup
+    let tWindup = tmp.sl.challenge.windup
 
     if (windup.cursorInside) {
         let gain = tWindup.energyGain.mul(diff)
@@ -437,12 +437,12 @@ function updateWindupPoints(diff) {
     // }
 
         // if (windup.cursorInside) {
-    //     let windupGain = tmp.tm.sluggish.windup.gain.mul(diff)
-    //     windup.points = windup.points.add(windupGain).min(tmp.tm.sluggish.windup.cap)
+    //     let windupGain = tmp.sl.challenge.windup.gain.mul(diff)
+    //     windup.points = windup.points.add(windupGain).min(tmp.sl.challenge.windup.cap)
     // } else {
-    //     let lossRate = tmp.tm.sluggish.windup.lossRate
+    //     let lossRate = tmp.sl.challenge.windup.lossRate
     //     windup.points = getLogisticAmount(windup.points, decimalZero, lossRate, diff)
-    //                         .min(tmp.tm.sluggish.windup.cap)
+    //                         .min(tmp.sl.challenge.windup.cap)
     // }
 }
 
@@ -450,8 +450,8 @@ function sluggishClocksDisplay() {
     let ret = ``
     let rowsOfClocks = 2
 
-    if (tmp.tm.sluggish.windup.unlocked) {
-        // if (player.tm.sluggish.windup.everHovered) {
+    if (tmp.sl.challenge.windup.unlocked) {
+        // if (player.sl.windup.everHovered) {
         // }
         ret += 
         `<div class = "windupContainer">
@@ -477,7 +477,7 @@ function sluggishClocksDisplay() {
         ret += `<div class = "clockCanvasContainer">`
         for (let j = 3 * i + 1; j <= 3 * i + 3; j++) {
             let clock = "clock" + j
-            if (!tmp.tm.sluggish.clocks[clock].unlocked) break
+            if (!tmp.sl.challenge.clocks[clock].unlocked) break
 
             let clockNumText;
             switch (j) {
@@ -509,12 +509,12 @@ function sluggishClocksDisplay() {
 }
 
 function inSluggishLayer(challNumber = 0) {
-    return player.tm.sluggish.layer >= challNumber
+    return player.sl.layer >= challNumber
 }
 
 function availableTMUpgrades() {
     let ret = ["Breakdown"]
-    switch (player.tm.sluggish.layer) {
+    switch (player.sl.layer) {
         case 7:
         case 6:
         case 5:
@@ -528,8 +528,8 @@ function availableTMUpgrades() {
 }
 
 function displayTMUpgrades() {
-    if (player.tm.upgradeMenu == "Breakdown") {
-        if (!tmp.tm.sluggish.breakdown.unlocked) return ["display-text", "Enter Sluggish at layer 2 or higher and complete TM Achievement 3 to unlock the Breakdown feature!"]
+    if (player.sl.upgradeMenu == "Breakdown") {
+        if (!tmp.sl.challenge.breakdown.unlocked) return ["display-text", "Enter Sluggish at layer 2 or higher and complete TM Achievement 3 to unlock the Breakdown feature!"]
         
         let upgrades = [
             ["11", "12", "13"],
@@ -546,18 +546,18 @@ function displayTMUpgrades() {
     }
 
     let hundreds;
-    switch (player.tm.upgradeMenu) {
+    switch (player.sl.upgradeMenu) {
         case "Temporal Energy": hundreds = 1; break;
         case "Point/Penny": hundreds = 2; break;
         case "Expansion": hundreds = 3; break;
-        default: console.error("Missing case for sluggish upg menu: ", player.tm.upgradeMenu)
+        default: console.error("Missing case for sluggish upg menu: ", player.sl.upgradeMenu)
     }
     hundreds *= 10
     return ["upgrades", [hundreds + 1, hundreds + 2, hundreds + 3, hundreds + 4, hundreds + 5]]
 }
 
 function displayAchTab() {
-    if (player.tm.achievementMenu == "Achievements") return "achievements"
+    if (player.sl.achievementMenu == "Achievements") return "achievements"
 
-    return ["column", ["grid", "blank", ["display-text", player.tm.sluggish.shopDisplay], "blank"]]
+    return ["column", ["grid", "blank", ["display-text", player.sl.shopDisplay], "blank"]]
 }

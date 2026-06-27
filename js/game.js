@@ -342,7 +342,7 @@ function gameLoop(diff) {
 
 
 	player.points = player.points.add(tmp.pointGen.times(diff)).max(0)
-	if (player.tm.sluggish.inChallenge) player.best = player.best.max(player.points)
+	if (player.sluggish.inChallenge) player.best = player.best.max(player.points)
 
 	let hasWNBP = hasUpgrade("p", 23)
 	if (hasWNBP && player.points.gt(upgrade23Limit())) player.points = upgrade23Limit()
