@@ -1,6 +1,6 @@
 let modInfo = {
 	name: "Universal Expansion",
-	id: "danickversetree", // never change, used to store saves
+	id: "danickversetree-timemachine", // never change, used to store saves
 	author: "@.danick",
 	pointsName: "points",
 	modFiles: [
