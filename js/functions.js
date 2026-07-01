@@ -152,7 +152,7 @@ function pennyTaxStart() {
     if (hasUpg("p", 45)) ret = ret.mul(upgEff("p", 42))
     if (hasMilestone("s", 2)) ret = ret.mul(tmp.s.stored_expansion.effects[4])
     if (inChallenge("s", 11)) ret = ret.div(1e4)
-    ret = ret.div(5 ** (player.sluggish.layer ** 0.5))
+    ret = ret.div(5 ** (player.sl.layer ** 0.5))
     return ret.max(1)
 }
 
@@ -262,6 +262,7 @@ function expansionUpgradeCost(id) {
 
 function timeFlux() {
     let ret = 1
+    ret *= tmp.e.effect
     if (hasAchievement('a', 35) && !tmp.a.achievements[35].effLocked) ret *= 1.02
     if (hasMilestone("a", 8)) ret *= (1 + (player.a.achievements.length**1.5)/1000)
     ret *= tmp.quests.bars.dollarResetBar.reward
@@ -273,7 +274,7 @@ function timeFlux() {
     ret *= buyableEffect("tm", 32).toNumber()
     ret *= (1 + 5 * Object.values(player.tm.challenges).reduce((a,b)=>a+b)/100)
 
-    if (inSluggishLayer(2)) ret = (ret ** 0.5) / (1.5 ** player.sluggish.layer) 
+    if (inSluggishLayer(2)) ret = (ret ** 0.5) / (1.5 ** player.sl.layer) 
     return ret
 }
 

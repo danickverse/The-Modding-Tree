@@ -247,6 +247,14 @@ function resetRow(row) {
 }
 
 function startChallenge(layer, x) {
+	if (layer == "tm") {
+		let msg
+		if (player[layer].challenges[x] == 0) 
+			msg = "Are you sure you want to enter Sluggish? This will reset much of your current progress."
+		else 
+			msg = "Are you sure you want to enter this layer of Sluggish? You have already completed this layer."
+		if (!confirm(msg)) return
+	}
 	let enter = false
 	if (!player[layer].unlocked || !tmp[layer].challenges[x].unlocked) return
 	if (player[layer].activeChallenge == x) {
@@ -342,7 +350,7 @@ function gameLoop(diff) {
 
 
 	player.points = player.points.add(tmp.pointGen.times(diff)).max(0)
-	if (player.sluggish.inChallenge) player.best = player.best.max(player.points)
+	if (player.sl.inChallenge) player.best = player.best.max(player.points)
 
 	let hasWNBP = hasUpgrade("p", 23)
 	if (hasWNBP && player.points.gt(upgrade23Limit())) player.points = upgrade23Limit()
@@ -356,7 +364,7 @@ function gameLoop(diff) {
 	// 	if (hasUpgrade("p", 23)) player.highestPointsEver = player.points.max(player.highestPointsEver)
 	// }
 
-	player.resetTime += diff * timeFlux()
+	player.resetTime += diff * (hasMilestone("e", 3) ? timeFlux() : 1)
 	for (let x = 0; x <= maxRow; x++){
 		for (item in TREE_LAYERS[x]) {
 			let layer = TREE_LAYERS[x][item]

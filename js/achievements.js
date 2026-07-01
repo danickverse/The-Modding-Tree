@@ -160,9 +160,9 @@ addLayer("a", {
         32: {
             name: "12",
             done() {
-                if (this.unlocked() && player.tm.challenges[11] == 1 && player.p.investment.points.gte(100)) return true
+                if (this.unlocked() && player.tm.challenges[11] == 1 && player.p.investment.points.gt(0)) return true
             },
-            tooltip: "Complete Sluggish 1 and reach 100 Investment<br><br>Generate 1% of Pennies on reset per second per achievement in this row and the next",
+            tooltip: "Complete Sluggish 1 and gain Investment outside of Sluggish<br><br>Generate 1% of Pennies on reset per second per achievement in this row and the next",
             unlocked:() => hasAchievement("a", 31),
             style: achBlueStyle,
             effect() {
@@ -185,9 +185,9 @@ addLayer("a", {
         34: {
             name: "14",
             done() {
-                if (this.unlocked() && player.p.investment.points.lt(2) && player.p.points.gte(5e6)) return true
+                if (this.unlocked() && player.p.investment.points.lt(2) && player.p.points.gte(5e7)) return true
             },
-            tooltip: "Reach 5 million pennies with < 2 investment<br><br>Multiplies expansion gain by 1.1 and penny and investment gain by 1.337",
+            tooltip: "Reach 50 million pennies with < 2 investment<br><br>Multiplies expansion gain by 1.1 and penny and investment gain by 1.337",
             unlocked:() => hasAchievement("a", 31),
             style: achBlueStyle
         },

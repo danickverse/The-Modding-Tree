@@ -79,6 +79,7 @@ addLayer("p", {
         ret = ret.mul(tmp.sys.businesses.apples.effect)
         ret = ret.mul(tmp.quests.bars.pointsBar.reward)
         ret = ret.mul(gridEffect("quests", 101))
+        ret = ret.mul(gridEffect("sl", 102)[0])
         return ret
     },
     softcap: new Decimal("1e9"),
@@ -139,7 +140,7 @@ addLayer("p", {
     ],
     layerShown(){return true},
     doReset(layer) {
-        if (!player.oneTimeEvents & OneTimeEvents.FIRST_PENNY_RESET) {
+        if (neverSeenEvent(OneTimeEvents.FIRST_PENNY_RESET)) {
             let response = confirm("To perform a reset, you can also press a hotkey!"
                 + " Check out the list of hotkeys in the *General Information* tab (left side of tree)."
                 + " You may also be able to press Enter (after clicking on the prestige button first) to perform a reset."

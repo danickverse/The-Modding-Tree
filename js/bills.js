@@ -27,6 +27,7 @@ function lootGain(lvl, forSpellCost = false) {
     if (hasUpg("banks", 12)) ret = ret.mul(upgEff("banks", 12)[1])
     if (hasUpg("banks", 13)) ret = ret.mul(upgEff("banks", 13)[1])
     if (hasUpg("sys", 125)) ret = ret.mul(upgEff("sys", 125))
+    ret = ret.mul(gridEffect("quests", 101))
 
     let exp = 1
     ret = ret.pow(exp)

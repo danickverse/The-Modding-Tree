@@ -36,7 +36,7 @@ const questShopItems = {
     106: {
         maxLevels: 2, title: "SL ADV", 
         cost: 10, costType: "static",
-        shopDisplay: `Level 1: Unlock Flux Capacitors in the Time Machine<br>
+        shopDisplay: `Level 1: Unlock Flux Capacitors <b>IMPLEMENT!!!</b> in the Time Machine<br>
                     Level 2: Unlock a new Quest and the Sluggish 4 challenge`, 
         effectType: "unlock"
     },
@@ -64,7 +64,7 @@ const sluggishShopItems = {
         shopDisplay: "Levels boost various stats<br>Enable an additional effect every 5 levels",
         effectType: "other",
         formulaTexts: [
-            (eff) => `Multiply Penny/Temporal Energy gain by 1 + x<sup>2</sup>/100: ${format(eff)}x`,
+            (eff) => `Multiply post-nerf Penny/Temporal Energy gain by 1 + x<sup>2</sup>/100: ${format(eff)}x`,
             (eff) => `Reduce Education I amount for cost purposes by (x - 4): -${eff}`
         ],
         formulas: [

@@ -96,6 +96,13 @@ addLayer("e", {
         
         return exp
     },
+    effect() {
+        let x = player.e.points
+        let logarithmic = x.add(1).log2()
+        let rooted = x.pow(.1)
+        let coefficient = .01
+        return rooted.mul(logarithmic).mul(coefficient).add(1)
+    },
     row: 0,
     layerShown() {
         let visible = false
@@ -151,7 +158,7 @@ addLayer("e", {
     },
     penny_expansion: {
         gain() {
-            if (player.e.points.lt(decimalOne)) return decimalZero
+            if (player.e.points.lt(1)) return decimalZero
             let ret = this.baseGain().times(this.gainMult()) // base gain
             if (getClickableState("e", 21)) ret = ret.div(tmp.e.clickables[21].negEffect)
             if (getClickableState("e", 22)) ret = ret.mul(clickableEffect("e", 22))
@@ -252,7 +259,7 @@ addLayer("e", {
     milestones: {
         0: {
             requirementDescription: "1 Expansion",
-            effectDescription: "Time Flux multiplies Expansion gain",
+            effectDescription: "Time Flux multiplies Expansion gain and unlock Penny Expansion",
             effect:() => timeFlux(),
             done() { return player.e.points.gte(1) }
         },
@@ -925,7 +932,8 @@ addLayer("e", {
                     function(){
                         return `You have 
                         <h2><span style="color: white; text-shadow: 0px 0px 10px white; font-family: Lucida Console, Courier New, monospace">
-                            ${format(player.e.points)}</span></h2> Expansion<br><br>
+                            ${format(player.e.points)}</span></h2> Expansion,
+                            multiplying Time Flux by ${format(tmp.e.effect)}x<br><br>
                         `
                     }
                 ],
@@ -969,7 +977,7 @@ addLayer("e", {
                 ["clickable", [11]],
                 ["upgrades", [1, 2, 3, 4, 5]]
             ],
-            unlocked:() => player.e.points.gte(".1") || player.s.unlocked || player.sys.unlocked
+            unlocked:() => player.e.points.gte(1) || player.s.unlocked || player.sys.unlocked
         },
         "System Expansion": {
             content: [
@@ -1029,7 +1037,8 @@ addLayer("e", {
                 content: [
                     ["display-text", function() {
                         let ret = `<br>Expansion point generation is based on your highest points ever achieved`
-                        if (!hasMilestone("sys", 4)) ret+=`, <b>which is only calculated when Penny upgrade WNBP is purchased</b>`
+                        if (!hasMilestone("sys", 4)) ret+=`, <b>which is only calculated when Penny upgrade WNBP 
+                        (We Need Bigger Pockets) is purchased</b>`
                         ret += `. Penny Expansion begins generating when Expansion surpasses a value of 1 and is directly based 
                         on its value.<br><br> Autobuyers unlocked by QOL (Quality-Of-Life) upgrades
                         typically purchase things <b>at no cost</b> once they can be afforded.<br><br>`
@@ -1038,8 +1047,20 @@ addLayer("e", {
                     }]
                 ]
             },
+            "Time Flux": {
+                content: [
+                    "blank",
+                    ["display-text", `Time Flux is a global stat which is not tied to any one feature.
+                        Rather, it is used by various features to provide various boosts. On its own,
+                        Time Flux has <b>no effect</b>. Effects must be unlocked, such as by obtaining the 
+                        first Expansion milestone. For example, Penny gain (and passive Penny generation) is 
+                        unaffected by Time Flux unless otherwise specified.`],
+                    "blank"
+                ]
+            },
             "Formulas": {
                 content: [
+                    "blank",
                     ["display-text", function() { 
                         let divisor = new Decimal(200)
                         if (hasMilestone("s", 4)) {
@@ -1050,17 +1071,19 @@ addLayer("e", {
                             let scaling = 1 + Math.pow(Math.E, exp)
                             divisor = divisor.sub(limitingValue/scaling)
                         }
-                        let ret = `<br>Highest Points Ever: ${format(player.highestPointsEver)}<br><br>`
+                        let ret = `Highest Points Ever: ${format(player.highestPointsEver)}<br><br>`
                         ret += hasUpg("sys", 34) ? `Expansion base gain:<br>max(0, log2(log2(Highest Points Ever)))`
                             : `Expansion base gain:<br>max(0, log10(log10(Highest Points Ever)) - 1)`
-                        ret += `<br><br>Penny Exp. base gain:<br>Expansion / ${format(divisor)}<br><br>`
+                        
+                        if (player.e.penny_expansion.points.gt(0)) ret += `<br><br>Penny Exp. base gain:<br>Expansion / ${format(divisor)}<br>`
 
                         if (tmp.e.system_expansion.unlocked) ret +=
                             `System Exp. base gain:<br>log10(1 + Expansion))/100 * 1.1<sup>sqrt(Highest Zone Completed - 15)</sup>
-                            * 1.5<sup>Factory Components<br><br>`
+                            * 1.5<sup>Factory Components<br>`
 
                         return ret
-                    }]
+                    }],
+                    "blank"
                 ]
             }
         }

@@ -81,7 +81,8 @@ addLayer("effects", {
             content: [
                 ["display-text", function() {
                     let ret = "Base Time Flux is 1, and it is increased by...<br><br>"
-                    ret += format(1 + player.a.achievements.length**1.5/1000, 3) + "x from Achievement Milestone 9"
+                    ret += `${format(tmp.e.effect, 5)}x from the Expansion effect`
+                    if (hasMilestone("a", 8)) ret += format(1 + player.a.achievements.length**1.5/1000, 3) + ",<br>x from Achievement Milestone 9"
                     if (tmp.quests.bars.dollarResetBar.reward > 1)
                         ret += `,<br>${format(tmp.quests.bars.dollarResetBar.reward)}x from the Dollar Reset Quest`
                     if (tmp.quests.bars.zoneBar.reward > 1)
@@ -95,7 +96,7 @@ addLayer("effects", {
                     return ret
                 }]
             ],
-            unlocked:() => hasMilestone("a", 8)
+            unlocked:() => timeFlux() != 1
         },
         "Pennies": {
             content: [

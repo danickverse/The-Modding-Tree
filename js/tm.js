@@ -480,7 +480,7 @@ addLayer("tm", {
             onExit() {
                 resetSluggish(on=false, layer=1)
             },
-            requirement: new Decimal(1e5)
+            requirement: new Decimal(125000)
         },
         12: {
             name: "Sluggish 2",
@@ -545,16 +545,6 @@ addLayer("tm", {
                 "challenges"
             ]
         },
-        "Sluggish" : {
-            content: [
-                ["display-text", () => 
-                    `You have <h2 style="color: purple; font-family: Lucida Console, Courier New, monospace; text-shadow: 0px 0px 10px">
-                    ${format(player.sl.points)}</h2> temporal energy (+${format(tmp.sl.challenge.perSecond)}/s)<br>`
-                ], "blank",
-                ["microtabs", "sluggish"]
-            ],
-            unlocked:() => player.sl.inChallenge
-        },
         "Info": {
             content: [
                 ["microtabs", "information"]
@@ -567,7 +557,7 @@ addLayer("tm", {
                 content: [
                     "blank",
                     ["display-text",   
-                        `<b>NOTHING</b> in this node will update during warp calculation. <B>MOST</b> things in this node will update during
+                        `<b>NOTHING</b> in this feature, *including Sluggish*, will update during warp calculation. <B>MOST</b> things in this node will update during
                         offline time. So, features of the Time Machine will only update while the game is open and running normally, except
                         for Temporal Power generation. Temporal Power generates 3x faster during offline time calculations.
                         <br><br>Temporal Power passively generates based on real time scaled down by a factor. Initially, this factor is

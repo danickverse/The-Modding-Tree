@@ -288,7 +288,7 @@ function getPointGen() {
 		directMult = directMult.pow(.5)
 	}
 
-	if (challengeCompletions("tm", 11) >= 1) mult = mult.times(challengeEffect("tm", 11))
+	if (challengeCompletions("tm", 11) >= 1) gainMult = gainMult.times(challengeEffect("tm", 11))
 	if (hasAchievement("sl", 11)) gainMult = gainMult.mul(achievementEffect("sl", 11))
 	if (hasUpg("sl", 112)) gainMult = gainMult.mul(upgEff("sl", 112))
 	if (hasUpg("sl", 121)) gainMult = gainMult.mul(upgEff("sl", 121))
@@ -321,10 +321,18 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	() => (timeFlux() != 1 || player.sys.unlocked ? 
-		(player.shiftDown ? `Your current reset time is ${timeDisplay(player.resetTime)}<br>`
-			: `Time Flux: ${format(timeFlux(), 4)}x<br>`)
-	: "") + `Time played: ${formatTime(player.timePlayed)}`,
+	() => player.sl.inChallenge 
+			? `You have been in SL ${player.sl.layer} for ${formatTime(player.sl.resetTime)}`
+			: "",
+	() => (timeFlux() != 1 || player.sys.unlocked 
+			? `Time Flux: ${format(timeFlux(), 4)}x<br>` 
+			: "")
+		+ `Your current reset time is ` 
+			+ (player.shiftDown 
+				? `${format(player.resetTime)} seconds<br>`
+				: `${timeDisplay(player.resetTime)}<br>`
+			)
+		+ `Time played: ${formatTime(player.timePlayed)}`,
 	"Current endgame: 1 Bank, HZC 30, Specks Unlocked",
 	() => isEndgame() ? `<p style="color: #5499C7">You are past the endgame.
 		<br>The game is not balanced here, and is subject to bugs and inflation.
@@ -362,6 +370,10 @@ const OneTimeEvents = {
   // For nth event, left shift by n+1
   // If have >= 32 events, use BigInt... shouldnt happen for us!
   //	let flags = 0n; const EVENT_40 = 1n << 39n; flags |= EVENT_40;
+}
+
+function neverSeenEvent(event) {
+	return player.oneTimeEvents & event === false
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
