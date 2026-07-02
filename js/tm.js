@@ -11,7 +11,8 @@ addLayer("tm", {
             unlocked: false,
             points: decimalZero,
             best: decimalZero,
-            minTickLength: 10
+            minTickLength: 10,
+            notifyForBuyables: true
         }
     },
     layerShown() {
@@ -21,6 +22,22 @@ addLayer("tm", {
             visible = true
         }
         return visible
+    },
+    canAffordAnyBuyable() {
+        for (id in tmp.tm.buyables){
+            if (isPlainObject(layers.tm.buyables[id]) && canBuyBuyable("tm", id))
+                return true
+        }
+        return false
+    },
+    shouldNotify() {
+        if (player.tm.notifyForBuyables && tmp.tm.canAffordAnyBuyable) return true
+        return false
+    },
+    glowColor() {
+        if (player.sl.inChallenge && canCompleteChallenge(layer, player.tm.activeChallenge))
+		    return "red"
+        return "magenta"
     },
     effect() {
         return player.tm.points.mul(this.efficiency()).toNumber()
@@ -68,7 +85,7 @@ addLayer("tm", {
                 else if (x.eq(1)) return 1e13
                 else return x.pow(1.5).add(1).pow_base(1e4)
             },
-            maxLevels() { return 20 },
+            purchaseLimit() { return 20 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
@@ -82,7 +99,7 @@ addLayer("tm", {
                 let x = getBuyableAmount("tm", this.id)
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Increase the Temporal Converter's efficiency by ${format(this.effect() * 100)}%` 
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -94,7 +111,7 @@ addLayer("tm", {
                 return x.div(100).toNumber()
             },
             canAfford() {
-                return player.p.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return player.p.points.gte(this.cost())
             },
             buy() {
                 player.p.points = player.p.points.sub(this.cost())
@@ -106,7 +123,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.03).mul(300)
             },
-            maxLevels() { return 100 },
+            purchaseLimit() { return 100 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
@@ -119,7 +136,7 @@ addLayer("tm", {
                 let x = getBuyableAmount("tm", this.id)
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply max Temporal Power by ${format(this.effect())}x` 
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -131,7 +148,7 @@ addLayer("tm", {
                 return x.pow_base(1.02)
             },
             canAfford() {
-                return player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return player.tm.points.gte(this.cost())
             },
             buy() {
                 player.tm.points = player.tm.points.sub(this.cost())
@@ -143,7 +160,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.1).mul(x.pow(2).pow_base(1.004)).mul(20)
             },
-            maxLevels() { return 25 },
+            purchaseLimit() { return 25 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
@@ -158,7 +175,7 @@ addLayer("tm", {
                 let x = getBuyableAmount("tm", this.id)
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply Temporal Power gain by ${format(this.effect())}x (based on Sluggish Challenge completions)` 
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -170,7 +187,7 @@ addLayer("tm", {
                 return x.pow_base(1 + tmp.sl.challenge.completions / 100)
             },
             canAfford() {
-                return player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return player.tm.points.gte(this.cost())
             },
             buy() {
                 player.tm.points = player.tm.points.sub(this.cost())
@@ -182,7 +199,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.1).mul(100)
             },
-            maxLevels() { return 25 },
+            purchaseLimit() { return 25 },
             display() {
                 if (this.locked()) { 
                     return `<h3>LOCKED</h3><br>Until 200 best Temporal Energy and Sluggish 2 complete!`
@@ -201,7 +218,7 @@ addLayer("tm", {
 
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply Time Flux by ${format(this.effect())}x (based on Temporal Power)`
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -214,7 +231,7 @@ addLayer("tm", {
                 return player.tm.points.div(1000).add(1).pow(exp)
             },
             canAfford() {
-                return !this.locked() && player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return !this.locked() && player.tm.points.gte(this.cost())
             },
             buy() {
                 player.tm.points = player.tm.points.sub(this.cost())
@@ -227,7 +244,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.1).mul(100)
             },
-            maxLevels() { return 25 },
+            purchaseLimit() { return 25 },
             display() {
                 if (this.locked()) { 
                     return `<h3>LOCKED</h3><br>Until 200 best Temporal Energy and Sluggish 2 complete!`
@@ -245,7 +262,7 @@ addLayer("tm", {
 
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Increase Temporal Power gain (after boosts) by ${this.effect().toFixed(3)}`
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -257,7 +274,7 @@ addLayer("tm", {
                 return x.mul(.001)
             },
             canAfford() {
-                return !this.locked() && player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return !this.locked() && player.tm.points.gte(this.cost())
             },
             buy() {
                 player.tm.points = player.tm.points.sub(this.cost())
@@ -270,7 +287,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.1).mul(100)
             },
-            maxLevels() { return 25 },
+            purchaseLimit() { return 25 },
             display() {
                 if (this.locked()) { 
                     return `<h3>LOCKED</h3><br>Until 200 best Temporal Energy and Sluggish 2 complete!`
@@ -288,7 +305,7 @@ addLayer("tm", {
 
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply offline Temporal Power gain by ${format(this.effect())}x`
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -301,7 +318,7 @@ addLayer("tm", {
                 return 1 + .02 * x + .05 * Math.floor(x / 5)
             },
             canAfford() {
-                return !this.locked() && player.tm.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return !this.locked() && player.tm.points.gte(this.cost())
             },
             buy() {
                 player.tm.points = player.tm.points.sub(this.cost())
@@ -314,7 +331,7 @@ addLayer("tm", {
             cost(x) {
                 return x.add(1).pow(3).mul(x.pow_base(5))
             },
-            maxLevels() { return 10 },
+            purchaseLimit() { return 10 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
@@ -327,7 +344,7 @@ addLayer("tm", {
                 let x = getBuyableAmount("tm", this.id)
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply the exponent for each Sluggish challenge reward by ${format(this.effect())}x` 
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -339,7 +356,7 @@ addLayer("tm", {
                 return x.div(100).pow_base(timeFlux())
             },
             canAfford() {
-                return player.quests.specks.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return player.quests.specks.points.gte(this.cost())
             },
             buy() {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
@@ -352,7 +369,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.1).mul(x.add(1))
             },
-            maxLevels() { return 100 },
+            purchaseLimit() { return 100 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
@@ -365,7 +382,7 @@ addLayer("tm", {
                 let x = getBuyableAmount("tm", this.id)
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply Time Flux by ${format(this.effect())}x` 
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -377,7 +394,7 @@ addLayer("tm", {
                 return x.div(1000).pow_base(player.timePlayed)
             },
             canAfford() {
-                return player.quests.specks.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return player.quests.specks.points.gte(this.cost())
             },
             buy() {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
@@ -390,7 +407,7 @@ addLayer("tm", {
             cost(x) {
                 return x.pow_base(1.1).mul(x.add(1))
             },
-            maxLevels() { return 120 },
+            purchaseLimit() { return 120 },
             display() {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
@@ -404,7 +421,7 @@ addLayer("tm", {
                 let x = getBuyableAmount("tm", this.id)
                 let levels = "<b><h3>Levels:</h3></b> "
                 let eff = `<b><h3>Effect:</h3></b> Multiply Speck gain by ${format(this.effect())}x (based on Temporal Power)` 
-                if (x.lt(this.maxLevels())) levels += x + "/" + this.maxLevels()
+                if (x.lt(this.purchaseLimit())) levels += x + "/" + this.purchaseLimit()
                 else {
                     levels += "MAXED"
                     return levels + "<br>" + eff
@@ -417,7 +434,7 @@ addLayer("tm", {
                 return x.mul(factor).add(1)
             },
             canAfford() {
-                return player.quests.specks.points.gte(this.cost()) && getBuyableAmount("tm", this.id).lt(this.maxLevels())
+                return player.quests.specks.points.gte(this.cost())
             },
             buy() {
                 player.quests.specks.points = player.quests.specks.points.sub(this.cost())
@@ -523,6 +540,11 @@ addLayer("tm", {
                 ["row", [
                     ["display-text", "Set minimum simulated tick length (250 = 250ms):&ensp;"],
                     ["slider", ["minTickLength", 10, 250]]
+                ]],
+                "blank",
+                ["row", [
+                    ["display-text", "Notify when a buyable is affordable?&ensp;"],
+                    ["toggle", ["tm", "notifyForBuyables"]],
                 ]],
                 "blank",
                 ["buyables", [1, 2, 3]]

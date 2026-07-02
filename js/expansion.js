@@ -194,7 +194,7 @@ addLayer("e", {
             if (hasUpg("e", 35)) return 8
             if (hasUpg("e", 25)) return 3
             if (hasUpg("e", 15)) return 2.2
-            return 2
+            return 2.1
         }
     },
     system_expansion: {
@@ -264,22 +264,22 @@ addLayer("e", {
             done() { return player.e.points.gte(1) }
         },
         1: {
-            requirementDescription: "25 Expansion",
-            effectDescription() { return `Multiply Point/Penny gain by 1.1x/1.05x per digit in Expansion/Penny Expansion per milestone<br>Currently: 
+            requirementDescription: "35 Expansion",
+            effectDescription() { return `Multiply Point/Penny gain by 1.1x/1.05x per digit (not including decimals) in Expansion/Penny Expansion per milestone<br>Currently: 
                 ${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
             effect() {
-                let e = player.e.points.max(1).log10().floor().mul(player.e.milestones.length)
-                let p = player.e.penny_expansion.points.max(1).log10().floor().mul(player.e.milestones.length)
+                let e = player.e.points.max(1).log10().ceil().mul(player.e.milestones.length)
+                let p = player.e.penny_expansion.points.max(1).log10().ceil().mul(player.e.milestones.length)
                 return [e.pow_base(1.1), p.pow_base(1.05)]
             },
-            done() { return player.e.points.gte(25) },
+            done() { return player.e.points.gte(35) },
             unlocked:() => hasAchievement("a", 33)
         },
         2: {
-            requirementDescription: "100 Expansion and 100 Penny Expansion",
+            requirementDescription: "200 Expansion and 200 Penny Expansion",
             effectDescription: "Time Flux multiplies Point gain",
             effect:() => timeFlux(),
-            done() { return player.e.points.gte(100) && player.e.penny_expansion.points.gte(100) },
+            done() { return player.e.points.gte(200) && player.e.penny_expansion.points.gte(200) },
             unlocked:() => hasAchievement("a", 33)
         },
         3: {

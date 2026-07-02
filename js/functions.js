@@ -220,11 +220,11 @@ function expansionUpgradeCost(id) {
         let upgBoughtScaling = Math.pow(staticMultPE, boughtAfterInclRowPE)
         switch (row) {
             case 1:
-                return Math.min(upgBoughtScaling, 16)
+                return Math.min(upgBoughtScaling, 19.45)
             case 2:
-                return Math.min(upgBoughtScaling * 16, 374.8)
+                return Math.min(upgBoughtScaling * 19.45, 456.8)
             case 3:
-                return Math.min(upgBoughtScaling * 500, 40500)
+                return Math.min(upgBoughtScaling * 600, 48600)
             case 4:
                 return Math.min(upgBoughtScaling * 100000, 409600000)
             case 5:
