@@ -26,7 +26,7 @@ let modInfo = {
 // Set your version in num and name
 let VERSION = {
 	num: "0.3",
-	name: "Oh, Right, This is a Tree",
+	name: "Time goes by all of the time",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
@@ -316,7 +316,9 @@ function addedPlayerData() { return {
 	oneTimeEvents: 0,
 	shiftDown: false,
 	particles: {},
-	particleID: 0
+	particleID: 0,
+	showSaveBank: false,
+	CUSTOM_SAVES_PAGE: 0
 }}
 
 // Display extra things at the top of the page

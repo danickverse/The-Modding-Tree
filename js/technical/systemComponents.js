@@ -136,7 +136,7 @@ var systemComponents = {
             Made by <span style="color:#DEB887">{{modInfo.author}}</span>
         </span>
         <br>
-		Credit to <span style="color:pink">@pg132</span> for math stuff with Expansion and with Department levels
+		Credit to <span style="color:pink">@pg132</span> for math stuff with Expansion and with Department levels, and for the save bank
 		<br>
         The Modding Tree <a v-bind:href="'https://github.com/Acamaeda/The-Modding-Tree/blob/master/changelog.md'" target="_blank" class="link" v-bind:style = "{'font-size': '14px', 'display': 'inline'}" >{{TMT_VERSION.tmtNum}}</a> by Acamaeda
         <br>
@@ -149,7 +149,30 @@ var systemComponents = {
 		<br><br>
         Time Played: {{ formatTime(player.timePlayed) }}<br><br>
         <h3>Hotkeys</h3><br>
-        <span v-for="key in hotkeys" v-if="player[key.layer].unlocked && tmp[key.layer].hotkeys[key.id].unlocked"><br>{{key.description}}</span></div>
+        <span v-for="key in hotkeys" v-if="player[key.layer].unlocked && tmp[key.layer].hotkeys[key.id].unlocked"><br>{{key.description}}</span>
+		<br><br><button class="opt" onclick="player.showSaveBank = !player.showSaveBank">Show save bank</button>
+		<br><br><span v-if="player.showSaveBank">
+			<h2 style='color: #00FF99'>Built-in saves</h2><br>
+			<bdi style='color: #F16105'>Warning: Scrolling past here may contain spoilers.</bdi><br><br>
+
+			<button class="opt" onclick="player.CUSTOM_SAVES_PAGE = Math.max(0, player.CUSTOM_SAVES_PAGE - (player.shiftAlias ? 5 : 1))">Previous<br>page<br>(Shift 5x)</button>
+			<button class="opt" onclick="player.CUSTOM_SAVES_PAGE = Math.min(Math.floor(CUSTOM_SAVE_IDS.length / 20), player.CUSTOM_SAVES_PAGE + (player.shiftAlias ? 5 : 1))">Next<br>page<br>(Shift 5x)</button>
+			<br>
+			<span>Page {{player.CUSTOM_SAVES_PAGE+1}} / {{1+Math.floor(CUSTOM_SAVE_IDS.length / 20)}}</span>
+			<br><br>
+			<template v-for="(key, i) in CUSTOM_SAVES_IDS">
+				<table>
+					<tr v-if="i >= 20 * player.CUSTOM_SAVES_PAGE && i < (player.CUSTOM_SAVES_PAGE + 1) * 20">
+						<button class="savebutton" v-on:click="importSave(key, false, true)">
+							Import '{{key}}' save
+						</button>
+					</tr>
+				</table>
+			</template> 
+			</span>
+		</span>
+		<br><br><br><br>
+		</div>
     `
     },
 

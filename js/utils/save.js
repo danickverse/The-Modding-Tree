@@ -273,6 +273,11 @@ function importSave(imported = undefined, forced = false) {
 	if (imported === undefined)
 		imported = prompt("Paste your save here");
 	try {
+		if (CUSTOM_SAVES_IDS.includes(imported)) {
+			let cString = "Are you sure you want to import the '" + imported + "' save?" 
+			if (!confirm(cString)) return 
+			imported = CUSTOM_SAVES[imported]
+		}
 		tempPlr = Object.assign(getStartPlayer(), JSON.parse(atob(imported)));
 		if (tempPlr.versionType != modInfo.id && !forced && !confirm("This save appears to be for a different mod! Are you sure you want to import?")) // Wrong save (use "Forced" to force it to accept.)
 			return;
