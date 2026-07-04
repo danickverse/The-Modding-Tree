@@ -698,7 +698,8 @@ addLayer("p", {
             display() {
                 let gain = tmp.p.buyables[11].gain
                 if (!player.shiftDown) {
-                    let investmentRate = !inAnyChallenge() ? `<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/1e6)<sup>${format(this.rateExp(), 3)}</sup>!`
+                    let investmentRate = !inAnyChallenge() 
+                        ? `<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/${tmp.p.buyables[11].rateDivisor.toExponential(2).replace("+", "")})<sup>${format(tmp.p.buyables[11].rateExp, 3)}</sup>!`
                         : `<b><h3>Rate:</h3></b> Invest your current pennies to gain ${format(gain)} investment!`
                     let cooldown = "<b><h3>Cooldown:</h3></b> " + format(player.p.investmentCooldown) + " seconds."
                     let req = "<b><h3>Requires:</h3></b> " + format(this.cost()) + " pennies"
@@ -707,12 +708,23 @@ addLayer("p", {
                 return `Investing your pennies will earn you ${format(gain)} investment.`
             },
             canAfford() {return player.p.points.gte(this.cost()) & player.p.investmentCooldown == 0},
-            rateExp() { 
-                if (!inSluggishLayer(1)) return 0.5 
-
-                let ret = 0.1
-                if (hasUpg("sl", 123)) ret += upgEff("sl", 123)
-                return ret
+            rateDivisor() {
+                let ird = 1e6
+                if (player.points.gte(1e10)) // continuous nerf
+                    ird = ird * player.points.log10().div(10).pow_base(1.1).toNumber()
+                return ird
+            },
+            rateExp() {
+                let ire 
+                if (!inSluggishLayer(1)) {
+                    ire = 0.5 
+                } else {
+                    ire = 0.1
+                }
+                if (hasUpg("sl", 123)) ire += upgEff("sl", 123)
+                if (player.points.gte(1e10)) // continuous nerf
+                    ire = ire - player.points.log10().div(10).mul(.001).toNumber()
+                return ire
             },
             gain() {
                 let ret;
@@ -724,7 +736,7 @@ addLayer("p", {
                     if (hasUpg("sys", 13)) ret = ret.mul(upgEff("sys", 13))
                     if (hasAchievement("a", 85)) ret = ret.mul(1.5)
                 } else {
-                    ret = player.p.points.div(1000000).pow(this.rateExp())
+                    ret = player.p.points.div(this.rateDivisor()).pow(this.rateExp())
                     if (hasAchievement("a", 25)) ret = ret.mul(2)
                     if (hasAchievement("a", 34)) ret = ret.mul(1.331)
                     if (hasAchievement("a", 44)) ret = ret.mul(1.2)
@@ -1196,8 +1208,15 @@ addLayer("p", {
                             + "Investing will reset most upgrades (including 3rd row and beyond),  current points, current pennies, " 
                         if (hasUpg("p", 31)) ret = ret + "best pennies, and Education buyables.<br><br>"
                         else ret = ret + " and best pennies.<br><br>"
-                        ret = ret + "The first effect that investment has is a direct boost to your point gain, which is " +
-                            "given by the Now We're Getting Somewhere... upgrade."
+                        ret += "The first effect that investment has is a direct boost to your point gain, which is " +
+                            "given by the Now We're Getting Somewhere... upgrade.<br><br>"
+                        ret += "Investment gain is directly based on Penny amount with a formula shown in the Production tab. "
+                        ret += "However, the Investment Rate Exponent (IRE) decreases and the Investment Rate Divisor (IRD) increases as Points increase past <b>1e10</b>. "
+                        ret += "For example, if you have 1e50 points, then you would have IRE = .500 - .001 * 5 = .495 and IRD = 1e6 * 1.1<sup>5</sup> = 2.577e6, "
+                        ret += "disregarding any other factors. These nerfs are applied continuously, so that the nerfs increase "
+                        ret += "even if your Points only increase from 1e50 to 1e51.<br><br>"
+                        ret += `IRE Nerf = -${format(player.points.log10().div(10).mul(.001))}<br>`
+                        ret += `IRD Nerf = ${format(player.points.log10().div(10).pow_base(1.1))}x<br>`
                         return ret
                     }],
                     "blank",
