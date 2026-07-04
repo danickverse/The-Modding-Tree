@@ -185,9 +185,9 @@ addLayer("a", {
         34: {
             name: "14",
             done() {
-                if (this.unlocked() && player.p.investment.points.lt(2) && player.p.points.gte(5e7)) return true
+                if (this.unlocked() && player.p.investment.points.lt(2) && player.p.points.gte(1e7)) return true
             },
-            tooltip: "Reach 50 million pennies with < 2 investment<br><br>Multiplies expansion gain by 1.1 and penny and investment gain by 1.337",
+            tooltip: "Reach 10 million pennies with < 2 investment<br><br>Multiplies expansion gain by 1.1 and penny and investment gain by 1.331",
             unlocked:() => hasAchievement("a", 31),
             style: achBlueStyle
         },

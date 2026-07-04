@@ -66,15 +66,20 @@ addLayer("tm", {
     update(diff) {
         if (player.tm.isWarping || !player.tm.unlocked) return
 
+        let gain = tmp.tm.perSecond.mul(diff)
+        let limit = this.stoTimeLimit()
+
         if (player.offTime !== undefined) {
-            let gain = tmp.tm.perSecond.mul(buyableEffect("tm", 23)).mul(diff)
-            player.tm.points = player.tm.points.add(gain).min(this.stoTimeLimit())
+            gain = gain.mul(buyableEffect("tm", 23))
+            player.tm.points = player.tm.points.add(gain).min(limit)
             player.tm.best = player.tm.best.max(player.tm.points)
+            if (player.tm.points.neq(limit)) player.tm.total = player.tm.total.add(gain)
             return
         }
         
-        player.tm.points = player.tm.points.add(tmp.tm.perSecond.mul(diff)).min(this.stoTimeLimit())
+        player.tm.points = player.tm.points.add(gain).min(limit)
         player.tm.best = player.tm.best.max(player.tm.points)
+        if (player.tm.points.neq(limit)) player.tm.total = player.tm.total.add(gain)
         
     },
     buyables: {
@@ -202,7 +207,7 @@ addLayer("tm", {
             purchaseLimit() { return 25 },
             display() {
                 if (this.locked()) { 
-                    return `<h3>LOCKED</h3><br>Until 200 best Temporal Energy and Sluggish 2 complete!`
+                    return `<h3>LOCKED</h3><br>Until 100 total Temporal Energy!`
                 }
 
                 let x = getBuyableAmount("tm", this.id)
@@ -237,7 +242,7 @@ addLayer("tm", {
                 player.tm.points = player.tm.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            locked:() => player.tm.best.lt(200) || player.tm.challenges[12] == 0
+            locked:() => player.tm.total.lt(100)
         },
         22: {
             title: "Temporal Powers B",
@@ -247,7 +252,7 @@ addLayer("tm", {
             purchaseLimit() { return 25 },
             display() {
                 if (this.locked()) { 
-                    return `<h3>LOCKED</h3><br>Until 200 best Temporal Energy and Sluggish 2 complete!`
+                    return `<h3>LOCKED</h3><br>Until 200 total Temporal Energy and Sluggish 2 complete!`
                 }
 
                 let x = getBuyableAmount("tm", this.id)
@@ -280,7 +285,7 @@ addLayer("tm", {
                 player.tm.points = player.tm.points.sub(this.cost())
                 addBuyables("tm", this.id, 1)
             },
-            locked:() => player.tm.best.lt(200) || player.tm.challenges[12] == 0
+            locked:() => player.tm.total.lt(200) || player.tm.challenges[12] == 0
         },
         23: {
             title: "Temporal Powers C",

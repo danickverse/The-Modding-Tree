@@ -51,7 +51,7 @@ addLayer("p", {
         if (hasUpg("sl", 211)) mult = mult.mul(upgEff("sl", 211)[1])
 
         if (challengeCompletions("tm", 11) >= 1) mult = mult.times(challengeEffect("tm", 11))
-        if (hasAchievement("a", 34)) mult = mult.times(1.337)
+        if (hasAchievement("a", 34)) mult = mult.times(1.331)
         if (hasUpg("p", 35)) mult = mult.times(upgEff("p", 35))
         mult = mult.times(tmp.sys.effect)
         return mult
@@ -726,7 +726,7 @@ addLayer("p", {
                 } else {
                     ret = player.p.points.div(1000000).pow(this.rateExp())
                     if (hasAchievement("a", 25)) ret = ret.mul(2)
-                    if (hasAchievement("a", 34)) ret = ret.mul(1.337)
+                    if (hasAchievement("a", 34)) ret = ret.mul(1.331)
                     if (hasAchievement("a", 44)) ret = ret.mul(1.2)
                     if (hasMilestone("a", 4)) ret = ret.mul(1.1 ** (player.a.milestones.length - 3))
                     if (hasUpg("p", 43)) ret = ret.mul(upgEff("p", 43))

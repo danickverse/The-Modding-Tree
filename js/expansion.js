@@ -265,12 +265,12 @@ addLayer("e", {
         },
         1: {
             requirementDescription: "35 Expansion",
-            effectDescription() { return `Multiply Point/Penny gain by 1.1x/1.05x per digit (not including decimals) in Expansion/Penny Expansion per milestone<br>Currently: 
+            effectDescription() { return `Multiply Point/Penny gain by 1.05x/1.02x per digit (not including decimals) in Expansion/Penny Expansion per milestone<br>Currently: 
                 ${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
             effect() {
                 let e = player.e.points.max(1).log10().ceil().mul(player.e.milestones.length)
                 let p = player.e.penny_expansion.points.max(1).log10().ceil().mul(player.e.milestones.length)
-                return [e.pow_base(1.1), p.pow_base(1.05)]
+                return [e.pow_base(1.05), p.pow_base(1.02)]
             },
             done() { return player.e.points.gte(35) },
             unlocked:() => hasAchievement("a", 33)

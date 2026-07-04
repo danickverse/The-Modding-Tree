@@ -222,11 +222,11 @@ function expansionUpgradeCost(id) {
             case 1:
                 return Math.min(upgBoughtScaling, 19.45)
             case 2:
-                return Math.min(upgBoughtScaling * 19.45, 456.8)
+                return Math.min(upgBoughtScaling * 32, 750)
             case 3:
-                return Math.min(upgBoughtScaling * 600, 48600)
+                return Math.min(upgBoughtScaling * 1000, 81000)
             case 4:
-                return Math.min(upgBoughtScaling * 100000, 409600000)
+                return Math.min(upgBoughtScaling * 125000, 512000000)
             case 5:
                 let base = new Decimal(1e16)
                 return base.mul(upgBoughtScaling).min(1e24)
