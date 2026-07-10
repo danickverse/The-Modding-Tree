@@ -367,15 +367,19 @@ function maxTickLength() {
 // When an event is encountered, add to player.oneTimeEvents (|=)
 const OneTimeEvents = {
   FIRST_PENNY_RESET: 1 << 0,
-  EVENT_2: 1 << 1,
-  EVENT_3: 1 << 2
+  SEEN_PENNY_INFO: 1 << 1,
+  NEW_INVESTMENT_INFO: 1 << 2
   // For nth event, left shift by n+1
   // If have >= 32 events, use BigInt... shouldnt happen for us!
   //	let flags = 0n; const EVENT_40 = 1n << 39n; flags |= EVENT_40;
 }
 
 function neverSeenEvent(event) {
-	return player.oneTimeEvents & event === false
+	return !Boolean(player.oneTimeEvents & event)
+}
+
+function witnessEvent(event) {
+	player.oneTimeEvents |= event
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,

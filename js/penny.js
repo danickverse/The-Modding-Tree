@@ -27,6 +27,9 @@ addLayer("p", {
     baseAmount() {return player.points}, // Get the current amount of baseResource
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
     exponent: .5, // Prestige currency exponent
+    canReset() {
+        return true
+    },
     gainMult() { // Calculate the multiplier for main currency from bonuses
         let mult = new Decimal(1)
         // row 1
@@ -488,13 +491,13 @@ addLayer("p", {
         41: {
             title: "Finally...",
             description: "Increase WNBP <b>effect</b> exponent by log2(1 + Penny Expansions)/10",
-            cost:() => new Decimal("3e10"),
+            cost:() => new Decimal("5e10"),
             effect:() => player.e.penny_expansion.points.add(1).log2().div(10),
             effectDisplay:() => "+" + format(upgEff("p", 41)),
             unlocked:() => hasUpg("e", 23) || hasUpg("p", 41)
         },
         42: {
-            canAfford:() => player.p.points.gte(1e11),
+            canAfford:() => player.p.points.gte(1.5e11),
             effect() {
                 let exp = .4
                 if (tmp.s.challenges[11].unlocked) exp = Decimal.add(exp, challengeEffect("s", 11))
@@ -510,7 +513,7 @@ addLayer("p", {
                 let description = (!hasUpg("p", 42)) ? "Unlock Expansion Investment and unlock an effect for this upgrade"
                     : `Multiply expansion, penny, and point gain by (1 + Expansion Investment)<sup>${format(this.effExponent(), 3)}</sup>`
                 let effect = (!hasUpg("p", 42)) ? "" : "Currently: " + format(upgEff("p", 42)) + "x<br>"
-                let cost = "Requires: 1e11 pennies"
+                let cost = "Requires: 1.5e11 pennies"
                 return title + "<br>" + description + "<br>" + effect + "<br>" + cost
             },
             unlocked:() => hasUpg("e", 23) || hasUpg("p", 42)
@@ -699,8 +702,8 @@ addLayer("p", {
                 let gain = tmp.p.buyables[11].gain
                 if (!player.shiftDown) {
                     let investmentRate = !inAnyChallenge() 
-                        ? `<b><h3>Rate:</h3></b> Invest your current pennies at a rate of (x/${tmp.p.buyables[11].rateDivisor.toExponential(2).replace("+", "")})<sup>${format(tmp.p.buyables[11].rateExp, 3)}</sup>!`
-                        : `<b><h3>Rate:</h3></b> Invest your current pennies to gain ${format(gain)} investment!`
+                        ? `<b><h3>Rate:</h3></b> Invest your pennies at a rate of (x/${tmp.p.buyables[11].rateDivisor.toExponential(2).replace("+", "")})<sup>${format(tmp.p.buyables[11].rateExp, 3)}</sup>!`
+                        : `<b><h3>Rate:</h3></b> Invest your pennies to gain ${format(gain)} investment!`
                     let cooldown = "<b><h3>Cooldown:</h3></b> " + format(player.p.investmentCooldown) + " seconds."
                     let req = "<b><h3>Requires:</h3></b> " + format(this.cost()) + " pennies"
                     return investmentRate + "<br><br>" + req + "<br><br>" + cooldown
@@ -727,7 +730,7 @@ addLayer("p", {
                 return ire
             },
             gain() {
-                let ret;
+                let ret, x;
                 if (inChallenge("s", 11) || inChallenge("s", 12)) {
                     ret = decimalOne
                     if (inChallenge("s", 12)) ret = ret.div(10)
@@ -736,7 +739,8 @@ addLayer("p", {
                     if (hasUpg("sys", 13)) ret = ret.mul(upgEff("sys", 13))
                     if (hasAchievement("a", 85)) ret = ret.mul(1.5)
                 } else {
-                    ret = player.p.points.div(this.rateDivisor()).pow(this.rateExp())
+                    let [ird, ire] = [tmp.p.buyables[11].rateDivisor, tmp.p.buyables[11].rateExp]
+                    ret = player.p.points.div(ird).pow(ire)
                     if (hasAchievement("a", 25)) ret = ret.mul(2)
                     if (hasAchievement("a", 34)) ret = ret.mul(1.331)
                     if (hasAchievement("a", 44)) ret = ret.mul(1.2)
@@ -789,7 +793,7 @@ addLayer("p", {
             cost() {return new Decimal("5e3")},
             display() {
                 if (!player.shiftDown) {
-                    let investmentRate = "<b><h3>Rate:</h3></b> Invest your current investment at a rate of (x/10000)<sup>.4</sup>!"
+                    let investmentRate = `<b><h3>Rate:</h3></b> Invest your investment at a rate of (x/${tmp.p.buyables[12].rateDivisor.toExponential(2).replace("+", "")})<sup>${format(tmp.p.buyables[12].rateExp, 3)}</sup>!`
                     let req = "<b><h3>Requires:</h3></b> " + format(this.cost()) + " investment"
                     let softcap = "<b><h3>Softcap:</h3></b> Gain past " + format(this.softcap()) + " expansion investment"
                     let hardcap = "<b><h3>Hardcap:</h3></b> " + format(this.hardcap()) + " expansion investment"
@@ -807,9 +811,21 @@ addLayer("p", {
             canAfford() {
                 return player.p.investment.points.gte(this.cost())
             },
+            rateDivisor() {
+                let ird = 10000
+                if (player.p.investment.points.gte(10000)) // continuous nerf
+                    ird = ird * player.p.investment.points.log10().sub(4).pow_base(1.05).toNumber()
+                return ird
+            },
+            rateExp() {
+                let ire = 0.4
+                if (player.p.investment.points.gte(10000)) // continuous nerf
+                    ire = ire - player.p.investment.points.log10().sub(4).mul(.001).toNumber()
+                return ire
+            },
             gain() {
-                let investmentExponent = new Decimal(".4")
-                let ret = player.p.investment.points.div(10000).pow(investmentExponent)
+                let [ird, ire] = [tmp.p.buyables[12].rateDivisor, tmp.p.buyables[12].rateExp]
+                let ret = player.p.investment.points.div(ird).pow(ire)
                 if (getClickableState("e", 21) || getClickableState("e", 22)) ret = ret.div(tmp.e.clickables[21].negEffect)
                 if (hasMilestone("s", 1)) ret = ret.mul(tmp.s.stored_expansion.effects[3][0])
                 if (hasMilestone("a", 6)) ret = ret.mul(1.01**(player.a.achievements.length-21))
@@ -1035,6 +1051,17 @@ addLayer("p", {
         }
     },
     update(diff) {
+        let event = OneTimeEvents.SEEN_PENNY_INFO
+        if (neverSeenEvent(event) 
+            && player.subtabs.p.mainTabs == "Info") 
+            witnessEvent(event)
+
+        event = OneTimeEvents.NEW_INVESTMENT_INFO
+        if (neverSeenEvent(event) 
+            && player.subtabs.p.mainTabs == "Info"
+            && player.subtabs.p.info == "Investment") 
+            witnessEvent(event)
+
         if (player.p.investmentCooldown > 0) {
             player.p.investmentCooldown = Math.max(0, player.p.investmentCooldown - diff)
         }
@@ -1132,7 +1159,7 @@ addLayer("p", {
                             + "Tax begins at " + format(pennyTaxStart()) + " pennies<br><br>"
                     }
                 ],
-                "prestige-button", "blank",
+                () => tmp.p.canReset ? "prestige-button" : "", "blank",
                 ["display-text", function() {
                     let ret = ""
                     if (!tmp.p.softcapPower.eq(.5)) ret += `The penny gain softcap power is currently ${format(tmp.p.softcapPower, 4)}<br>`
@@ -1163,7 +1190,7 @@ addLayer("p", {
                             + "Tax begins at " + format(pennyTaxStart()) + " pennies<br><br>"
                     }
                 ],
-                "prestige-button", "blank",
+                () => tmp.p.canReset ? "prestige-button" : "", "blank",
                 ["display-text",
                     function(){
                         let ret = ""
@@ -1197,30 +1224,51 @@ addLayer("p", {
             unlocked(){
                 return hasUpg("p", 25)
             },
+            glowColor: "red",
+            shouldNotify() {
+                return hasUpg("p", 25) && neverSeenEvent(OneTimeEvents.SEEN_PENNY_INFO)
+            }
         }
     },
     microtabs: {
         info: {
             "Investment": {
                 content: [
+                    "blank",
                     ["display-text", function() {
-                        let ret = "<br>Investment is used in a number of places to help boost overall progression. "
+                        let ret = "Investment is used in a number of places to help boost overall progression. "
                             + "Investing will reset most upgrades (including 3rd row and beyond),  current points, current pennies, " 
                         if (hasUpg("p", 31)) ret = ret + "best pennies, and Education buyables.<br><br>"
                         else ret = ret + " and best pennies.<br><br>"
-                        ret += "The first effect that investment has is a direct boost to your point gain, which is " +
-                            "given by the Now We're Getting Somewhere... upgrade.<br><br>"
-                        ret += "Investment gain is directly based on Penny amount with a formula shown in the Production tab. "
-                        ret += "However, the Investment Rate Exponent (IRE) decreases and the Investment Rate Divisor (IRD) increases as Points increase past <b>1e10</b>. "
-                        ret += "For example, if you have 1e50 points, then you would have IRE = .500 - .001 * 5 = .495 and IRD = 1e6 * 1.1<sup>5</sup> = 2.577e6, "
-                        ret += "disregarding any other factors. These nerfs are applied continuously, so that the nerfs increase "
-                        ret += "even if your Points only increase from 1e50 to 1e51.<br><br>"
-                        ret += `IRE Nerf = -${format(player.points.log10().div(10).mul(.001))}<br>`
-                        ret += `IRD Nerf = ${format(player.points.log10().div(10).pow_base(1.1))}x<br>`
+                        ret += `The first effect that Investment has is a direct boost to your point gain, which is
+                            given by the Now We're Getting Somewhere... upgrade.<br><br>
+                            Investment gain is directly based on Penny amount with a formula shown in the Production tab.
+                            However, the Investment Rate Exponent (IRE) decreases and the Investment Rate Divisor (IRD) increases as Points increase past <b>1e10</b>.
+                            For example, if you have 1e50 points, then you would have IRE = .500 - .001 * 5 = .495 and IRD = 1e6 * 1.1<sup>5</sup> = 2.577e6,
+                            disregarding any other factors. These nerfs are applied continuously, so that the nerfs increase
+                            even if your Points only increase from 1e50 to 1e51.<br><br>
+                            IRE Nerf = -${format(player.points.max(1).log10().div(10).mul(.001))}<br>
+                            IRD Nerf = ${format(player.points.max(1).log10().div(10).pow_base(1.1))}x<br>`
+                        if (hasUpg("p", 42)) ret += `<br>The first effects that Expansion Investment has are direct boosts
+                            to point gain, penny gain, and expansion gain, which is given by the Invest In The Universe! upgrade.<br><br>
+                            Expansion Investment gain is directly based on Investment amount with a formula shown in the Production tab.
+                            However, the Expansion Investment Rate Exponent (EIRE) and the Expansion Investment Rate Divisor (EIRE) increases as Pennies increase past <b>10000 (1e4)</b>.
+                            For example, if you have 1e10 Investment, then you would have IRE = .400 - .001 * (10 - 4) = .394
+                            and IRD = 1e4 * 1.05<sup>10 - 4</sup> = 1.34e4. These nerfs are applied continuously, so that the nerfs increase
+                            even if your points only increase from 1e10 to 2e10. This is similar to Investment. However, note that Expansion Investment <i>gain</i> is softcapped past a certain value
+                            and Expansion Investment <i>amount</i> is hardcapped to a certain amount.<br><br>
+                            EIRE Nerf = -${format(player.p.investment.points.log10().sub(4).max(0).mul(.001))}<br>
+                            EIRD Nerf = ${format(player.p.investment.points.log10().sub(4).max(0).pow_base(1.05))}x
+                        `
                         return ret
                     }],
                     "blank",
-                ]
+                ],
+                unlocked: true,
+                glowColor: "red",
+                shouldNotify() {
+                    return hasUpg("p", 42) && neverSeenEvent(OneTimeEvents.NEW_INVESTMENT_INFO)
+                }
             },
             "Upgrades": {
                 content: [

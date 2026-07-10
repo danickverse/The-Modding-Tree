@@ -163,7 +163,7 @@ addLayer("tm", {
         13: {
             title: "Time Machine C",
             cost(x) {
-                return x.pow_base(1.1).mul(x.pow(2).pow_base(1.004)).mul(20)
+                return x.pow_base(1.1).mul(x.pow(2).pow_base(1.005)).mul(20)
             },
             purchaseLimit() { return 25 },
             display() {
@@ -173,7 +173,7 @@ addLayer("tm", {
                         &#8658; ${1 + tmp.sl.challenge.completions / 100}<sup>x</sup>
                         (Caps at 12 Completions)`
                     let costForm = `<b><h3>Cost Formula:</h3></b>
-                        20 * 1.1<sup>x</sup> * 1.004<sup>x^2</sup>`
+                        20 * 1.1<sup>x</sup> * 1.005<sup>x^2</sup>`
                     return effForm + "<br><br>" + costForm
                 }
 
@@ -202,7 +202,7 @@ addLayer("tm", {
         21: {
             title: "Temporal Powers A",
             cost(x) {
-                return x.pow_base(1.1).mul(100)
+                return x.pow_base(1.1).mul(50)
             },
             purchaseLimit() { return 25 },
             display() {
@@ -215,10 +215,14 @@ addLayer("tm", {
                 if (player.shiftDown) {
                     let effForm = `<b><h3>Effect Formula:</h3></b>
                         (1 + Temporal Power / 1000)<sup>.04x</sup>
-                        ${format(player.tm.points.div(1000).add(1))}<sup>.04x</sup>`
+                        ${format(player.tm.points.div(1000).add(1))}<sup>.08x</sup>`
+                    let amt = getBuyableAmount("tm", 21).add(1)
+                    let nextEff = `Next:&ensp;${format(player.tm.points.div(1000).add(1))}`
+                        + `<sup>${amt.mul(.08).toStringWithDecimalPlaces(2)}</sup>`
+                        + ` = ${format(layers.tm.buyables[21].actualEffectFunction(amt))}`
                     let costForm = `<b><h3>Cost Formula:</h3></b>
-                        100 * 1.1<sup>x</sup>`
-                    return effForm + "<br><br>" + costForm
+                        50 * 1.1<sup>x</sup>`
+                    return effForm + "<br>" + nextEff + "<br><br>" + costForm
                 }
 
                 let levels = "<b><h3>Levels:</h3></b> "
@@ -232,7 +236,7 @@ addLayer("tm", {
                 return levels + "<br>" + eff + "<br><br>" + cost
             },
             effect(x) {
-                let exp = x.mul(.04)
+                let exp = x.mul(.08)
                 return player.tm.points.div(1000).add(1).pow(exp)
             },
             canAfford() {
@@ -486,7 +490,7 @@ addLayer("tm", {
             rewardDescription:() => `Multiply point/penny gain based on total time played,
                 and double offline time limit (7.5m --> 15m)`,
             rewardEffect() { 
-                let ret = (player.timePlayed ** 0.03) * Math.log10(player.timePlayed + 1) ** .25
+                let ret = (player.timePlayed ** 0.03) * Math.log10(player.timePlayed + 1) ** .2
                 let exp = buyableEffect("tm", 31)
                 return exp.pow_base(ret)
             },

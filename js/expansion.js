@@ -193,7 +193,7 @@ addLayer("e", {
             if (tmp.e.upgrades[51].unlocked) return 100
             if (hasUpg("e", 35)) return 8
             if (hasUpg("e", 25)) return 3
-            if (hasUpg("e", 15)) return 2.2
+            if (hasUpg("e", 15)) return 2.25
             return 2.1
         }
     },
@@ -265,12 +265,12 @@ addLayer("e", {
         },
         1: {
             requirementDescription: "35 Expansion",
-            effectDescription() { return `Multiply Point/Penny gain by 1.05x/1.02x per digit (not including decimals) in Expansion/Penny Expansion per milestone<br>Currently: 
+            effectDescription() { return `Multiply Point/Penny gain by 1.02x/1.01x per digit (not including decimals) in Expansion/Penny Expansion per milestone<br>Currently: 
                 ${format(this.effect()[0])}x, ${format(this.effect()[1])}x` },
             effect() {
                 let e = player.e.points.max(1).log10().ceil().mul(player.e.milestones.length)
                 let p = player.e.penny_expansion.points.max(1).log10().ceil().mul(player.e.milestones.length)
-                return [e.pow_base(1.05), p.pow_base(1.02)]
+                return [e.pow_base(1.02), p.pow_base(1.01)]
             },
             done() { return player.e.points.gte(35) },
             unlocked:() => hasAchievement("a", 33)
@@ -301,8 +301,8 @@ addLayer("e", {
                     }
                     let ret = "Increases base penny expansion gain by "
                     if (!hasUpg("e", 21)) ret = ret +  "log4(4 + Upgrades<sup>*</sup>) / 50"
-                    else if (!hasUpg("e", 31)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 10"
-                    else if (!hasUpg("e", 41)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 2"
+                    else if (!hasUpg("e", 31)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) / 5"
+                    else if (!hasUpg("e", 41)) ret = ret + "ln(4 + Upgrades<sup>*</sup>) * 2"
                     else ret = ret + "log2(4 + Upgrades<sup>*</sup>) * 5"
                     return ret
                 }
@@ -326,8 +326,8 @@ addLayer("e", {
                     if (hasMilestone("sys", 2)) upgCount += tmp.sys.getMainUpgCount ** 2
 
                     if (hasUpg("e", 41)) ret = Decimal.log2(upgCount).mul(10)
-                    else if (hasUpg("e", 31)) ret = Decimal.ln(upgCount).div(2)
-                    else if (hasUpg("e", 21)) ret = Decimal.ln(upgCount).div(10)
+                    else if (hasUpg("e", 31)) ret = Decimal.ln(upgCount).mul(2)
+                    else if (hasUpg("e", 21)) ret = Decimal.ln(upgCount).div(5)
                     else ret = Decimal.log(upgCount, 4).div(50)
                 }
 
@@ -416,7 +416,7 @@ addLayer("e", {
         },
         21: {
             title: "It's Even Reasonabler",
-            description: "Reduces above upgrade's log4 to ln and reduce divisor to 10",
+            description: "Reduces above upgrade's log4 to ln and reduce divisor to 5",
             cost() { return expansionUpgradeCost(this.id) },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",
@@ -510,7 +510,7 @@ addLayer("e", {
         },
         31: {
             title: "It's So Beautiful",
-            description: "Remove divisor of upgrade two rows above this one",
+            description: "Replace divisor of upgrade two rows above this one with coefficient of 2",
             cost() { return expansionUpgradeCost(this.id) },
             currencyDisplayName: "Penny Expansion",
             currencyInternalName: "points",

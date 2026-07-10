@@ -222,9 +222,9 @@ function expansionUpgradeCost(id) {
             case 1:
                 return Math.min(upgBoughtScaling, 19.45)
             case 2:
-                return Math.min(upgBoughtScaling * 32, 750)
+                return Math.min(upgBoughtScaling * 32, 820)
             case 3:
-                return Math.min(upgBoughtScaling * 1000, 81000)
+                return Math.min(upgBoughtScaling * 1200, 97200)
             case 4:
                 return Math.min(upgBoughtScaling * 125000, 512000000)
             case 5:

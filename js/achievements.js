@@ -219,9 +219,8 @@ addLayer("a", {
         42: {
             name: "17",
             done() {
-                return player.highestPointsEver.gte(1e17)
-                // if (this.unlocked() && player.p.points.gte(3e10) && tmp.pointGen.lt(upgrade23Limit())) return true
-            },
+                return this.unlocked() && player.highestPointsEver.gte(1e17)
+                },
             tooltip: "Reach a Highest Points Ever of 1e17<br><br>Increase WNBP effect base by 2 (10 --> 12)",
             unlocked:() => hasUpg("e", 23) || player.s.unlocked || player.sys.unlocked,
             style: achBlueStyle
@@ -229,9 +228,9 @@ addLayer("a", {
         43: {
             name: "18",
             done() {
-                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(1e7)) return true
+                if (this.unlocked() && player.p.investment.points.eq(0) && player.p.points.gte(2.5e7)) return true
             },
-            tooltip: "Reach 10 million pennies with 0 (normal) investment",
+            tooltip: "Reach 25 million pennies with 0 (normal) investment",
             unlocked:() => hasUpg("e", 23) || player.s.unlocked || player.sys.unlocked
         },
         44: {
